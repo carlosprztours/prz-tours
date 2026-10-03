@@ -87,7 +87,7 @@ function NewSettingForm({ locale, es }: { locale: string; es: boolean }) {
       />
       <button
         type="submit"
-        className="h-10 rounded-full bg-coral-500 px-5 text-sm font-bold text-white transition hover:bg-coral-600"
+        className="h-10 rounded-full bg-coral-700 px-5 text-sm font-bold text-white transition hover:bg-coral-800"
       >
         {es ? "Agregar" : "Add"}
       </button>

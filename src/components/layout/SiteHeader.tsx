@@ -40,7 +40,7 @@ async function SiteHeaderInner({ locale, dict, phoneDisplay }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-white/90 backdrop-blur">
       <div className="container-site relative flex h-[72px] items-center justify-between gap-3">
-        <Link href={base} className="flex items-center gap-2.5" aria-label={dict.meta.siteName}>
+        <Link href={base} className="flex items-center gap-2.5" aria-label="Perez Tours Puerto Plata">
           <Image
             src="/img/logo.jpg"
             alt={dict.meta.siteName}
@@ -88,7 +88,7 @@ async function SiteHeaderInner({ locale, dict, phoneDisplay }: Props) {
           </a>
           <Link
             href={`${base}/tours`}
-            className="hidden h-10 items-center rounded-full bg-coral-500 px-5 text-sm font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-600 lg:inline-flex"
+            className="hidden h-10 items-center rounded-full bg-coral-700 px-5 text-sm font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800 lg:inline-flex"
           >
             {dict.nav.bookNow}
           </Link>

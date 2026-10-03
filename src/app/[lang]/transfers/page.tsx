@@ -54,7 +54,7 @@ export default async function TransfersPage({ params }: Props) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-white/80">{dict.transfers.ctaBody}</p>
           <Link
             href={`/${locale}/book?type=transfer`}
-            className="mt-6 inline-flex h-12 items-center rounded-full bg-coral-500 px-8 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-600"
+            className="mt-6 inline-flex h-12 items-center rounded-full bg-coral-700 px-8 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-800"
           >
             {dict.transfers.ctaButton}
           </Link>

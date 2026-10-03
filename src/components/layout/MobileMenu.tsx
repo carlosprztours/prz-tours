@@ -57,7 +57,7 @@ export function MobileMenu({ locale, dict, links, bookHref }: Props) {
             <Link
               href={bookHref}
               onClick={() => setOpen(false)}
-              className="mt-2 rounded-xl bg-coral-500 px-4 py-3 text-center font-display text-lg font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-600"
+              className="mt-2 rounded-xl bg-coral-700 px-4 py-3 text-center font-display text-lg font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800"
             >
               {dict.bookNow}
             </Link>

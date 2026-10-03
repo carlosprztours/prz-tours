@@ -79,7 +79,7 @@ export default async function AccountPage({ params }: Props) {
             <p className="text-sm text-ink-500">{copy.noBookings}</p>
             <Link
               href={`/${locale}/tours`}
-              className="mt-4 inline-flex h-11 items-center rounded-full bg-coral-500 px-6 text-sm font-bold text-white transition hover:bg-coral-600"
+              className="mt-4 inline-flex h-11 items-center rounded-full bg-coral-700 px-6 text-sm font-bold text-white transition hover:bg-coral-800"
             >
               {copy.explore}
             </Link>

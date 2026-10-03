@@ -41,7 +41,7 @@ export function Hero({ locale, dict, stats }: Props) {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href={`${base}/tours`}
-            className="inline-flex h-12 items-center rounded-full bg-coral-500 px-7 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-600"
+            className="inline-flex h-12 items-center rounded-full bg-coral-700 px-7 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-800"
           >
             {dict.hero.ctaPrimary}
           </Link>

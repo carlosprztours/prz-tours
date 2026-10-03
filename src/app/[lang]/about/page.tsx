@@ -108,7 +108,7 @@ export default async function AboutPage({ params }: Props) {
         <div className="mt-12 text-center">
           <Link
             href={`/${locale}/tours`}
-            className="inline-flex h-12 items-center rounded-full bg-coral-500 px-8 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-600"
+            className="inline-flex h-12 items-center rounded-full bg-coral-700 px-8 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-800"
           >
             {dict.nav.bookNow}
           </Link>

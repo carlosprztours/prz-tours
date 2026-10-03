@@ -53,7 +53,7 @@ export function UserRowActions({ locale, user, isMe, labels }: Props) {
         <button
           disabled={pending || isMe}
           onClick={() => run(() => promoteCustomer(locale, user.id, "editor"))}
-          className={`${btn} bg-coral-500 text-white hover:bg-coral-600`}
+          className={`${btn} bg-coral-700 text-white hover:bg-coral-800`}
         >
           {labels.promote}
         </button>

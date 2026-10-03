@@ -34,7 +34,9 @@ export function LanguageSwitcher({
   return (
     <Link
       href={target}
-      aria-label={label}
+      aria-label={
+        locale === "es" ? `Ver en English (${other.toUpperCase()})` : `View in Español (${other.toUpperCase()})`
+      }
       title={label}
       className="inline-flex h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-3 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700"
     >
