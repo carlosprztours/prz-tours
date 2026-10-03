@@ -70,17 +70,18 @@ function isStaff(role: string): boolean {
  * Verificación de STAFF. Úsala al inicio de cada página del panel y de cada
  * Server Action administrativa. Redirige al login si no hay sesión de staff.
  *
- * Si había cookie pero la sesión ya no es válida (revocada, expirada o
- * usuario eliminado/desactivado), se borra la cookie antes de redirigir.
- * Sin esto, el proxy vería la firma válida y devolvería a /admin o
+ * Si había cookie con firma válida pero sin sesión en BD (revocada,
+ * expirada o usuario eliminado/desactivado), se pasa por
+ * `/api/auth/clear`, que borra la cookie y redirige al login. Las cookies
+ * NO se pueden borrar durante el render (lanza error), por eso existe esa
+ * ruta. Sin esto, el proxy vería la firma válida y devolvería a /admin o
  * /account en bucle infinito.
  */
 export const verifySession = cache(
   async (locale: Locale = defaultLocale): Promise<VerifiedSession> => {
     const session = await loadVerifiedSession();
     if (!session) {
-      await clearStaleCookie();
-      redirect(`/${locale}/login`);
+      redirect(await loginOrClear(locale));
     }
     // Con sesión válida de customer: redirige a su cuenta SIN borrar nada.
     if (!isStaff(session.user.role)) redirect(`/${locale}/account`);
@@ -96,20 +97,20 @@ export const verifyCustomerSession = cache(
   async (locale: Locale = defaultLocale): Promise<VerifiedSession> => {
     const session = await loadVerifiedSession();
     if (!session) {
-      await clearStaleCookie();
-      redirect(`/${locale}/login`);
+      redirect(await loginOrClear(locale));
     }
     return session;
   },
 );
 
-/** Borra la cookie si existe pero ya no respalda una sesión válida. */
-async function clearStaleCookie(): Promise<void> {
+/**
+ * Destino al fallar la verificación: al login directo si no había cookie,
+ * o por `/api/auth/clear` (que la borra) si el JWT tenía firma válida.
+ */
+async function loginOrClear(locale: Locale): Promise<string> {
   const hasToken = await readToken();
-  if (hasToken) {
-    const store = await cookies();
-    store.delete(SESSION_COOKIE);
-  }
+  if (!hasToken) return `/${locale}/login`;
+  return `/api/auth/clear?next=${encodeURIComponent(`/${locale}/login`)}`;
 }
 
 /** Devuelve la sesión verificada o `null` (sin redirigir). */
