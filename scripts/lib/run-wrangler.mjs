@@ -4,29 +4,34 @@
  * Detalles que ya nos mordieron:
  * - En Windows `npx` es un `.cmd` y `execFileSync("npx", …)` falla con
  *   ENOENT si no se usa shell.
- * - Con `shell: true`, cmd.exe fragmenta los argumentos con espacios, así
- *   que `--command "SELECT …"` llega roto a wrangler.
- *
- * Solución: el SQL siempre viaja en un archivo temporal con `--file`.
- * Los argumentos de la línea de comandos quedan cortos y sin espacios.
+ * - Con `shell: true`, Node concatena sin entrecomillar: los valores con
+ *   espacios se envuelven en comillas dobles a mano (nuestro SQL solo usa
+ *   comillas simples, así que es seguro).
+ * - En remoto, `--file` devuelve un resumen de importación, nunca filas:
+ *   las lecturas van por `--command`; `--file` solo para escrituras largas
+ *   (límite de ~8 KB de la línea de comandos en Windows).
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 
 const NPX = process.platform === "win32" ? "npx.cmd" : "npx";
 
-function runWrangler(db, flag, filePath) {
+function runWrangler(db, flag, sqlArgs) {
+  const useShell = process.platform === "win32";
+  // Con shell:true Node concatena sin entrecomillar: hay que envolver los
+  // valores con espacios. Nuestro SQL solo usa comillas simples, así que
+  // envolver en dobles es seguro.
+  const finalArgs = useShell
+    ? sqlArgs.map((a) => (/[\s"]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a))
+    : sqlArgs;
   try {
     const out = execFileSync(
       NPX,
-      ["wrangler", "d1", "execute", db, flag, "--yes", "--file", filePath, "--json"],
+      ["wrangler", "d1", "execute", db, flag, "--yes", ...finalArgs, "--json"],
       {
         stdio: ["ignore", "pipe", "pipe"],
         encoding: "utf8",
         // En Windows los .cmd solo se ejecutan a través del shell.
-        shell: process.platform === "win32",
+        shell: useShell,
       },
     );
     // En remoto wrangler a veces imprime líneas de estado antes del JSON.
@@ -47,21 +52,19 @@ function runWrangler(db, flag, filePath) {
 }
 
 /**
- * Ejecuta SQL contra D1 y devuelve el JSON parseado.
- * Termina el proceso con código 1 si wrangler falla.
+ * Sentencias CORTAS (lecturas y escrituras simples): viajan por `--command`
+ * para que los SELECT devuelvan filas reales. En remoto, `--file` devuelve
+ * solo un resumen de importación, lo que rompe cualquier lectura.
  */
 export function d1Execute(db, flag, sql) {
-  const dir = mkdtempSync(join(tmpdir(), "prz-sql-"));
-  try {
-    const file = join(dir, "query.sql");
-    writeFileSync(file, sql, "utf8");
-    return runWrangler(db, flag, file);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+  return runWrangler(db, flag, ["--command", sql]);
 }
 
-/** Alias explícito para sentencias largas (semántica idéntica). */
+/**
+ * Sentencias LARGAS (solo escritura, p. ej. lotes del seed): viajan por
+ * `--file` porque la línea de comandos de Windows tiene límite de ~8 KB.
+ * NO usar para lecturas en remoto (devuelve resumen, no filas).
+ */
 export function d1ExecuteFile(db, flag, filePath) {
-  return runWrangler(db, flag, filePath);
+  return runWrangler(db, flag, ["--file", filePath]);
 }
