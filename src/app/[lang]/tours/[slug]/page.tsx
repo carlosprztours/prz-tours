@@ -8,7 +8,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { BookingForm } from "@/components/booking/BookingForm";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TourCard, formatDuration } from "@/components/tours/TourCard";
 import { TourGallery } from "@/components/tours/TourGallery";
@@ -193,7 +192,8 @@ export default async function TourDetailPage({ params }: Props) {
                   {dict.booking.title}
                 </h2>
                 <p className="mb-4 mt-1 text-xs text-ink-500">{dict.booking.subtitle}</p>
-                <BookingForm
+                {/* BISECT-DEBUG: BookingForm comentado temporalmente */}
+                {/* <BookingForm
                   locale={locale}
                   booking={dict.booking}
                   optionalLabel={dict.common.optional}
@@ -202,7 +202,7 @@ export default async function TourDetailPage({ params }: Props) {
                   tours={[{ id: tour.id, title: tour.translation.title, price: tour.price }]}
                   routes={[]}
                   preselectedTourId={tour.id}
-                />
+                /> */}
               </div>
             </aside>
           </div>
