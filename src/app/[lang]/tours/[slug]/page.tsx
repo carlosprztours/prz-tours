@@ -43,7 +43,16 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, slug } = await params;
   if (!isLocale(lang)) return {};
-  const tour = await getTourBySlug(slug, lang);
+  let tour;
+  try {
+    tour = await getTourBySlug(slug, lang);
+  } catch (err) {
+    console.error(
+      "[tour-detail] metadata getTourBySlug:",
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+    );
+    throw err;
+  }
   if (!tour) return {};
   const cover = tour.images[0]?.url;
   return {
@@ -81,10 +90,21 @@ export default async function TourDetailPage({ params }: Props) {
   }
   if (!tour) notFound();
 
-  const [dict, related] = await Promise.all([
-    getDictionary(locale),
-    listRelatedTours(tour.id, tour.category, locale),
-  ]);
+  let dict;
+  let related;
+  try {
+    [dict, related] = await Promise.all([
+      getDictionary(locale),
+      listRelatedTours(tour.id, tour.category, locale),
+    ]);
+    console.log(`[tour-detail] render data ok slug=${slug} related=${related.length}`);
+  } catch (err) {
+    console.error(
+      "[tour-detail] related/dict:",
+      err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : String(err),
+    );
+    throw err;
+  }
 
   const paragraphs = tour.translation.description
     .split("\n\n")
