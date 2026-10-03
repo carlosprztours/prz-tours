@@ -8,8 +8,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BookingForm } from "@/components/booking/BookingForm";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TourCard, formatDuration } from "@/components/tours/TourCard";
+import { TourGallery } from "@/components/tours/TourGallery";
+import { TourInfo } from "@/components/tours/TourInfo";
 import { priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import { getTourBySlug, listRelatedTours } from "@/lib/db/tours";
@@ -27,40 +30,23 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, slug } = await params;
   if (!isLocale(lang)) return {};
-  let tour;
-  try {
-    tour = await getTourBySlug(slug, lang);
-  } catch (err) {
-    console.error(
-      "[tour-detail] metadata getTourBySlug:",
-      err instanceof Error ? `${err.name}: ${err.message}` : String(err),
-    );
-    throw err;
-  }
+  const tour = await getTourBySlug(slug, lang);
   if (!tour) return {};
   const cover = tour.images[0]?.url;
-  try {
-    return {
-      title: tour.translation.seo_title || tour.translation.title,
-      description: tour.translation.seo_description || tour.translation.summary,
-      alternates: {
-        canonical: `/${lang}/tours/${slug}`,
-        languages: { es: `/es/tours/${slug}`, en: `/en/tours/${slug}` },
-      },
-      openGraph: {
-        title: tour.translation.title,
-        description: tour.translation.summary,
-        type: "article",
-        ...(cover ? { images: [{ url: cover }] } : {}),
-      },
-    };
-  } catch (err) {
-    console.error(
-      "[tour-detail] metadata build:",
-      err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : String(err),
-    );
-    throw err;
-  }
+  return {
+    title: tour.translation.seo_title || tour.translation.title,
+    description: tour.translation.seo_description || tour.translation.summary,
+    alternates: {
+      canonical: `/${lang}/tours/${slug}`,
+      languages: { es: `/es/tours/${slug}`, en: `/en/tours/${slug}` },
+    },
+    openGraph: {
+      title: tour.translation.title,
+      description: tour.translation.summary,
+      type: "article",
+      ...(cover ? { images: [{ url: cover }] } : {}),
+    },
+  };
 }
 
 export default async function TourDetailPage({ params }: Props) {
@@ -68,35 +54,13 @@ export default async function TourDetailPage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  // Instrumentación temporal (issue prod 500): registra el error real en
-  // `wrangler tail` y relanza. Quitar cuando se identifique la causa.
-  let tour;
-  try {
-    tour = await getTourBySlug(slug, locale);
-  } catch (err) {
-    console.error(
-      "[tour-detail] getTourBySlug:",
-      err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : String(err),
-    );
-    throw err;
-  }
+  const tour = await getTourBySlug(slug, locale);
   if (!tour) notFound();
 
-  let dict;
-  let related;
-  try {
-    [dict, related] = await Promise.all([
-      getDictionary(locale),
-      listRelatedTours(tour.id, tour.category, locale),
-    ]);
-    console.log(`[tour-detail] render data ok slug=${slug} related=${related.length}`);
-  } catch (err) {
-    console.error(
-      "[tour-detail] related/dict:",
-      err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : String(err),
-    );
-    throw err;
-  }
+  const [dict, related] = await Promise.all([
+    getDictionary(locale),
+    listRelatedTours(tour.id, tour.category, locale),
+  ]);
 
   const paragraphs = tour.translation.description
     .split("\n\n")
@@ -155,10 +119,9 @@ export default async function TourDetailPage({ params }: Props) {
                 )}
               </p>
 
-              {/* BISECT-DEBUG: galería e info comentados temporalmente */}
-              {/* <div className="mt-6">
+              <div className="mt-6">
                 <TourGallery images={tour.images} title={tour.translation.title} />
-              </div> */}
+              </div>
 
               <div className="prose-tours mt-8 space-y-4">
                 {paragraphs.map((p, i) => (
@@ -168,9 +131,9 @@ export default async function TourDetailPage({ params }: Props) {
                 ))}
               </div>
 
-              {/* <div className="mt-10">
+              <div className="mt-10">
                 <TourInfo tour={tour} dict={dict} />
-              </div> */}
+              </div>
             </div>
 
             <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -186,8 +149,7 @@ export default async function TourDetailPage({ params }: Props) {
                   {dict.booking.title}
                 </h2>
                 <p className="mb-4 mt-1 text-xs text-ink-500">{dict.booking.subtitle}</p>
-                {/* BISECT-DEBUG: BookingForm comentado temporalmente */}
-                {/* <BookingForm
+                <BookingForm
                   locale={locale}
                   booking={dict.booking}
                   optionalLabel={dict.common.optional}
@@ -196,7 +158,7 @@ export default async function TourDetailPage({ params }: Props) {
                   tours={[{ id: tour.id, title: tour.translation.title, price: tour.price }]}
                   routes={[]}
                   preselectedTourId={tour.id}
-                /> */}
+                />
               </div>
             </aside>
           </div>
