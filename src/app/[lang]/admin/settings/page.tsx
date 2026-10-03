@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import { deleteSetting, listSettings, saveSetting } from "@/lib/admin/misc";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
-import { DeleteButton } from "@/components/admin/DeleteButton";
 
 function SettingRow({
   locale,
@@ -48,13 +47,17 @@ function SettingRow({
         >
           {es ? "Guardar" : "Save"}
         </button>
-        <DeleteButton
-          locale={locale}
-          id={0}
-          action={async (l) => deleteSetting(l, settingKey)}
-          confirmMessage={es ? `¿Eliminar el ajuste "${settingKey}"?` : `Delete setting "${settingKey}"?`}
-          label="✕"
-        />
+        <button
+          type="submit"
+          formAction={async (): Promise<void> => {
+            "use server";
+            await deleteSetting(locale, settingKey);
+          }}
+          className="h-10 rounded-full bg-red-100 px-4 text-sm font-bold text-red-700 transition hover:bg-red-200"
+          title={es ? "Eliminar" : "Delete"}
+        >
+          ✕
+        </button>
       </span>
     </form>
   );
