@@ -36,6 +36,14 @@ export function bookingConfirmationMessage(
 ): string {
   const experience =
     data.tourTitle || data.transferLabel || (locale === "es" ? "tour" : "tour");
+  const totalLine =
+    data.total > 0
+      ? locale === "es"
+        ? `Total estimado: $${data.total} ${data.currency ?? "USD"}`
+        : `Estimated total: $${data.total} ${data.currency ?? "USD"}`
+      : locale === "es"
+        ? "Total: precio a convenir"
+        : "Total: price to be agreed";
   if (locale === "es") {
     const lines = [
       "Hola Perez Tours, quiero confirmar mi reserva.",
@@ -46,7 +54,7 @@ export function bookingConfirmationMessage(
     if (data.date) lines.push(`Fecha: ${data.date}`);
     lines.push(`Personas: ${data.guests}`);
     lines.push(`Nombre: ${data.name}`);
-    lines.push(`Total estimado: $${data.total} ${data.currency ?? "USD"}`);
+    lines.push(totalLine);
     lines.push("", "Quedo atento a la confirmación. Gracias.");
     return lines.join("\n");
   }
@@ -59,7 +67,7 @@ export function bookingConfirmationMessage(
   if (data.date) lines.push(`Date: ${data.date}`);
   lines.push(`Guests: ${data.guests}`);
   lines.push(`Name: ${data.name}`);
-  lines.push(`Estimated total: $${data.total} ${data.currency ?? "USD"}`);
+  lines.push(totalLine);
   lines.push("", "Looking forward to your confirmation. Thanks.");
   return lines.join("\n");
 }
