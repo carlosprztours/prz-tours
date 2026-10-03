@@ -83,3 +83,67 @@ export function newBookingAlertMessage(
     .filter(Boolean)
     .join("\n");
 }
+
+export type CustomerStatusData = {
+  name: string;
+  reference: string;
+  experience: string;
+  date?: string | null;
+};
+
+/**
+ * Mensaje del negocio al cliente con la decisión (confirmada o declinada).
+ * Se abre en WhatsApp con un clic desde el panel; el estado ya quedó
+ * guardado en la BD y se refleja al instante en /account, /track y el panel.
+ */
+export function customerStatusMessage(
+  data: CustomerStatusData,
+  status: "confirmed" | "cancelled",
+  locale: Locale,
+): string {
+  const dateLine = data.date
+    ? locale === "es"
+      ? `Fecha: ${data.date}`
+      : `Date: ${data.date}`
+    : null;
+
+  if (locale === "es") {
+    const head =
+      status === "confirmed"
+        ? `Hola ${data.name}, ¡tu reserva está CONFIRMADA! ✅`
+        : `Hola ${data.name}, lamentablemente no podremos tomar tu reserva. ❌`;
+    return [
+      head,
+      "",
+      "Perez Tours & Transfers",
+      `Referencia: ${data.reference}`,
+      `Tour: ${data.experience}`,
+      dateLine,
+      "",
+      status === "confirmed"
+        ? "Te esperamos. Cualquier duda escríbenos por aquí."
+        : "Escríbenos si quieres que te propongamos otra fecha u otro tour.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  const head =
+    status === "confirmed"
+      ? `Hi ${data.name}, your booking is CONFIRMED! ✅`
+      : `Hi ${data.name}, unfortunately we won't be able to take your booking. ❌`;
+  return [
+    head,
+    "",
+    "Perez Tours & Transfers",
+    `Reference: ${data.reference}`,
+    `Tour: ${data.experience}`,
+    dateLine,
+    "",
+    status === "confirmed"
+      ? "See you soon. Message us here with any questions."
+      : "Message us if you'd like us to suggest another date or tour.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}

@@ -13,7 +13,8 @@ import {
   setBookingPayment,
   setBookingStatus,
 } from "@/lib/admin/bookings";
-import type { BookingStatus, PaymentStatus } from "@/types";
+import { customerStatusMessage, whatsappLink } from "@/lib/notify/whatsapp";
+import type { BookingStatus, Locale, PaymentStatus } from "@/types";
 
 type Labels = {
   confirm: string;
@@ -23,19 +24,36 @@ type Labels = {
   markPaid: string;
   markPartial: string;
   markUnpaid: string;
+  confirmWhatsapp: string;
+  declineWhatsapp: string;
   done: string;
   failed: string;
 };
 
 type Props = {
-  locale: string;
+  locale: Locale;
   bookingId: number;
   status: BookingStatus;
   payment: PaymentStatus;
+  customer: {
+    name: string;
+    phone: string;
+    reference: string;
+    experience: string;
+    date: string | null;
+    locale: Locale;
+  };
   labels: Labels;
 };
 
-export function BookingActions({ locale, bookingId, status, payment, labels }: Props) {
+export function BookingActions({
+  locale,
+  bookingId,
+  status,
+  payment,
+  customer,
+  labels,
+}: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -49,11 +67,76 @@ export function BookingActions({ locale, bookingId, status, payment, labels }: P
     });
   };
 
+  /**
+   * Guarda el estado y abre WhatsApp con el mensaje al cliente.
+   * La ventana se abre EN el clic (antes del await) para que los
+   * bloqueadores de popups del móvil no la tumben; luego se navega a la
+   * URL de WhatsApp. Si el navegador la bloquea igual, el estado ya quedó
+   * guardado y se avisa para abrirlo manual.
+   */
+  const runWithWhatsapp = (to: "confirmed" | "cancelled") => {
+    const win = window.open("about:blank", "_blank");
+    setMessage(null);
+    startTransition(async () => {
+      const res = await setBookingStatus(locale, bookingId, to);
+      if (!res.ok) {
+        win?.close();
+        setMessage(labels.failed);
+        return;
+      }
+      setMessage(labels.done);
+      router.refresh();
+      const url = whatsappLink(
+        customer.phone,
+        customerStatusMessage(
+          {
+            name: customer.name,
+            reference: customer.reference,
+            experience: customer.experience,
+            date: customer.date,
+          },
+          to,
+          customer.locale,
+        ),
+      );
+      if (win) {
+        win.location.href = url;
+      } else {
+        window.location.href = url;
+      }
+    });
+  };
+
   const btn =
     "h-10 rounded-full px-4 text-sm font-bold text-white transition disabled:cursor-wait disabled:opacity-60";
 
   return (
     <div className="grid gap-3">
+      {status === "pending" && (
+        <div className="grid gap-2 border-b border-sand-100 pb-3">
+          <button
+            disabled={pending || !customer.phone}
+            onClick={() => runWithWhatsapp("confirmed")}
+            className={`${btn} bg-[#25d366] hover:bg-[#1fb857]`}
+          >
+            {labels.confirmWhatsapp}
+          </button>
+          <button
+            disabled={pending || !customer.phone}
+            onClick={() => runWithWhatsapp("cancelled")}
+            className={`${btn} bg-slate-600 hover:bg-slate-700`}
+          >
+            {labels.declineWhatsapp}
+          </button>
+          {!customer.phone && (
+            <p className="text-xs text-ink-500">
+              {locale === "es"
+                ? "Sin teléfono: solo cambio de estado."
+                : "No phone: status change only."}
+            </p>
+          )}
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {status === "pending" && (
           <>

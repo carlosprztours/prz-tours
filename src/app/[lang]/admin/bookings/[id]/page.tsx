@@ -96,6 +96,14 @@ export default async function BookingDetailPage({ params }: Props) {
             bookingId={booking.id}
             status={booking.status}
             payment={booking.payment_status}
+            customer={{
+              name: booking.customer_name,
+              phone: booking.customer_phone,
+              reference: booking.reference,
+              experience: booking.tour_title || booking.transfer_label || "—",
+              date: booking.booked_for,
+              locale: booking.locale,
+            }}
             labels={
               locale === "es"
                 ? {
@@ -106,6 +114,8 @@ export default async function BookingDetailPage({ params }: Props) {
                     markPaid: "Marcar pagada",
                     markPartial: "Pago parcial",
                     markUnpaid: "Sin pagar",
+                    confirmWhatsapp: "✅ Confirmar por WhatsApp",
+                    declineWhatsapp: "Declinar por WhatsApp",
                     done: "Listo.",
                     failed: "No se pudo aplicar el cambio.",
                   }
@@ -117,6 +127,8 @@ export default async function BookingDetailPage({ params }: Props) {
                     markPaid: "Mark paid",
                     markPartial: "Partial payment",
                     markUnpaid: "Unpaid",
+                    confirmWhatsapp: "✅ Confirm on WhatsApp",
+                    declineWhatsapp: "Decline on WhatsApp",
                     done: "Done.",
                     failed: "Could not apply the change.",
                   }
