@@ -3,7 +3,7 @@
  * No imprime ningún valor sensible, solo el resultado.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
