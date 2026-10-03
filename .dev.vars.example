@@ -1,0 +1,13 @@
+# Variables locales de desarrollo (NO subir valores reales a git)
+# Copia este archivo como `.dev.vars` y rellénalo.
+
+# Secreto de firma de sesiones: genera uno con
+#   node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+# Mínimo 32 caracteres.
+AUTH_SECRET=dev-only-secret-change-me-in-production-000000000000000
+
+# Resend (emails). En local puedes dejarlo vacío: los correos se registran
+# en consola y las reservas se guardan igual.
+RESEND_API_TOKEN=
+RESEND_FROM=
+NOTIFY_EMAIL=

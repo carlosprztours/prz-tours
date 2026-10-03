@@ -1,0 +1,96 @@
+/**
+ * Consultas públicas de traslados, testimonios, galería y ajustes.
+ *
+ * Cada entidad tiene su propio archivo solo cuando crece lo suficiente para
+ * justificarlo; estas cuatro son lecturas simples y viven juntas aquí con
+ * nombres claros. Si alguna necesita escritura desde el panel, su Server
+ * Action vive en `src/lib/admin/<entidad>.ts`, no aquí.
+ */
+import "server-only";
+
+import { query, queryOne } from "./client";
+import type {
+  GalleryImage,
+  SiteSettings,
+  Testimonial,
+  TransferRoute,
+} from "@/types";
+
+// ───────────────────────────── Traslados ─────────────────────────────
+
+export async function listPublishedTransferRoutes(): Promise<TransferRoute[]> {
+  return query<TransferRoute>(
+    `SELECT id, origin_key, origin_label, origin_airport, destination,
+            price_1_5, price_6_11, price_note, sort_order, is_published
+     FROM transfer_routes
+     WHERE is_published = 1
+     ORDER BY sort_order ASC, id ASC`,
+  );
+}
+
+export async function getTransferRouteById(
+  id: number,
+): Promise<TransferRoute | null> {
+  return queryOne<TransferRoute>(
+    `SELECT id, origin_key, origin_label, origin_airport, destination,
+            price_1_5, price_6_11, price_note, sort_order, is_published
+     FROM transfer_routes
+     WHERE id = ? AND is_published = 1`,
+    id,
+  );
+}
+
+// ───────────────────────────── Testimonios ─────────────────────────────
+
+export async function listPublishedTestimonials(
+  limit = 12,
+): Promise<Testimonial[]> {
+  return query<Testimonial>(
+    `SELECT id, author_name, author_origin, rating, text_es, text_en,
+            tour_slug, avatar_url, is_published, sort_order, created_at
+     FROM testimonials
+     WHERE is_published = 1
+     ORDER BY sort_order ASC, id ASC
+     LIMIT ?`,
+    limit,
+  );
+}
+
+// ───────────────────────────── Galería ─────────────────────────────
+
+export async function listPublishedGalleryImages(
+  limit = 24,
+): Promise<GalleryImage[]> {
+  return query<GalleryImage>(
+    `SELECT id, url, alt, caption, is_published, sort_order, created_at
+     FROM gallery_images
+     WHERE is_published = 1
+     ORDER BY sort_order ASC, id ASC
+     LIMIT ?`,
+    limit,
+  );
+}
+
+// ───────────────────────────── Ajustes ─────────────────────────────
+
+/** Todos los ajustes como objeto clave/valor. */
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const rows = await query<{ key: string; value: string }>(
+    `SELECT key, value FROM settings`,
+  );
+  const out: SiteSettings = {};
+  for (const row of rows) out[row.key] = row.value;
+  return out;
+}
+
+/** Un ajuste con valor por defecto si no existe. */
+export async function getSetting(
+  key: string,
+  fallback = "",
+): Promise<string> {
+  const row = await queryOne<{ value: string }>(
+    `SELECT value FROM settings WHERE key = ?`,
+    key,
+  );
+  return row?.value ?? fallback;
+}

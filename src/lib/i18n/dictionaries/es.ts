@@ -1,0 +1,301 @@
+/**
+ * Diccionario de textos de la interfaz en español.
+ *
+ * Solo contiene la interfaz (botones, etiquetas, mensajes). El contenido de los
+ * tours, traslados y testimonios se guarda en la base de datos para poder
+ * editarlo desde el panel.
+ */
+export const es = {
+  meta: {
+    localeName: "Español",
+    siteName: "Perez Tours & Transfers",
+    tagline: "Aventuras inolvidables en Puerto Plata",
+    defaultDescription:
+      "Tours, excursiones y traslados en Puerto Plata, República Dominicana. Cascadas, ATV, city tour, Monkey Jungle, dune buggy, esnórquel y Cayo Arena con guías locales certificados.",
+  },
+
+  nav: {
+    home: "Inicio",
+    tours: "Tours",
+    transfers: "Traslados",
+    about: "Nosotros",
+    contact: "Contacto",
+    bookNow: "Reservar ahora",
+    menu: "Menú",
+    closeMenu: "Cerrar menú",
+    openMenu: "Abrir menú",
+    switchLanguage: "Cambiar idioma",
+    adminPanel: "Panel de administración",
+    signIn: "Entrar",
+    myAccount: "Mi cuenta",
+  },
+
+  common: {
+    from: "Desde",
+    duration: "Duración",
+    difficulty: "Dificultad",
+    difficultyEasy: "Fácil",
+    difficultyModerate: "Moderada",
+    difficultyChallenging: "Desafiante",
+    groupSize: "Grupo",
+    languages: "Idiomas",
+    readMore: "Ver más",
+    viewTour: "Ver tour",
+    viewAllTours: "Ver todos los tours",
+    backToTours: "Volver a los tours",
+    loading: "Cargando…",
+    required: "Obligatorio",
+    optional: "opcional",
+    yes: "Sí",
+    no: "No",
+    all: "Todos",
+    none: "Ninguno",
+    search: "Buscar",
+    save: "Guardar",
+    saving: "Guardando…",
+    cancel: "Cancelar",
+    delete: "Eliminar",
+    edit: "Editar",
+    create: "Crear",
+    close: "Cerrar",
+    confirm: "Confirmar",
+    back: "Volver",
+    next: "Siguiente",
+    previous: "Anterior",
+    or: "o",
+    and: "y",
+    days: "días",
+    hours: "horas",
+    minutes: "min",
+    perPerson: "por persona",
+    skipToContent: "Ir al contenido principal",
+  },
+
+  hero: {
+    badge: "Puerto Plata · República Dominicana",
+    title: "Aventuras inolvidables en la costa norte",
+    subtitle:
+      "Cascadas, arrecifes de coral, ciudad colonial y campo dominicano. Tours y traslados con guías locales que llevan más de una década de experiencia.",
+    ctaPrimary: "Explorar tours",
+    ctaSecondary: "Traslados desde el aeropuerto",
+    statTours: "Tours disponibles",
+    statYears: "Años de experiencia",
+    statGuests: "Viajeros felices",
+    statRating: "Valoración media",
+  },
+
+  home: {
+    whyUsTitle: "Por qué elegirnos",
+    whyUsSubtitle: "La diferencia se nota en el detalle",
+    whyTrustworthy: "Confiables",
+    whyTrustworthyText:
+      "Guías locales certificados y equipos de seguridad revisados antes de cada salida.",
+    whyFun: "Divertidos",
+    whyFunText:
+      "Itinerarios vivos que se adaptan al grupo: agua, barro y aventura — siempre algo memorable.",
+    whySafe: "Seguros",
+    whySafeText:
+      "Transportes propios, protocolos claros y acompañamiento de principio a fin.",
+    featuredTitle: "Tours destacados",
+    featuredSubtitle: "Los favoritos de nuestros viajeros",
+    testimonialsTitle: "Lo que dicen nuestros clientes",
+    testimonialsSubtitle: "Opiniones reales de visitantes de todo el mundo",
+    galleryTitle: "Galería",
+    gallerySubtitle: "Un vistazo a la experiencia Perez Tours",
+    ctaTitle: "¿Listo para explorar Puerto Plata?",
+    ctaSubtitle:
+      "Reserva tu aventura o escríbenos por WhatsApp para armar un paquete a tu medida.",
+    ctaButton: "Reservar ahora",
+  },
+
+  tours: {
+    title: "Nuestros tours",
+    subtitle: "Descubre las mejores aventuras y experiencias en Puerto Plata y alrededores.",
+    filterAll: "Todos",
+    filterFeatured: "Destacados",
+    filterByCategory: "Categoría",
+    emptyState: "No hay tours publicados por el momento.",
+    emptyStateHint: "Vuelve pronto, estamos preparando nuevas experiencias.",
+    resultsCount: (n: number) =>
+      n === 1 ? "1 tour encontrado" : `${n} tours encontrados`,
+    categoryWater: "Agua",
+    categoryAdventure: "Aventura",
+    categoryCulture: "Cultura",
+    categoryWildlife: "Naturaleza",
+    categoryBeach: "Playa",
+    categoryOther: "Otros",
+    includedTitle: "Qué incluye",
+    excludedTitle: "Qué no incluye",
+    bringTitle: "Qué llevar",
+    galleryTitle: "Galería",
+    itineraryTitle: "Detalles de la experiencia",
+    relatedTitle: "También te puede interesar",
+    pickupTitle: "Recogida",
+    ageMin: (n: number) => `A partir de ${n} años`,
+    notFound: "No encontramos ese tour",
+    notFoundHint: "Puede que el enlace esté equivocado o que ya no esté disponible.",
+  },
+
+  booking: {
+    title: "Reservar este tour",
+    subtitle: "Completa tus datos y te confirmamos por WhatsApp en minutos.",
+    tourLabel: "Tour",
+    dateLabel: "Fecha del tour",
+    dateHint: "Si no tienes fecha fija, déjalo en blanco y lo coordinamos.",
+    guestsLabel: "Número de personas",
+    nameLabel: "Nombre completo",
+    namePlaceholder: "Tu nombre",
+    emailLabel: "Correo electrónico",
+    emailPlaceholder: "tu@correo.com",
+    phoneLabel: "Teléfono / WhatsApp",
+    phonePlaceholder: "+1 809 000 0000",
+    countryLabel: "País de residencia",
+    countryPlaceholder: "Estados Unidos",
+    hotelLabel: "Nombre del hotel",
+    hotelPlaceholder: "Hotel donde te hospedas",
+    hotelHint: "Nos ayuda a organizar la recogida.",
+    airportLabel: "Aeropuerto de llegada",
+    airportPlaceholder: "POP, SDQ, PUJ…",
+    cruisePortLabel: "Puerto de cruceros",
+    cruisePortPlaceholder: "Taino Bay, Amber Cove…",
+    pickupTimeLabel: "Hora de recogida preferida",
+    meetingPointLabel: "Punto de encuentro",
+    notesLabel: "Notas o necesidades especiales",
+    notesPlaceholder: "Alergias, cumpleaños o cualquier cosa que necesitemos saber.",
+    submit: "Solicitar reserva",
+    submitting: "Enviando…",
+    submittingHint: "Guardando tu solicitud y abriendo WhatsApp…",
+    totalEstimate: "Estimación",
+    perPerson: "por persona",
+    summary: "Resumen de tu solicitud",
+    successTitle: "¡Solicitud recibida!",
+    successBody:
+      "Guardamos tu solicitud y te contactamos muy pronto para confirmar los detalles.",
+    successReference: "Tu número de referencia",
+    successWhatsapp: "Continuar por WhatsApp",
+    successEmail: "También te enviamos un correo con el resumen.",
+    errorTitle: "No pudimos enviar tu solicitud",
+    errorHint: "Revisa los campos marcados e inténtalo de nuevo.",
+    tourRequired: "Elige un tour para continuar.",
+    routeRequired: "Elige una ruta de traslado para continuar.",
+    serverError: "Ocurrió un error en el servidor. Inténtalo de nuevo.",
+    validation: {
+      nameRequired: "Escribe tu nombre.",
+      nameTooShort: "El nombre es demasiado corto.",
+      emailRequired: "Escribe tu correo electrónico.",
+      emailInvalid: "Ese correo no parece válido.",
+      phoneRequired: "Escribe tu teléfono o WhatsApp.",
+      phoneInvalid: "Ese teléfono no parece válido.",
+      guestsRequired: "Indica cuántas personas viajan.",
+      guestsRange: "Entre 1 y 60 personas.",
+      dateInvalid: "Usa el formato AAAA-MM-DD.",
+      messageTooLong: "El mensaje es demasiado largo.",
+    },
+  },
+
+  transfers: {
+    title: "Traslados de aeropuerto",
+    subtitle:
+      "Traslados privados y cómodos desde los aeropuertos de República Dominicana hasta Puerto Plata y sus resorts.",
+    tableHeaders: {
+      airport: "Aeropuerto",
+      destination: "Destinos",
+      small: "1–5 personas",
+      large: "6–11 personas",
+    },
+    footnote: "Precios por trayecto, ida o vuelta. Contáctanos para grupos de más de 11 personas.",
+    ctaTitle: "¿Necesitas un traslado?",
+    ctaBody:
+      "Cuéntanos tu vuelo y tu resort y te cotizamos al instante. También podemos incluir el traslado en tu reserva de tour.",
+    ctaButton: "Cotizar traslado",
+    emptyState: "No hay rutas de traslado publicadas.",
+  },
+
+  about: {
+    title: "Sobre Perez Tours",
+    subtitle: "Una empresa local, equipos propios y guías que conocen cada camino.",
+    missionTitle: "Nuestra misión",
+    missionImage: "Nuestra misión",
+    localTitle: "Experiencia local",
+    localImage: "Experiencia local",
+    localText:
+      "Descubre República Dominicana a través de los ojos de su gente. En Perez Tours ofrecemos aventuras auténticas que conectan a los viajeros con personas, tradiciones y rincones únicos.",
+    qualityTitle: "Servicio de calidad",
+    qualityImage: "Servicio de calidad",
+    qualityText:
+      "Nos enorgullecemos de ofrecer un excelente servicio de principio a fin. Nuestro equipo es amable y profesional, y se asegura de que cada huésped disfute de comodidad, seguridad y atención personalizada.",
+    statsTitle: "En números",
+    teamTitle: "Por qué nosotros",
+    teamIntro:
+      "Somos una empresa familiar con sede en Puerto Plata. Conocemos cada ruta porque las recorremos todos los días.",
+  },
+
+  contact: {
+    title: "Contáctanos",
+    subtitle:
+      "¿Tienes una pregunta o quieres un paquete a medida? Escríbenos y te respondemos enseguida.",
+    addressTitle: "Dirección",
+    phoneTitle: "Teléfono",
+    whatsappTitle: "WhatsApp",
+    emailTitle: "Correo",
+    hoursTitle: "Horario",
+    formTitle: "Envíanos un mensaje",
+    formSubtitle: "Respondemos normalmente en menos de 2 horas.",
+    nameLabel: "Nombre",
+    emailLabel: "Correo electrónico",
+    phoneLabel: "Teléfono (opcional)",
+    subjectLabel: "Asunto",
+    messageLabel: "Mensaje",
+    messagePlaceholder: "Cuéntanos qué necesitas…",
+    submit: "Enviar mensaje",
+    submitting: "Enviando…",
+    successTitle: "¡Mensaje enviado!",
+    successBody: "Gracias por escribirnos. Te responderemos muy pronto.",
+    errorTitle: "No pudimos enviar el mensaje",
+    errorHint: "Revisa los campos e inténtalo de nuevo.",
+    whatsappCta: "También puedes escribirnos por WhatsApp",
+    validation: {
+      nameRequired: "Escribe tu nombre.",
+      emailRequired: "Escribe tu correo electrónico.",
+      emailInvalid: "Ese correo no parece válido.",
+      messageRequired: "Escribe tu mensaje.",
+      messageTooShort: "El mensaje es demasiado corto.",
+      messageTooLong: "El mensaje es demasiado largo.",
+    },
+  },
+
+  footer: {
+    quickLinks: "Enlaces rápidos",
+    contactUs: "Contacto",
+    followUs: "Síguenos",
+    rights: "Todos los derechos reservados.",
+    privacy: "Privacidad",
+    terms: "Términos",
+    payments: "Métodos de pago",
+    builtWith: "Hecho con cariño en Puerto Plata",
+  },
+
+  whatsapp: {
+    label: "Escríbenos por WhatsApp",
+    defaultMessage: "¡Hola! Me gustaría información sobre sus tours en Puerto Plata.",
+    bookingMessage: "Hola",
+  },
+
+  errors: {
+    notFoundTitle: "Página no encontrada",
+    notFoundBody:
+      "La página que buscas no existe o fue movida. Vuelve al inicio para seguir explorando.",
+    goHome: "Ir al inicio",
+    genericTitle: "Algo salió mal",
+    genericBody:
+      "Se produjo un error inesperado. Inténtalo de nuevo en unos minutos.",
+    tryAgain: "Reintentar",
+  },
+};
+
+// NOTA: sin `as const` a propósito. Así los strings se ensanchan a `string`
+// y `en.ts` puede usar valores distintos manteniendo la misma estructura.
+// La comprobación estructural sigue siendo estricta: si falta una clave en
+// `en.ts`, TypeScript falla.
+
+export type Dictionary = typeof es;
