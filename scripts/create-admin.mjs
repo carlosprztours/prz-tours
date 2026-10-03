@@ -8,7 +8,7 @@
  * actualiza su contraseña y lo activa como admin.
  *
  * El hash usa los mismos parámetros que src/lib/auth/password.ts
- * (PBKDF2-SHA256, 210 000 iteraciones), así que el login lo acepta tal cual.
+ * (PBKDF2-SHA256, 100 000 iteraciones = máximo de Workers), así que el login lo acepta tal cual.
  */
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
@@ -33,12 +33,12 @@ async function hashPassword(password) {
     ["deriveBits"],
   );
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt, iterations: 210_000, hash: "SHA-256" },
+    { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
     key,
     256,
   );
   const b64 = (bytes) => Buffer.from(bytes).toString("base64");
-  return `pbkdf2-sha256$210000$${b64(salt)}$${b64(new Uint8Array(bits))}`;
+  return `pbkdf2-sha256$100000$${b64(salt)}$${b64(new Uint8Array(bits))}`;
 }
 
 function run(sql) {

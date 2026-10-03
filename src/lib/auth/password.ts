@@ -10,8 +10,15 @@
 import "server-only";
 
 const ALGORITHM = "pbkdf2-sha256";
-/** Iteraciones según recomendación OWASP para PBKDF2-HMAC-SHA256. */
-const ITERATIONS = 210_000;
+/**
+ * Iteraciones de PBKDF2.
+ *
+ * Cloudflare Workers limita PBKDF2 a un máximo de 100.000 iteraciones
+ * (NotSupportedError por encima). Se usa ese máximo. Cada hash guarda su
+ * conteo (`pbkdf2-sha256$<n>$...`), así que `verifyPassword` acepta hashes
+ * con cualquier conteo, presente o futuro.
+ */
+const ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const KEY_BYTES = 32;
 
@@ -72,7 +79,7 @@ export async function verifyPassword(
   if (parts.length !== 4 || parts[0] !== ALGORITHM) return false;
 
   const iterations = Number(parts[1]);
-  if (!Number.isInteger(iterations) || iterations < 10_000) return false;
+  if (!Number.isInteger(iterations) || iterations < 10_000 || iterations > 1_000_000) return false;
 
   let salt: Uint8Array<ArrayBuffer>;
   let expected: Uint8Array;
