@@ -18,16 +18,22 @@
     {
       "binding": "DB",
       "database_name": "prz-tours",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "997ba1c0-2612-49da-8dbc-615b5af56401",
       "migrations_dir": "migrations"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "MEDIA",
-      "bucket_name": "prz-media"
-    }
-  ],
+  // R2 desactivado por ahora: el bucket `prz-media` aún no existe porque R2
+  // no está habilitado en la cuenta (Dashboard → R2 → Enable).
+  // Pasos para reactivar:
+  //   1. Habilitar R2 en el dashboard.
+  //   2. `wrangler r2 bucket create prz-media`
+  //   3. Descomentar el bloque de abajo y desplegar.
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MEDIA",
+  //     "bucket_name": "prz-media"
+  //   }
+  // ],
   "images": {
     "binding": "IMAGES"
   },

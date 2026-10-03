@@ -29,7 +29,15 @@ function runWrangler(db, flag, filePath) {
         shell: process.platform === "win32",
       },
     );
-    return JSON.parse(out);
+    // En remoto wrangler a veces imprime líneas de estado antes del JSON.
+    // Se extrae el bloque JSON (empieza en `[` y termina en `]`).
+    const start = out.indexOf("[");
+    const end = out.lastIndexOf("]");
+    if (start < 0 || end < 0) {
+      console.error(out);
+      process.exit(1);
+    }
+    return JSON.parse(out.slice(start, end + 1));
   } catch (err) {
     const detail =
       err.stderr?.toString() ?? err.stdout?.toString() ?? err.message;
