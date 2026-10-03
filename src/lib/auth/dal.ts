@@ -69,11 +69,21 @@ function isStaff(role: string): boolean {
 /**
  * Verificación de STAFF. Úsala al inicio de cada página del panel y de cada
  * Server Action administrativa. Redirige al login si no hay sesión de staff.
+ *
+ * Si había cookie pero la sesión ya no es válida (revocada, expirada o
+ * usuario eliminado/desactivado), se borra la cookie antes de redirigir.
+ * Sin esto, el proxy vería la firma válida y devolvería a /admin o
+ * /account en bucle infinito.
  */
 export const verifySession = cache(
   async (locale: Locale = defaultLocale): Promise<VerifiedSession> => {
     const session = await loadVerifiedSession();
-    if (!session || !isStaff(session.user.role)) redirect(`/${locale}/login`);
+    if (!session) {
+      await clearStaleCookie();
+      redirect(`/${locale}/login`);
+    }
+    // Con sesión válida de customer: redirige a su cuenta SIN borrar nada.
+    if (!isStaff(session.user.role)) redirect(`/${locale}/account`);
     return session;
   },
 );
@@ -85,10 +95,22 @@ export const verifySession = cache(
 export const verifyCustomerSession = cache(
   async (locale: Locale = defaultLocale): Promise<VerifiedSession> => {
     const session = await loadVerifiedSession();
-    if (!session) redirect(`/${locale}/login`);
+    if (!session) {
+      await clearStaleCookie();
+      redirect(`/${locale}/login`);
+    }
     return session;
   },
 );
+
+/** Borra la cookie si existe pero ya no respalda una sesión válida. */
+async function clearStaleCookie(): Promise<void> {
+  const hasToken = await readToken();
+  if (hasToken) {
+    const store = await cookies();
+    store.delete(SESSION_COOKIE);
+  }
+}
 
 /** Devuelve la sesión verificada o `null` (sin redirigir). */
 export const getCurrentUser = cache(
