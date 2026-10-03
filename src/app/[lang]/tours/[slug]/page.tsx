@@ -10,8 +10,6 @@ import { notFound } from "next/navigation";
 
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TourCard, formatDuration } from "@/components/tours/TourCard";
-import { TourGallery } from "@/components/tours/TourGallery";
-import { TourInfo } from "@/components/tours/TourInfo";
 import { priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import {
