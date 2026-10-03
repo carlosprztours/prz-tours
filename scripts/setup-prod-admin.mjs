@@ -31,11 +31,6 @@ if (!existsSync(SECRETS_FILE)) {
 }
 
 let text = readFileSync(SECRETS_FILE, "utf8");
-const get = (key) => {
-  const m = text.match(new RegExp(`^${key}=(.*)$`, "m"));
-  const v = m ? m[1].trim() : "";
-  return v && !v.startsWith("#") ? v : "";
-};
 
 // Contraseña de 20 caracteres (letras + dígitos, sin símbolos conflictivos).
 const password = randomBytes(15).toString("base64").replace(/[^A-Za-z0-9]/g, "").slice(0, 20).padEnd(20, "7Kp");

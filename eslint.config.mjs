@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Salida de OpenNext/workerd (bundle gigante, revienta ESLint):
+    ".open-next/**",
+    ".wrangler/**",
+    // Estado local de D1/R2:
+    "*.sqlite*",
+    "*.db*",
   ]),
 ]);
 
