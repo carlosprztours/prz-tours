@@ -23,7 +23,7 @@ const cases = [
   ["/en/tours/paradise-island", 200, ["Paradise Island"]],
   ["/es/tours/damajagua-waterfalls", 200, ["Cascadas de Damajagua"]],
   ["/en/tours/no-existe", 404, []],
-  ["/en/transfers", 200, ["Airport transfers", "Santiago", "$100"]],
+  ["/en/transfers", 200, ["Airport transfers", "Santiago", "130", "Request a quote"]],
   ["/en/about", 200, ["About Perez Tours", "Our mission"]],
   ["/en/contact", 200, ["Get in touch", "Send us a message"]],
   ["/en/book", 200, ["Book now"]],
