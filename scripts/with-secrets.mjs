@@ -70,9 +70,18 @@ if (command.length === 0) {
 }
 
 const [cmd, ...rest] = command;
-const result = spawnSync(cmd, rest, {
+
+// En Windows se usa shell (los .cmd lo exigen), pero Node concatena los
+// argumentos sin escaparlos (DEP0190): hay que entrecomillar a mano los que
+// lleven espacios o comillas, o `gh api --jq "{a, b}"` llegaría roto.
+const useShell = process.platform === "win32";
+const finalArgs = useShell
+  ? rest.map((a) => (/[\s"]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a))
+  : rest;
+
+const result = spawnSync(cmd, finalArgs, {
   stdio: "inherit",
-  shell: process.platform === "win32",
+  shell: useShell,
   env: { ...process.env, ...secrets },
 });
 process.exit(result.status ?? 1);
