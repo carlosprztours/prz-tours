@@ -182,6 +182,34 @@ npm run deploy
 | `node scripts/check-content.mjs` | Valida que no haya texto corrupto |
 | `node scripts/dev-session.mjs`   | Cookie de admin para probar con curl (solo local) |
 
+## Automatización total por WhatsApp (fase 2, opcional)
+
+Lo que hay hoy: al crear una reserva el cliente recibe el enlace para
+escribirte, y en el panel confirmas/declinas con un clic que abre el chat
+con el mensaje listo. El estado se refleja al instante en `/account`,
+`/track` y el panel.
+
+Para que los botones de aceptar/declinar lleguen SOLOS a tu WhatsApp (API
+oficial de WhatsApp Business) hace falta, en este orden:
+
+1. **Cuenta de Meta for Developers** (developers.facebook.com) + app creada.
+2. **Número de WhatsApp Business** conectado (puede ser tu mismo número
+   migrado, o uno nuevo; migrarlo saca el número de la app del teléfono).
+3. **Plantillas aprobadas por Meta**, p. ej. `nueva_reserva` con botones
+   Aceptar / Declinar (la aprobación tarda horas–días).
+4. **Webhook**: hay que construir `POST /api/whatsapp/webhook` que verifique
+   la firma (`WHATSAPP_APP_SECRET`), lea el botón pulsado y actualice la
+   reserva. El código actual ya deja esto fácil: la misma
+   `setBookingStatus()` del panel serviría.
+5. **Secretos**: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_APP_SECRET`
+   vía `wrangler secret put`.
+6. **Costo**: Meta cobra por conversación (~US$0.03–0.07 por mensaje de
+   utilidad; precios 2026, varían por país). Requiere método de pago en Meta.
+
+Sin estos pasos no hay envío automático posible: WhatsApp no permite que un
+servidor escriba a tu número sin la API oficial (o un proveedor BSP de pago
+como Twilio/360dialog, que cuesta mensualidad + por mensaje).
+
 ## Notas
 
 - `scripts/seed-test-bookings.mjs` inserta reservas falsas: úsalo solo en
