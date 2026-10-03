@@ -110,8 +110,8 @@ export function customerStatusMessage(
   if (locale === "es") {
     const head =
       status === "confirmed"
-        ? `Hola ${data.name}, ¡tu reserva está CONFIRMADA! ✅`
-        : `Hola ${data.name}, lamentablemente no podremos tomar tu reserva. ❌`;
+        ? `Hola ${data.name}, ¡tu reserva está CONFIRMADA!`
+        : `Hola ${data.name}, lamentablemente no podremos tomar tu reserva.`;
     return [
       head,
       "",
@@ -130,8 +130,8 @@ export function customerStatusMessage(
 
   const head =
     status === "confirmed"
-      ? `Hi ${data.name}, your booking is CONFIRMED! ✅`
-      : `Hi ${data.name}, unfortunately we won't be able to take your booking. ❌`;
+      ? `Hi ${data.name}, your booking is CONFIRMED!`
+      : `Hi ${data.name}, unfortunately we won't be able to take your booking.`;
   return [
     head,
     "",
