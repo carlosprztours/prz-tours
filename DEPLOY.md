@@ -188,5 +188,13 @@ npm run deploy
   local para probar el panel.
 - El plan gratuito de Cloudflare cubre D1 (5 GB), R2 (10 GB) y Workers
   (100k req/día): de sobra para este sitio.
-- `wrangler.jsonc` apunta a `database_id: REPLACE_WITH_YOUR_D1_DATABASE_ID`
-  hasta que completes el paso 2.
+- `wrangler.jsonc` ya lleva el `database_id` de producción.
+- **Dos identidades de Cloudflare**: si tu máquina tiene un login oauth
+  (`wrangler login`) de OTRA cuenta, los comandos remotos deben pasar
+  SIEMPRE por `node scripts/with-secrets.mjs -- ...`, que inyecta el token
+  y el account ID juntos. Mezclar token de una cuenta con el login de otra
+  produce `Authentication error [code: 10000]`.
+- **El build nunca depende de la BD**: las páginas se renderizan bajo
+  demanda desde D1, así lo que edites en el panel se refleja al instante
+  sin reconstruir. Por eso `generateStaticParams` tiene fallback vacío y el
+  sitemap es `force-dynamic`.

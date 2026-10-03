@@ -67,7 +67,18 @@ export default async function TourDetailPage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const tour = await getTourBySlug(slug, locale);
+  // Instrumentación temporal (issue prod 500): registra el error real en
+  // `wrangler tail` y relanza. Quitar cuando se identifique la causa.
+  let tour;
+  try {
+    tour = await getTourBySlug(slug, locale);
+  } catch (err) {
+    console.error(
+      "[tour-detail] getTourBySlug:",
+      err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : String(err),
+    );
+    throw err;
+  }
   if (!tour) notFound();
 
   const [dict, related] = await Promise.all([
