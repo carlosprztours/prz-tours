@@ -28,9 +28,16 @@ type Props = {
 };
 
 export async function generateStaticParams() {
-  const slugs = await listPublishedTourSlugs();
-  // Se generan para ambos idiomas.
-  return slugs.flatMap((slug) => [{ lang: "es", slug }, { lang: "en", slug }]);
+  // Las páginas se renderizan bajo demanda desde D1 (el contenido lo edita
+  // el panel, así que nada puede quedar congelado en el build). Aquí solo
+  // se pre-generan slugs cuando hay BD disponible (local); en CI sin D1 se
+  // devuelve vacío y el build sigue adelante.
+  try {
+    const slugs = await listPublishedTourSlugs();
+    return slugs.flatMap((slug) => [{ lang: "es", slug }, { lang: "en", slug }]);
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

@@ -6,6 +6,9 @@ import type { MetadataRoute } from "next";
 import { listPublishedTourSlugs } from "@/lib/db/tours";
 import { locales } from "@/lib/i18n/config";
 
+/** Siempre bajo demanda: el sitemap debe reflejar la BD de producción. */
+export const dynamic = "force-dynamic";
+
 const BASE = "https://pereztours.cloud";
 const STATIC_ROUTES = ["", "/tours", "/transfers", "/about", "/contact", "/book"];
 
