@@ -18,6 +18,8 @@ import { useActionState, useMemo } from "react";
 import { bookTour, type BookTourResult } from "@/lib/actions/book-tour";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { TimePicker } from "@/components/ui/TimePicker";
 
 export type BookingOption = {
   id: number;
@@ -32,11 +34,13 @@ type Props = {
   optionalLabel: string;
   /** Título de la sección de traslados (para el selector de rutas). */
   transfersTitle: string;
-  kind: "tour" | "transfer";
+  kind: "tour" | "transfer" | "custom";
   tours: BookingOption[];
   routes: { id: number; label: string; price15: number; price611: number }[];
   preselectedTourId?: number;
   preselectedRouteId?: number;
+  /** Datos del cliente logueado para pre-rellenar (opcional). */
+  defaults?: { name?: string; email?: string; phone?: string };
 };
 
 /** "validation.nameRequired" -> booking.validation.nameRequired */
@@ -47,6 +51,7 @@ function resolveError(
   if (code === "validation.tourRequired") return booking.tourRequired;
   if (code === "validation.routeRequired") return booking.routeRequired;
   if (code === "validation.serverError") return booking.serverError;
+  if (code === "validation.customRequired") return booking.customRequired;
   if (code.startsWith("validation.")) {
     const key = code.slice("validation.".length);
     const table = booking.validation as Record<string, string>;
@@ -75,6 +80,7 @@ export function BookingForm({
   routes,
   preselectedTourId,
   preselectedRouteId,
+  defaults,
 }: Props) {
   const action = useMemo(
     () => bookTour.bind(null, locale),
@@ -114,7 +120,6 @@ export function BookingForm({
   }
 
   const errors = state.ok ? {} : state.errors;
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -143,7 +148,7 @@ export function BookingForm({
           </select>
           <FieldError message={errors.tourId && resolveError(t, errors.tourId)} />
         </div>
-      ) : (
+      ) : kind === "transfer" ? (
         <div>
           <label htmlFor="transferRouteId" className="mb-1.5 block text-sm font-bold text-ink-900">
             {transfersTitle}
@@ -166,14 +171,41 @@ export function BookingForm({
           </select>
           <FieldError message={errors.transferRouteId && resolveError(t, errors.transferRouteId)} />
         </div>
+      ) : (
+        <div className="rounded-2xl border border-coral-500/30 bg-coral-500/5 p-4">
+          <label htmlFor="notes-custom" className="mb-1.5 block font-display text-base font-bold text-ink-900">
+            {t.customDescription}
+          </label>
+          <textarea
+            id="notes-custom"
+            name="notes"
+            rows={5}
+            required
+            minLength={10}
+            placeholder={t.customPlaceholder}
+            className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
+          />
+          <FieldError message={errors.notes && resolveError(t, errors.notes)} />
+        </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="bookedFor" className="mb-1.5 block text-sm font-bold text-ink-900">
+          <label htmlFor="bookedFor-button" className="mb-1.5 block text-sm font-bold text-ink-900">
             {t.dateLabel}
           </label>
-          <input id="bookedFor" name="bookedFor" type="date" min={today} className={inputClass} />
+          <DatePicker
+            id="bookedFor-button"
+            name="bookedFor"
+            locale={locale}
+            labels={{
+              placeholder: t.datePlaceholder,
+              today: t.todayLabel,
+              clear: t.clearLabel,
+              prevMonth: t.prevMonthLabel,
+              nextMonth: t.nextMonthLabel,
+            }}
+          />
           <p className="mt-1 text-xs text-ink-500">{t.dateHint}</p>
           <FieldError message={errors.bookedFor && resolveError(t, errors.bookedFor)} />
         </div>
@@ -205,6 +237,7 @@ export function BookingForm({
           type="text"
           autoComplete="name"
           required
+          defaultValue={defaults?.name ?? ""}
           placeholder={t.namePlaceholder}
           className={inputClass}
         />
@@ -222,6 +255,7 @@ export function BookingForm({
             type="email"
             autoComplete="email"
             required
+            defaultValue={defaults?.email ?? ""}
             placeholder={t.emailPlaceholder}
             className={inputClass}
           />
@@ -237,6 +271,7 @@ export function BookingForm({
             type="tel"
             autoComplete="tel"
             required
+            defaultValue={defaults?.phone ?? ""}
             placeholder={t.phonePlaceholder}
             className={inputClass}
           />
@@ -253,25 +288,32 @@ export function BookingForm({
           <p className="mt-1 text-xs text-ink-500">{t.hotelHint}</p>
         </div>
         <div>
-          <label htmlFor="pickupTime" className="mb-1.5 block text-sm font-bold text-ink-900">
+          <label htmlFor="pickupTime-button" className="mb-1.5 block text-sm font-bold text-ink-900">
             {t.pickupTimeLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
           </label>
-          <input id="pickupTime" name="pickupTime" type="time" className={inputClass} />
+          <TimePicker
+            id="pickupTime-button"
+            name="pickupTime"
+            locale={locale}
+            labels={{ placeholder: t.timePlaceholder, clear: t.anyTimeLabel }}
+          />
         </div>
       </div>
 
-      <div>
-        <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-ink-900">
-          {t.notesLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
-        </label>
-        <textarea
-          id="notes"
-          name="notes"
-          rows={3}
-          placeholder={t.notesPlaceholder}
-          className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
-        />
-      </div>
+      {kind !== "custom" && (
+        <div>
+          <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-ink-900">
+            {t.notesLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={3}
+            placeholder={t.notesPlaceholder}
+            className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
+          />
+        </div>
+      )}
 
       {errors.form && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">

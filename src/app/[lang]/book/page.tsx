@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { BookingForm } from "@/components/booking/BookingForm";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { listPublishedTransferRoutes } from "@/lib/db/content";
+import { getBookingDefaults } from "@/lib/db/customer";
 import { listPublishedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
@@ -40,19 +41,23 @@ export default async function BookPage({ params, searchParams }: Props) {
   const locale = lang as Locale;
   const { type, route } = await searchParams;
 
-  const kind = type === "transfer" ? "transfer" : "tour";
+  const kind = type === "transfer" ? "transfer" : type === "custom" ? "custom" : "tour";
   const routeId = route ? Number(route) : undefined;
 
-  const [dict, tours, routes] = await Promise.all([
+  const [dict, tours, routes, defaults] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
     listPublishedTransferRoutes(),
+    getBookingDefaults(),
   ]);
 
   return (
     <div className="bg-sand-50/50 py-12 sm:py-16">
       <div className="container-site">
-        <SectionHeading title={dict.nav.bookNow} subtitle={dict.booking.subtitle} />
+        <SectionHeading
+          title={kind === "custom" ? dict.booking.customTitle : dict.nav.bookNow}
+          subtitle={dict.booking.subtitle}
+        />
         <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-sand-200 bg-white p-6 shadow-lg sm:p-8">
           <BookingForm
             locale={locale}
@@ -72,6 +77,7 @@ export default async function BookPage({ params, searchParams }: Props) {
               price611: r.price_6_11,
             }))}
             preselectedRouteId={Number.isInteger(routeId) ? routeId : undefined}
+            defaults={defaults}
           />
         </div>
       </div>

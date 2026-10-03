@@ -59,6 +59,7 @@ export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
             {[
               { href: `${base}/tours`, label: dict.nav.tours },
               { href: `${base}/transfers`, label: dict.nav.transfers },
+              { href: `${base}/book?type=custom`, label: dict.booking.customTitle },
               { href: `${base}/track`, label: locale === "es" ? "Mi reserva" : "My booking" },
               { href: `${base}/about`, label: dict.nav.about },
               { href: `${base}/contact`, label: dict.nav.contact },

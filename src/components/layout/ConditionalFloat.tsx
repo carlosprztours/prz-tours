@@ -1,5 +1,5 @@
 /**
- * Muestra el botón flotante de WhatsApp excepto en el panel.
+ * Muestra el menú flotante de WhatsApp excepto en el panel.
  *
  * En /admin el botón tapa los controles; allí no tiene sentido porque el
  * que navega es el staff, no un cliente.
@@ -8,16 +8,16 @@
 
 import { usePathname } from "next/navigation";
 
-import { WhatsAppFloat } from "./WhatsAppFloat";
+import type { Dictionary } from "@/lib/i18n";
+import { WhatsAppMenu } from "./WhatsAppMenu";
 
 type Props = {
   phone: string;
-  message: string;
-  label: string;
+  texts: Dictionary["whatsapp"];
 };
 
-export function ConditionalFloat({ phone, message, label }: Props) {
+export function ConditionalFloat({ phone, texts }: Props) {
   const pathname = usePathname();
   if (pathname.includes("/admin")) return null;
-  return <WhatsAppFloat phone={phone} message={message} label={label} />;
+  return <WhatsAppMenu phone={phone} texts={texts} />;
 }

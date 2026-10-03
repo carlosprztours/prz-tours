@@ -15,6 +15,7 @@ import { TourGallery } from "@/components/tours/TourGallery";
 import { TourInfo } from "@/components/tours/TourInfo";
 import { priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
+import { getBookingDefaults } from "@/lib/db/customer";
 import { getTourBySlug, listRelatedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
@@ -57,9 +58,10 @@ export default async function TourDetailPage({ params }: Props) {
   const tour = await getTourBySlug(slug, locale);
   if (!tour) notFound();
 
-  const [dict, related] = await Promise.all([
+  const [dict, related, defaults] = await Promise.all([
     getDictionary(locale),
     listRelatedTours(tour.id, tour.category, locale),
+    getBookingDefaults(),
   ]);
 
   const paragraphs = tour.translation.description
@@ -158,6 +160,7 @@ export default async function TourDetailPage({ params }: Props) {
                   tours={[{ id: tour.id, title: tour.translation.title, price: tour.price }]}
                   routes={[]}
                   preselectedTourId={tour.id}
+                  defaults={defaults}
                 />
               </div>
             </aside>

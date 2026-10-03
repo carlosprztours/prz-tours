@@ -35,7 +35,47 @@ export default async function AdminTransfersPage({ params }: Props) {
         </Link>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-sand-200 bg-white">
+      <div className="grid gap-3 md:hidden">
+        {routes.map((r) => (
+          <div key={r.id} className="rounded-2xl border border-sand-200 bg-white p-4">
+            <p className="font-display text-sm font-bold text-ink-900">{r.origin_label}</p>
+            {r.origin_airport && <p className="text-xs text-ink-500">{r.origin_airport}</p>}
+            <p className="mt-1 text-sm text-ink-700">{r.destination}</p>
+            <div className="mt-2 flex items-center gap-4 text-sm">
+              <span>
+                <span className="text-xs text-ink-500">1–5: </span>
+                <strong className="font-display font-extrabold">${r.price_1_5}</strong>
+              </span>
+              <span>
+                <span className="text-xs text-ink-500">6–11: </span>
+                <strong className="font-display font-extrabold">${r.price_6_11}</strong>
+              </span>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Link
+                href={`/${locale}/admin/transfers/${r.id}`}
+                className="rounded-full bg-ocean-100 px-3 py-1.5 text-xs font-bold text-ocean-800"
+              >
+                {es ? "Editar" : "Edit"}
+              </Link>
+              <DeleteButton
+                locale={locale}
+                id={r.id}
+                action={deleteRoute}
+                confirmMessage={es ? `¿Eliminar la ruta ${r.origin_label}?` : `Delete route ${r.origin_label}?`}
+                label={es ? "Eliminar" : "Delete"}
+              />
+            </div>
+          </div>
+        ))}
+        {routes.length === 0 && (
+          <p className="rounded-2xl border border-sand-200 bg-white p-10 text-center text-sm text-ink-500">
+            {es ? "Sin rutas." : "No routes."}
+          </p>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-2xl border border-sand-200 bg-white md:block">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
             <tr className="border-b border-sand-200 text-xs uppercase tracking-wider text-ink-500">

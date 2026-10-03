@@ -105,6 +105,21 @@ export default async function ToursPage({ params, searchParams }: Props) {
             ))}
           </div>
         )}
+
+        <div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-dashed border-ocean-300 bg-ocean-50 p-8 text-center">
+          <h2 className="font-display text-xl font-extrabold text-ink-900">
+            {dict.booking.customCtaTitle}
+          </h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-ink-600">
+            {dict.booking.customCtaBody}
+          </p>
+          <Link
+            href={`${base}/book?type=custom`}
+            className="mt-5 inline-flex h-11 items-center rounded-full bg-ocean-700 px-6 text-sm font-bold text-white transition hover:bg-ocean-800"
+          >
+            {dict.booking.customCtaButton}
+          </Link>
+        </div>
       </div>
     </div>
   );

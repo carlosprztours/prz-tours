@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { ConditionalFloat } from "@/components/layout/ConditionalFloat";
+import { ChromeSwitcher } from "@/components/layout/ChromeSwitcher";
 import { getSetting } from "@/lib/db/content";
 import { listPublishedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
@@ -30,42 +31,46 @@ export default async function LangLayout({ children, params }: Props) {
     listPublishedTours(lang),
   ]);
 
-  const [phoneDisplay, email, address, hours, whatsapp, waMessage] =
+  const [phoneDisplay, email, address, hours, whatsapp] =
     await Promise.all([
       getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
       getSetting("email", DEFAULT_EMAIL),
       getSetting("address", "Puerto Plata, República Dominicana"),
       getSetting("hours", "Lun – Sáb · 7:00 AM – 8:00 PM"),
       getSetting("whatsapp", DEFAULT_WHATSAPP),
-      getSetting("whatsapp_default_message", dict.whatsapp.defaultMessage),
     ]);
 
   return (
-    <>
-      <a
-        href="#contenido"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ocean-700 focus:px-5 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
-      >
-        {dict.common.skipToContent}
-      </a>
-      <SiteHeader locale={lang} dict={dict} phoneDisplay={phoneDisplay} />
-      <main id="contenido" className="flex-1">
-        {children}
-      </main>
-      <SiteFooter
-        locale={lang}
-        dict={dict}
-        settings={{
-          phoneDisplay,
-          email,
-          address,
-          hours,
-          instagram: "https://instagram.com/pereztours",
-          facebook: "https://facebook.com/pereztours",
-        }}
-        popularTours={tours.slice(0, 5)}
-      />
-      <ConditionalFloat phone={whatsapp} message={waMessage} label={dict.whatsapp.label} />
-    </>
+    <ChromeSwitcher
+      header={
+        <>
+          <a
+            href="#contenido"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-ocean-700 focus:px-5 focus:py-2 focus:text-sm focus:font-bold focus:text-white"
+          >
+            {dict.common.skipToContent}
+          </a>
+          <SiteHeader locale={lang} dict={dict} whatsapp={whatsapp} />
+          <ConditionalFloat phone={whatsapp} texts={dict.whatsapp} />
+        </>
+      }
+      footer={
+        <SiteFooter
+          locale={lang}
+          dict={dict}
+          settings={{
+            phoneDisplay,
+            email,
+            address,
+            hours,
+            instagram: "https://instagram.com/pereztours",
+            facebook: "https://facebook.com/pereztours",
+          }}
+          popularTours={tours.slice(0, 5)}
+        />
+      }
+    >
+      {children}
+    </ChromeSwitcher>
   );
 }

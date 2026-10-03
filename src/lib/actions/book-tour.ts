@@ -71,6 +71,9 @@ export async function bookTour(
   if (data.kind === "transfer" && !data.transferRouteId) {
     return { ok: false, errors: { transferRouteId: "validation.routeRequired" } };
   }
+  if (data.kind === "custom" && (!data.notes || data.notes.trim().length < 10)) {
+    return { ok: false, errors: { notes: "validation.customRequired" } };
+  }
 
   const headerList = await headers();
   const clientIp =

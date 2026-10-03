@@ -115,11 +115,12 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
   }
 
   // Reserva personalizada: sin precio automático (lo fija el admin).
+  // El título visible es genérico; el detalle va en `notes`.
   return {
     unitPrice: 0,
     totalPrice: 0,
     currency,
-    tourTitle: "",
+    tourTitle: input.locale === "es" ? "Tour personalizado" : "Custom tour",
     transferLabel: null,
   };
 }

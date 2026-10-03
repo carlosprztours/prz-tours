@@ -9,9 +9,11 @@ import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { logout } from "@/lib/actions/auth";
 import { verifyCustomerSession } from "@/lib/auth/dal";
+import { queryOne } from "@/lib/db/client";
 import { listBookingsByEmail } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { ProfileForm } from "./ProfileForm";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -23,6 +25,10 @@ export default async function AccountPage({ params }: Props) {
   const locale = lang as Locale;
 
   const session = await verifyCustomerSession(locale);
+  const profile = await queryOne<{ name: string; phone: string | null }>(
+    `SELECT name, phone FROM users WHERE id = ?`,
+    session.user.id,
+  );
   const bookings = await listBookingsByEmail(session.user.email);
 
   const es = locale === "es";
@@ -37,6 +43,35 @@ export default async function AccountPage({ params }: Props) {
     signOut: es ? "Cerrar sesión" : "Sign out",
     guests: es ? "personas" : "guests",
     panel: es ? "Ir al panel" : "Go to panel",
+    profile: es
+      ? {
+          title: "Mis datos",
+          subtitle: "Se usan para pre-rellenar tus reservas.",
+          name: "Nombre completo",
+          email: "Correo electrónico",
+          phone: "Teléfono / WhatsApp",
+          save: "Guardar datos",
+          saving: "Guardando…",
+          saved: "Datos guardados.",
+          errors: {
+            "bad-name": "Escribe tu nombre (mínimo 2 letras).",
+            "bad-phone": "Ese teléfono no parece válido.",
+          },
+        }
+      : {
+          title: "My details",
+          subtitle: "Used to pre-fill your bookings.",
+          name: "Full name",
+          email: "Email address",
+          phone: "Phone / WhatsApp",
+          save: "Save details",
+          saving: "Saving…",
+          saved: "Details saved.",
+          errors: {
+            "bad-name": "Please enter your name (at least 2 letters).",
+            "bad-phone": "That phone number doesn't look valid.",
+          },
+        },
   };
   const isStaff = session.user.role === "admin" || session.user.role === "editor";
 
@@ -70,10 +105,21 @@ export default async function AccountPage({ params }: Props) {
           </div>
         </div>
 
+        <div className="mt-8">
+          <ProfileForm
+            locale={locale}
+            initial={{
+              name: profile?.name ?? session.user.name,
+              email: session.user.email,
+              phone: profile?.phone ?? "",
+            }}
+            labels={copy.profile}
+          />
+        </div>
+
         <h2 className="mt-10 font-display text-xl font-extrabold text-ink-900">
           {copy.myBookings} · {bookings.length}
         </h2>
-
         {bookings.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-sand-200 bg-white p-8 text-center">
             <p className="text-sm text-ink-500">{copy.noBookings}</p>

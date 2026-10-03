@@ -90,7 +90,27 @@ export default async function UsersPage({ params }: Props) {
 
       <CreateStaffForm locale={locale} labels={copy.form} />
 
-      <section className="overflow-x-auto rounded-2xl border border-sand-200 bg-white">
+      <section className="grid gap-3 md:hidden">
+        {staff.map((u) => (
+          <div key={u.id} className={`rounded-2xl border border-sand-200 bg-white p-4 ${u.id === session.user.id ? "ring-1 ring-ocean-300" : ""}`}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-semibold text-ink-900">{u.name}</p>
+              <span className="rounded-full bg-ocean-100 px-2.5 py-1 text-xs font-bold text-ocean-800">
+                {u.role}
+              </span>
+            </div>
+            <p className="mt-0.5 break-all text-xs text-ink-500">{u.email}</p>
+            <p className="mt-1 text-xs text-ink-500">
+              {u.is_active === 1 ? copy.active : copy.inactive}
+            </p>
+            <div className="mt-3">
+              <UserRowActions locale={locale} user={u} isMe={u.id === session.user.id} labels={copy.row} />
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="hidden overflow-x-auto rounded-2xl border border-sand-200 bg-white md:block">
         <h2 className="px-4 pt-4 font-display text-lg font-bold text-ink-900">{copy.staff}</h2>
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>

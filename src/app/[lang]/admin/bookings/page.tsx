@@ -8,6 +8,7 @@ import { adminTexts } from "@/lib/admin/texts";
 import { countBookings, listBookings } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { BookingStatus, Locale } from "@/types";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 
 type Props = {
@@ -90,20 +91,77 @@ export default async function BookingsPage({ params, searchParams }: Props) {
             className="h-10 rounded-xl border border-sand-200 px-3 text-sm font-normal text-ink-900"
           />
         </label>
-        <label className="grid gap-1 text-xs font-bold text-ink-500">
-          {t.date} ({locale === "es" ? "desde" : "from"})
-          <input name="desde" type="date" defaultValue={sp.desde ?? ""} className="h-10 rounded-xl border border-sand-200 px-3 text-sm font-normal text-ink-900" />
-        </label>
-        <label className="grid gap-1 text-xs font-bold text-ink-500">
-          {t.date} ({locale === "es" ? "hasta" : "to"})
-          <input name="hasta" type="date" defaultValue={sp.hasta ?? ""} className="h-10 rounded-xl border border-sand-200 px-3 text-sm font-normal text-ink-900" />
-        </label>
+        <span className="grid gap-1 text-xs font-bold text-ink-500">
+          {t.date} ({t.dateFrom})
+          <DatePicker
+            id="f-desde"
+            name="desde"
+            locale={locale}
+            defaultValue={sp.desde ?? ""}
+            min={null}
+            labels={{
+              placeholder: t.pickDate,
+              today: t.today,
+              clear: t.clear,
+              prevMonth: t.prevMonth,
+              nextMonth: t.nextMonth,
+            }}
+          />
+        </span>
+        <span className="grid gap-1 text-xs font-bold text-ink-500">
+          {t.date} ({t.dateTo})
+          <DatePicker
+            id="f-hasta"
+            name="hasta"
+            locale={locale}
+            defaultValue={sp.hasta ?? ""}
+            min={null}
+            labels={{
+              placeholder: t.pickDate,
+              today: t.today,
+              clear: t.clear,
+              prevMonth: t.prevMonth,
+              nextMonth: t.nextMonth,
+            }}
+          />
+        </span>
         <button type="submit" className="h-10 rounded-full bg-ocean-700 px-5 text-sm font-bold text-white transition hover:bg-ocean-800">
           {t.filter}
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-2xl border border-sand-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-2xl border border-sand-200 bg-white shadow-sm md:hidden">
+        <ul className="divide-y divide-sand-100">
+          {bookings.map((b) => (
+            <li key={b.id} className="p-4">
+              <div className="flex items-center justify-between gap-2">
+                <Link href={`/${locale}/admin/bookings/${b.id}`} className="font-display text-base font-extrabold text-ocean-700">
+                  {b.reference}
+                </Link>
+                <StatusBadge status={b.status} locale={locale} />
+              </div>
+              <p className="mt-1 text-sm font-semibold text-ink-900">{b.customer_name}</p>
+              <p className="text-xs text-ink-500">{b.customer_phone}</p>
+              <p className="mt-2 text-sm text-ink-700">
+                {b.tour_title || b.transfer_label || "—"}
+              </p>
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span className="text-ink-500">
+                  {[b.booked_for, `${b.guests} ${t.guests.toLowerCase()}`].filter(Boolean).join(" · ")}
+                </span>
+                <span className="font-display text-lg font-extrabold text-ink-900">
+                  ${b.total_price}
+                </span>
+              </div>
+            </li>
+          ))}
+          {bookings.length === 0 && (
+            <li className="px-4 py-10 text-center text-sm text-ink-500">{t.noData}</li>
+          )}
+        </ul>
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-2xl border border-sand-200 bg-white shadow-sm md:block">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead>
             <tr className="border-b border-sand-200 text-xs uppercase tracking-wider text-ink-500">
