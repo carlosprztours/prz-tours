@@ -162,9 +162,10 @@ export default async function TourDetailPage({ params }: Props) {
                 )}
               </p>
 
-              <div className="mt-6">
+              {/* BISECT-DEBUG: galería e info comentados temporalmente */}
+              {/* <div className="mt-6">
                 <TourGallery images={tour.images} title={tour.translation.title} />
-              </div>
+              </div> */}
 
               <div className="prose-tours mt-8 space-y-4">
                 {paragraphs.map((p, i) => (
@@ -174,9 +175,9 @@ export default async function TourDetailPage({ params }: Props) {
                 ))}
               </div>
 
-              <div className="mt-10">
+              {/* <div className="mt-10">
                 <TourInfo tour={tour} dict={dict} />
-              </div>
+              </div> */}
             </div>
 
             <aside className="lg:sticky lg:top-24 lg:self-start">
