@@ -60,7 +60,7 @@ export default async function AdminMessagesPage({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <ul className="grid content-start gap-2">
+        <ul className="grid min-w-0 content-start gap-2">
           {messages.map((m) => (
             <li key={m.id}>
               <Link

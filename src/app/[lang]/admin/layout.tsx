@@ -42,24 +42,24 @@ export default async function AdminLayout({ children, params }: Props) {
   return (
     <div className="min-h-screen bg-sand-50">
       <header className="sticky top-0 z-30 border-b border-sand-200 bg-ocean-950 text-white">
-        <div className="container-site flex h-16 items-center justify-between gap-3">
-          <Link href={base} className="font-display text-lg font-bold">
-            Perez Tours <span className="font-medium text-ocean-200">· Panel</span>
+        <div className="container-site flex h-16 items-center justify-between gap-2 sm:gap-3">
+          <Link href={base} className="truncate font-display text-base font-bold sm:text-lg">
+            <span className="hidden sm:inline">Perez Tours · </span>Panel
           </Link>
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex shrink-0 items-center gap-2 text-xs sm:gap-3 sm:text-sm">
             <span className="hidden text-white/70 sm:block">
               {session.user.name} · {session.user.role}
             </span>
             <Link
               href={`/${locale}`}
-              className="rounded-full border border-white/25 px-3 py-1.5 font-semibold transition hover:bg-white/10"
+              className="rounded-full border border-white/25 px-2.5 py-1.5 font-semibold transition hover:bg-white/10 sm:px-3"
             >
               {locale === "es" ? "Ver sitio" : "View site"}
             </Link>
             <form action={logout.bind(null, locale)}>
               <button
                 type="submit"
-                className="rounded-full bg-white/10 px-3 py-1.5 font-semibold transition hover:bg-white/20"
+                className="rounded-full bg-white/10 px-2.5 py-1.5 font-semibold transition hover:bg-white/20 sm:px-3"
               >
                 {locale === "es" ? "Salir" : "Log out"}
               </button>
@@ -69,7 +69,7 @@ export default async function AdminLayout({ children, params }: Props) {
       </header>
 
       <div className="container-site grid gap-6 py-6 lg:grid-cols-[220px_1fr]">
-        <nav aria-label="Panel" className="lg:sticky lg:top-24 lg:self-start">
+        <nav aria-label="Panel" className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
             {nav.map((item) => (
               <li key={item.href} className="shrink-0">

@@ -53,7 +53,7 @@ export default async function BookingDetailPage({ params }: Props) {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
-        <div className="grid content-start gap-5">
+        <div className="grid min-w-0 content-start gap-5">
           <section className="rounded-2xl border border-sand-200 bg-white p-5">
             <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
               {rows.map(([label, value]) => (
