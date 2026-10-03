@@ -12,11 +12,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { TourCard, formatDuration } from "@/components/tours/TourCard";
 import { priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
-import {
-  getTourBySlug,
-  listPublishedTourSlugs,
-  listRelatedTours,
-} from "@/lib/db/tours";
+import { getTourBySlug, listRelatedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -24,18 +20,9 @@ type Props = {
   params: Promise<{ lang: string; slug: string }>;
 };
 
-export async function generateStaticParams() {
-  // Las páginas se renderizan bajo demanda desde D1 (el contenido lo edita
-  // el panel, así que nada puede quedar congelado en el build). Aquí solo
-  // se pre-generan slugs cuando hay BD disponible (local); en CI sin D1 se
-  // devuelve vacío y el build sigue adelante.
-  try {
-    const slugs = await listPublishedTourSlugs();
-    return slugs.flatMap((slug) => [{ lang: "es", slug }, { lang: "en", slug }]);
-  } catch {
-    return [];
-  }
-}
+// Sin generateStaticParams a propósito: la página es 100 % dinámica desde
+// D1. (Un generateStaticParams que devuelve [] rompía el render en el
+// bundle de OpenNext/Workers aunque en dev funcionaba.)
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, slug } = await params;
@@ -52,20 +39,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   if (!tour) return {};
   const cover = tour.images[0]?.url;
-  return {
-    title: tour.translation.seo_title || tour.translation.title,
-    description: tour.translation.seo_description || tour.translation.summary,
-    alternates: {
-      canonical: `/${lang}/tours/${slug}`,
-      languages: { es: `/es/tours/${slug}`, en: `/en/tours/${slug}` },
-    },
-    openGraph: {
-      title: tour.translation.title,
-      description: tour.translation.summary,
-      type: "article",
-      ...(cover ? { images: [{ url: cover }] } : {}),
-    },
-  };
+  try {
+    return {
+      title: tour.translation.seo_title || tour.translation.title,
+      description: tour.translation.seo_description || tour.translation.summary,
+      alternates: {
+        canonical: `/${lang}/tours/${slug}`,
+        languages: { es: `/es/tours/${slug}`, en: `/en/tours/${slug}` },
+      },
+      openGraph: {
+        title: tour.translation.title,
+        description: tour.translation.summary,
+        type: "article",
+        ...(cover ? { images: [{ url: cover }] } : {}),
+      },
+    };
+  } catch (err) {
+    console.error(
+      "[tour-detail] metadata build:",
+      err instanceof Error ? `${err.name}: ${err.message}\n${err.stack}` : String(err),
+    );
+    throw err;
+  }
 }
 
 export default async function TourDetailPage({ params }: Props) {
