@@ -5,22 +5,33 @@
  * src/proxy.ts). Todo el contenido vive bajo `app/[lang]/`.
  */
 import type { Metadata } from "next";
-import { Inter, Poppins } from "next/font/google";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 
 import { defaultLocale, isLocale } from "@/lib/i18n/config";
 import "./globals.css";
 
-const display = Poppins({
+/*
+ * Fuentes auto-hospedadas (src/app/fonts/*.woff2, subsets latin).
+ * Se usa next/font/local en vez de next/font/google para que el build no
+ * dependa de descargarlas de Google en cada CI (esa descarga fallaba de
+ * forma intermitente y rompía el deploy).
+ */
+const display = localFont({
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
+  src: [
+    { path: "./fonts/poppins-500.woff2", weight: "500" },
+    { path: "./fonts/poppins-600.woff2", weight: "600" },
+    { path: "./fonts/poppins-700.woff2", weight: "700" },
+    { path: "./fonts/poppins-800.woff2", weight: "800" },
+  ],
+  display: "swap",
 });
 
-const sans = Inter({
+const sans = localFont({
   variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  src: [{ path: "./fonts/inter-var.woff2", weight: "400 700" }],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
