@@ -40,7 +40,7 @@ async function SiteHeaderInner({ locale, dict, phoneDisplay }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-white/90 backdrop-blur">
       <div className="container-site relative flex h-[72px] items-center justify-between gap-3">
-        <Link href={base} className="flex items-center gap-2.5" aria-label="Perez Tours Puerto Plata">
+        <Link href={base} className="flex items-center gap-2.5">
           <Image
             src="/img/logo.jpg"
             alt={dict.meta.siteName}
