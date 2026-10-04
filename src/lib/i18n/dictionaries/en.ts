@@ -138,7 +138,6 @@ export const en: typeof es = {
     relatedTitle: "You might also like",
     pickupTitle: "Pickup",
     minAge: "Minimum age",
-    cruiseBadge: "Cruise friendly",
     ageMin: (n: number) => `Ages ${n}+`,
     notFound: "We couldn't find that tour",
     notFoundHint: "The link may be wrong, or the tour may no longer be available.",

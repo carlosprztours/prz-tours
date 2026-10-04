@@ -157,7 +157,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo menos estáticos de Next, API, favicon e imágenes/archivos con extensión.
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|webp|svg|gif|ico|css|js|txt|xml)$).*)",
+    // Todo menos estáticos de Next, API, favicon, manifiesto PWA e
+    // imágenes/archivos con extensión.
+    "/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|webp|svg|gif|ico|css|js|txt|xml|webmanifest)$).*)",
   ],
 };

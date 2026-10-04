@@ -133,7 +133,6 @@ export const es = {
     relatedTitle: "También te puede interesar",
     pickupTitle: "Recogida",
     minAge: "Edad mínima",
-    cruiseBadge: "Apto para cruceros",
     ageMin: (n: number) => `A partir de ${n} años`,
     notFound: "No encontramos ese tour",
     notFoundHint: "Puede que el enlace esté equivocado o que ya no esté disponible.",

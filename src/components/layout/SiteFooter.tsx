@@ -31,15 +31,15 @@ export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
     <footer className="bg-ocean-950 text-white">
       <div className="container-site grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <Image
               src="/img/logo.jpg"
               alt={dict.meta.siteName}
-              width={120}
-              height={48}
-              className="h-11 w-auto rounded-lg object-cover"
+              width={200}
+              height={64}
+              className="h-16 w-auto object-contain rounded-lg bg-white p-1"
             />
-            <p className="font-display text-lg font-bold leading-tight">
+            <p className="font-display text-xl font-bold leading-tight">
               Perez Tours
               <span className="block text-xs font-medium text-ocean-200">
                 {dict.meta.tagline}

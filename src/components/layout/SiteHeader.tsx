@@ -39,22 +39,16 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-white/90 backdrop-blur">
-      <div className="container-site relative flex h-[72px] items-center justify-between gap-3">
-        <Link href={base} className="flex items-center gap-2.5">
+      <div className="container-site relative flex h-[88px] items-center justify-between gap-3">
+        <Link href={base} className="flex items-center gap-3" aria-label={dict.meta.siteName}>
           <Image
             src="/img/logo.jpg"
             alt={dict.meta.siteName}
-            width={120}
-            height={48}
-            className="h-11 w-auto rounded-lg object-cover"
+            width={200}
+            height={64}
+            className="h-16 w-auto object-contain"
             priority
           />
-          <span className="hidden font-display text-lg font-bold leading-tight text-ink-900 sm:block">
-            Perez Tours
-            <span className="block text-xs font-medium text-ocean-600">
-              Puerto Plata
-            </span>
-          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label={dict.nav.menu}>

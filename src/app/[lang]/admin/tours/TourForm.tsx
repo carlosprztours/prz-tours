@@ -34,7 +34,6 @@ type Labels = {
   challenging: string;
   ageMin: string;
   maxGroup: string;
-  cruise: string;
   deposit: string;
   pickupNote: string;
   featured: string;
@@ -151,10 +150,6 @@ export function TourForm({ locale, initial, labels }: Props) {
           <label className="flex items-center gap-2 text-sm font-bold text-ink-900">
             <input type="checkbox" name="is_featured" defaultChecked={(t?.is_featured ?? 0) === 1} className="h-4 w-4" />
             {labels.featured}
-          </label>
-          <label className="flex items-center gap-2 text-sm font-bold text-ink-900">
-            <input type="checkbox" name="cruise_friendly" defaultChecked={(t?.cruise_friendly ?? 0) === 1} className="h-4 w-4" />
-            {labels.cruise}
           </label>
           <label className="flex items-center gap-2 text-sm font-bold text-ink-900">
             <input type="checkbox" name="is_published" defaultChecked={(t?.is_published ?? 1) === 1} className="h-4 w-4" />

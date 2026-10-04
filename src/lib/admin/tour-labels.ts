@@ -21,7 +21,6 @@ export function tourFormLabels(locale: Locale) {
     challenging: es ? "Desafiante" : "Challenging",
     ageMin: es ? "Edad mínima (vacío = todas)" : "Min. age (empty = all)",
     maxGroup: es ? "Cupo máximo por día" : "Max group per day",
-    cruise: es ? "Apto para cruceros" : "Cruise friendly",
     deposit: es ? "Anticipo % (0 = sin anticipo)" : "Deposit % (0 = none)",
     pickupNote: es ? "Nota de recogida" : "Pickup note",
     featured: es ? "Destacado en la home" : "Featured on home",

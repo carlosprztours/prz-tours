@@ -119,11 +119,6 @@ export default async function TourDetailPage({ params }: Props) {
               </h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-500">
                 <span>{formatDuration(tour.duration_minutes, dict.common)}</span>
-                {tour.cruise_friendly === 1 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-ocean-50 px-2.5 py-0.5 text-xs font-bold text-ocean-800">
-                    🛳️ {dict.tours.cruiseBadge}
-                  </span>
-                )}
               </p>
 
               <div className="mt-6">

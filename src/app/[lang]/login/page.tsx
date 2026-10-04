@@ -67,9 +67,9 @@ export default async function LoginPage({ params, searchParams }: Props) {
           <Image
             src="/img/logo.jpg"
             alt="Perez Tours"
-            width={120}
-            height={48}
-            className="mx-auto h-12 w-auto rounded-lg object-cover"
+            width={200}
+            height={64}
+            className="mx-auto h-16 w-auto object-contain"
           />
           <h1 className="mt-4 font-display text-2xl font-extrabold text-ink-900">
             {labels.title}
