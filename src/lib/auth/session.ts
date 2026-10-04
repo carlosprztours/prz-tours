@@ -133,11 +133,6 @@ export async function destroySession(): Promise<void> {
   store.delete(SESSION_COOKIE);
 }
 
-/** Revoca una sesión concreta por su id (para el panel de admin). */
-export async function revokeSession(sid: string): Promise<void> {
-  await execute(`DELETE FROM sessions WHERE id = ?`, sid);
-}
-
 /** Revoca todas las sesiones de un usuario. */
 export async function revokeAllUserSessions(userId: number): Promise<void> {
   await execute(`DELETE FROM sessions WHERE user_id = ?`, userId);

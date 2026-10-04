@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
   if (!isLocale(lang)) return {};
   return {
-    title: lang === "es" ? "Acceso al panel" : "Panel sign in",
+    title: lang === "es" ? "Acceso" : "Sign in",
     robots: { index: false, follow: false },
   };
 }
@@ -42,6 +42,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
           submitting: "Verificando…",
           invalid: "Credenciales incorrectas.",
           required: "Completa todos los campos.",
+          server: "Error del servidor. Inténtalo de nuevo.",
           noAccount: "¿No tienes cuenta?",
           signUp: "Crea una gratis",
         }
@@ -54,6 +55,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
           submitting: "Checking…",
           invalid: "Incorrect credentials.",
           required: "Please complete all fields.",
+          server: "Server error. Please try again.",
           noAccount: "No account yet?",
           signUp: "Create one free",
         };

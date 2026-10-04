@@ -21,9 +21,11 @@ export default async function BookingDetailPage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
   const t = adminTexts(locale);
+  const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) notFound();
 
-  const booking = await getBookingById(Number(id));
-  if (!booking || Number.isNaN(Number(id))) notFound();
+  const booking = await getBookingById(numericId);
+  if (!booking) notFound();
   const events = await listBookingEvents(booking.id);
 
   const rows: [string, string][] = [

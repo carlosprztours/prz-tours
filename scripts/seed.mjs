@@ -4,9 +4,11 @@
  *   node scripts/seed.mjs --local    (base emulada de wrangler, por defecto)
  *   node scripts/seed.mjs --remote   (requiere login de wrangler)
  *
- * Es idempotente: borra el contenido de demostración y lo vuelve a insertar.
- * NO toca la tabla `users` ni `sessions`, así que tu cuenta de admin y las
- * reservas reales se conservan intactas.
+ * Es idempotente en CONTENIDO (tours, traslados, testimonios, galería,
+ * ajustes, mensajes de ejemplo), pero OJO: por defecto NO toca `users`,
+ * `sessions`, `bookings` ni `booking_events` para no borrar cuentas ni
+ * reservas reales. Pasa `--include-bookings` para vaciarlas también
+ * (solo desarrollo, con backup previo).
  */
 import { randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -31,9 +33,9 @@ const statements = [];
 const sql = (s) => statements.push(s);
 
 // ── 1. Limpiar contenido de demostración ────────────────────────────────────
-for (const t of [
-  "booking_events",
-  "bookings",
+// Nunca reservas, eventos, mensajes ni cuentas sin flag explícito.
+const includeBookings = process.argv.includes("--include-bookings");
+const wipeTables = [
   "tour_list_items",
   "tour_images",
   "tour_translations",
@@ -43,7 +45,12 @@ for (const t of [
   "gallery_images",
   "messages",
   "settings",
-]) {
+];
+if (includeBookings) {
+  wipeTables.push("booking_events", "bookings");
+  console.log("⚠  --include-bookings: también se vacían reservas y eventos.");
+}
+for (const t of wipeTables) {
   sql(`DELETE FROM ${t};`);
 }
 

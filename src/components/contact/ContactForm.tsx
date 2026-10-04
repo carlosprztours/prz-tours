@@ -77,12 +77,14 @@ export function ContactForm({ locale, contact: t }: { locale: Locale; contact: D
             {t.phoneLabel}
           </label>
           <input id="phone" name="phone" type="tel" autoComplete="tel" className={inputClass} />
+          <FieldError message={errors.phone && resolveError(t, errors.phone)} />
         </div>
         <div>
           <label htmlFor="subject" className="mb-1.5 block text-sm font-bold text-ink-900">
             {t.subjectLabel}
           </label>
           <input id="subject" name="subject" type="text" className={inputClass} />
+          <FieldError message={errors.subject && resolveError(t, errors.subject)} />
         </div>
       </div>
 
@@ -108,6 +110,11 @@ export function ContactForm({ locale, contact: t }: { locale: Locale; contact: D
       >
         {pending ? t.submitting : t.submit}
       </button>
+      {errors.form && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
+          {resolveError(t, errors.form)}
+        </p>
+      )}
     </form>
   );
 }

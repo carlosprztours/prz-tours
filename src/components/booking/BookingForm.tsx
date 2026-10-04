@@ -223,8 +223,10 @@ export function BookingForm({
             required
             className={inputClass}
           />
-          {kind !== "transfer" && (
+          {kind !== "transfer" ? (
             <p className="mt-1 text-xs text-ink-500">{t.guestsHint}</p>
+          ) : (
+            <p className="mt-1 text-xs text-ink-500">{t.guestsHintTransfer}</p>
           )}
           <FieldError message={errors.guests && resolveError(t, errors.guests)} />
         </div>

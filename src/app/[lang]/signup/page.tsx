@@ -44,6 +44,7 @@ export default async function SignupPage({ params }: Props) {
           invalidEmail: "Ese correo no parece válido.",
           weakPassword: "La contraseña debe tener al menos 8 caracteres.",
           emailTaken: "Ese correo ya tiene una cuenta. Inicia sesión.",
+          server: "Error del servidor. Inténtalo de nuevo.",
           hasAccount: "¿Ya tienes cuenta?",
           signIn: "Inicia sesión",
         }
@@ -60,6 +61,7 @@ export default async function SignupPage({ params }: Props) {
           invalidEmail: "That email address doesn't look valid.",
           weakPassword: "Your password must be at least 8 characters.",
           emailTaken: "That email already has an account. Please sign in.",
+          server: "Server error. Please try again.",
           hasAccount: "Already have an account?",
           signIn: "Sign in",
         };

@@ -110,7 +110,14 @@ export async function bookTour(
   }
 
   // WhatsApp del negocio (editable desde el panel vía ajustes).
-  const businessWhatsapp = await getSetting("whatsapp", DEFAULT_WHATSAPP);
+  // Si D1 falla aquí la reserva YA existe: se usa el fallback y se avisa
+  // en el log en vez de mostrar un 500 que invite a duplicar la reserva.
+  const businessWhatsapp = await getSetting("whatsapp", DEFAULT_WHATSAPP).catch(
+    (err) => {
+      console.error("[bookTour] getSetting whatsapp error:", err);
+      return DEFAULT_WHATSAPP;
+    },
+  );
   const experience = booking.tour_title || booking.transfer_label || "";
   const whatsappUrl = whatsappLink(
     businessWhatsapp,

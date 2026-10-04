@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
 
   await bucket.put(key, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type },
+  }).catch((err) => {
+    console.error("[upload] R2 put error:", err);
+    throw err;
   });
 
   return NextResponse.json({ url: `/api/media/${key}` });

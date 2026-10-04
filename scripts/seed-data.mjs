@@ -12,12 +12,14 @@ export const settings = {
   site_name: "Perez Tours & Transfers",
   site_tagline: "Unforgettable adventures in Puerto Plata",
   site_description:
-    "Tours, excursiones y traslados en Puerto Plata, República Dominicana. Cascadas, ATV, city tour, Monkey Jungle, dune buggy, esnórquel y Cayo Arena con guías locales certificados.",
+    "Tours, excursiones y traslados en Puerto Plata, República Dominicana. Cascadas, ATV, City Tour, Monkey Jungle, dune buggy, esnórquel y Cayo Arena con guías locales certificados.",
   phone_display: "+1 (809) 835-4101",
   whatsapp: "18098354101",
   email: "carlosdavidpere@gmail.com",
   address: "Puerto Plata, República Dominicana",
   hours: "Lun – Sáb · 7:00 AM – 8:00 PM",
+  hours_es: "Lun – Sáb · 7:00 AM – 8:00 PM",
+  hours_en: "Mon – Sat · 7:00 AM – 8:00 PM",
   currency: "USD",
   instagram: "https://instagram.com/pereztours",
   facebook: "https://facebook.com/pereztours",
@@ -43,7 +45,7 @@ export const tours = [
         summary:
           "Desliza, salta y nada por 27 cascadas en plena selva tropical dominicana.",
         description:
-          "Prepárate para un día incomparable explorando las famosas Cascadas de Damajagua, uno de los lugares naturales más emocionantes de Puerto Plata. Caminarás por una selva tropical exuberante y descenderás saltando, deslizándote y nadando por cascadas de agua cristalina, siempre acompañado por nuestro equipo local profesional.\n\nLa aventura es perfecta para quienes buscan emoción, naturaleza y una experiencia auténtica. Es apta para familias y grupos, con rutas disponibles para todos los niveles de preparación física.\n\nAl terminar, disfrutas de un delicioso almuerzo típico dominicano y de tiempo libre para relajarte antes de volver. En el camino podrás apreciar vistas montanosas y escenas de la vida rural local. Incluimos transporte de ida y vuelta, equipo de seguridad y guías expertos: solo tienes que traer tu bañador, una toalla y ganas de aventura.",
+          "Prepárate para un día incomparable explorando las famosas Cascadas de Damajagua, uno de los lugares naturales más emocionantes de Puerto Plata. Caminarás por una selva tropical exuberante y descenderás saltando, deslizándote y nadando por cascadas de agua cristalina, siempre acompañado por nuestro equipo local profesional.\n\nLa aventura es perfecta para quienes buscan emoción, naturaleza y una experiencia auténtica. Es apta para familias y grupos, con rutas disponibles para todos los niveles de preparación física.\n\nAl terminar, disfrutas de un delicioso almuerzo típico dominicano y de tiempo libre para relajarte antes de volver. En el camino podrás apreciar vistas montañosas y escenas de la vida rural local. Incluimos transporte de ida y vuelta, equipo de seguridad y guías expertos: solo tienes que traer tu bañador, una toalla y ganas de aventura.",
         seoTitle: "Cascadas de Damajagua en Puerto Plata | Tour desde $60",
         seoDescription:
           "Aventura en las 27 cascadas de Damajagua con guía local, almuerzo, equipo de seguridad y transporte desde tu hotel. Reserva desde $60 por persona.",
@@ -56,7 +58,7 @@ export const tours = [
           "Get ready for an unforgettable day exploring the famous Waterfalls of Damajagua — one of the most exciting natural attractions in Puerto Plata. You'll hike through lush tropical forest and descend by jumping, sliding and swimming down crystal-clear cascades, guided at every step by our professional local team.\n\nThis adventure is perfect for thrill-seekers, nature lovers and anyone who wants to experience the real Dominican Republic. It suits families and groups, with routes available for every fitness level.\n\nAfter the adventure you'll enjoy a delicious Dominican-style lunch and some free time to relax before heading back. Along the way you'll take in stunning mountain views and scenes of local countryside life. Round-trip transportation, safety equipment and expert guides are all included — all you need to bring is your swimsuit, a towel and an adventurous spirit.",
         seoTitle: "Damajagua Waterfalls Tour in Puerto Plata | From $60",
         seoDescription:
-          "Cascade, slide and swim through the 27 waterfalls of Damajagua with a certified local guide, lunch, safety gear and hotel pickup. From $60 per person.",
+          "Jump, slide and swim through the 27 waterfalls of Damajagua with a certified local guide, lunch, safety gear and hotel pickup. From $60 per person.",
       },
     },
     images: [
@@ -130,7 +132,7 @@ export const tours = [
       es: {
         title: "Aventura en ATV",
         summary:
-          "Conduce tu propio quad por ríos, caminos de tierra y pueblos del campo puertorriqueño.",
+          "Conduce tu propio quad por ríos, caminos de tierra y pueblos del campo de Puerto Plata.",
         description:
           "Prepárate para una experiencia cargada de adrenalina mientras exploras por tu cuenta los senderos del campo de Puerto Plata en tu propio quad. Conduce a través de ríos, caminos de tierra y pueblos locales mientras disfrutas de vistas panorámicas y aire fresco.\n\nEste tour es perfecto para quienes buscan diversión, naturaleza y un poco de barro. No se requiere experiencia previa: nuestros guías te darán todas las instrucciones y el equipo de seguridad antes de comenzar.\n\nTermina el día relajándote junto a la piscina, con la opción de comprar fotos y recuerdos de la aventura.",
         seoTitle: "Tour en ATV (Quad) en Puerto Plata | Desde $60",
@@ -290,7 +292,7 @@ export const tours = [
         summary:
           "Conoce de cerca a los monos ardilla en un santuario ecológico con tirolina incluida.",
         description:
-          "Entra en la naturaleza y disfruta del encanto de los residentes más simpáticos de República Dominicana en Monkey Home Adventure. Ubicado en el exuberante campo cerca de Puerto Plata, este santuario ecológico es hogar de adorables monos ardilla que adoran conocer a los visitantes.\n\nCamina por jardines tropicales mientras decenas de monos juguetones se suben a tus hombros, comen suavemente de tus manos y te llenan de alegría. Es un encuentro mágico y conmovedor para familias, parejas y amantes de los animales de todas las edades.\n\nAprende hechos fascinantes sobre estas criaturas inteligentes de la mano de nuestros guías especializados mientras disfrutas del ambiente tranquilo del santuario. También tendrás la oportunidad de tomar fotos increíbles y observar cómo interactúan libremente los monos en un entorno seguro y protegido. Monkey Jungle apoya a una fundación local que ofrece atención médica y dental gratuita a las comunidades cercanas, así que tu visita no solo trae alegría: también marca una diferencia real.",
+          "Entra en la naturaleza y disfruta del encanto de los residentes más simpáticos de República Dominicana en Monkey Jungle. Ubicado en el exuberante campo cerca de Puerto Plata, este santuario ecológico es hogar de adorables monos ardilla que adoran conocer a los visitantes.\n\nCamina por jardines tropicales mientras decenas de monos juguetones se suben a tus hombros, comen suavemente de tus manos y te llenan de alegría. Es un encuentro mágico y conmovedor para familias, parejas y amantes de los animales de todas las edades.\n\nAprende hechos fascinantes sobre estas criaturas inteligentes de la mano de nuestros guías especializados mientras disfrutas del ambiente tranquilo del santuario. También tendrás la oportunidad de tomar fotos increíbles y observar cómo interactúan libremente los monos en un entorno seguro y protegido. Monkey Jungle apoya a una fundación local que ofrece atención médica y dental gratuita a las comunidades cercanas, así que tu visita no solo trae alegría: también marca una diferencia real.",
         seoTitle: "Monkey Jungle y tirolina en Puerto Plata | Desde $60",
         seoDescription:
           "Visita el santuario de monos ardilla en las afueras de Puerto Plata con entrada, tirolina, guías y transporte. Apoya una fundación local. Desde $60.",
@@ -300,7 +302,7 @@ export const tours = [
         summary:
           "Meet squirrel monkeys up close in an eco-sanctuary, with the zipline included.",
         description:
-          "Step into nature and experience the charm of the Dominican Republic's friendliest residents at Monkey Home Adventure! Set in the lush countryside near Puerto Plata, this eco-sanctuary is home to adorable squirrel monkeys who love meeting visitors.\n\nWalk through beautiful tropical gardens as dozens of playful monkeys climb onto your shoulders, gently eat from your hands and bring endless smiles. It's a magical and heartwarming encounter for families, couples and animal lovers of all ages.\n\nLearn fascinating facts about these intelligent creatures from our knowledgeable guides while enjoying the peaceful surroundings of the sanctuary. You'll also have the chance to take incredible photos and watch how the monkeys interact freely in a safe, protected environment. Monkey Jungle supports a local foundation that provides free medical and dental care to nearby communities — so your visit not only brings joy, it also makes a real difference.",
+          "Step into nature and experience the charm of the Dominican Republic's friendliest residents at Monkey Jungle! Set in the lush countryside near Puerto Plata, this eco-sanctuary is home to adorable squirrel monkeys who love meeting visitors.\n\nWalk through beautiful tropical gardens as dozens of playful monkeys climb onto your shoulders, gently eat from your hands and bring endless smiles. It's a magical and heartwarming encounter for families, couples and animal lovers of all ages.\n\nLearn fascinating facts about these intelligent creatures from our knowledgeable guides while enjoying the peaceful surroundings of the sanctuary. You'll also have the chance to take incredible photos and watch how the monkeys interact freely in a safe, protected environment. Monkey Jungle supports a local foundation that provides free medical and dental care to nearby communities — so your visit not only brings joy, it also makes a real difference.",
         seoTitle: "Monkey Jungle & Zipline in Puerto Plata | From $60",
         seoDescription:
           "Visit the squirrel monkey sanctuary outside Puerto Plata. Entry, zipline, guides and transport included. Supports a local foundation. From $60 per person.",
@@ -371,17 +373,17 @@ export const tours = [
       es: {
         title: "Dune Buggy",
         summary:
-          "Conduce tu propio buggy 4x2 por el barro, los ríos y una playa secluded.",
+          "Conduce tu propio dune buggy por el barro, los ríos y una playa apartada.",
         description:
-          "¡Prepárate para una aventura divertida y llena de barro por el campo de Puerto Plata! La excursión en dune buggy es una de las formas más emocionantes de explorar la belleza natural y la vida local de República Dominicana. Conduce tu propio buggy para dos personas —o viaja como pasajero— mientras recorres caminos todoterreno, atraviesas charcos de barro y pasas por pueblos locales, fincas tropicales y paisajes montanosos. Siente la descarga de adrenalina mientras conduces por ríos, caminos de tierra y vegetación verde.\n\nEn el camino nos detenemos para tomar fotos, conocer a lugareños amigables y visitar una playa hermosa y aislada donde podrás relajarte y disfrutar de la brisa del mar. Nuestros guías profesionales se encargarán de tu seguridad y comodidad mientras nos guían por las mejores rutas panorámicas de la región.\n\nYa seas buscador de emociones, una pareja o una familia en busca de diversión, este tour es la combinación perfecta de emoción, naturaleza y cultura dominicana auténtica. Prepárate para ensuciarte, reír mucho y crear recuerdos que quedarán grabados para siempre.",
+          "¡Prepárate para una aventura divertida y llena de barro por el campo de Puerto Plata! La excursión en dune buggy es una de las formas más emocionantes de explorar la belleza natural y la vida local de República Dominicana. Conduce tu propio buggy para dos personas —o viaja como pasajero— mientras recorres caminos todoterreno, atraviesas charcos de barro y pasas por pueblos locales, fincas tropicales y paisajes montañosos. Siente la descarga de adrenalina mientras conduces por ríos, caminos de tierra y vegetación verde.\n\nEn el camino nos detenemos para tomar fotos, conocer a lugareños amigables y visitar una playa hermosa y aislada donde podrás relajarte y disfrutar de la brisa del mar. Nuestros guías profesionales se encargarán de tu seguridad y comodidad mientras nos guían por las mejores rutas panorámicas de la región.\n\nYa seas amante de la adrenalina, vengas en pareja o en familia en busca de diversión, este tour es la combinación perfecta de emoción, naturaleza y cultura dominicana auténtica. Prepárate para ensuciarte, reír mucho y crear recuerdos que quedarán grabados para siempre.",
         seoTitle: "Excursión en Dune Buggy en Puerto Plata | Desde $60",
         seoDescription:
-          "Conduce tu propio dune buggy 4x2 por caminos todoterreno, ríos y una playa secluded. Incluye transporte, guía, casco y agua. Desde $60.",
+          "Conduce tu propio dune buggy 4x2 por caminos todoterreno, ríos y una playa apartada. Incluye transporte, guía, casco y agua. Desde $60.",
       },
       en: {
         title: "Dune Buggy Excursion",
         summary:
-          "Drive your own 4x4 buggy through mud, rivers and a secluded beach in the Dominican countryside.",
+          "Drive your own dune buggy through mud, rivers and a secluded beach in the Dominican countryside.",
         description:
           "Get ready for an exciting and muddy adventure through the stunning countryside of Puerto Plata! The dune buggy excursion is one of the most thrilling ways to explore the Dominican Republic's natural beauty and local life. Drive your own 2-passenger buggy — or ride as a passenger — as you tackle off-road trails, splash through muddy puddles and pass local villages, tropical farms and breathtaking mountain landscapes. Feel the adrenaline rush as you power through rivers, dirt roads and lush green terrain.\n\nAlong the way we'll stop to take photos, meet friendly locals and visit a beautiful secluded beach where you can relax and enjoy the ocean breeze. Our professional guides will ensure your safety and comfort while leading us along the best scenic routes around Puerto Plata.\n\nWhether you're an adventure seeker, a couple or a family looking for fun, this tour is the perfect mix of excitement, nature and authentic Dominican culture. Expect to get dirty, laugh a lot and make memories that last forever.",
         seoTitle: "Dune Buggy Tour in Puerto Plata | From $60",
@@ -540,9 +542,9 @@ export const tours = [
       es: {
         title: "Paradise Island (Cayo Arena)",
         summary:
-          "Lanchazo rápido, esnórquel en Cayo Arena y buffet dominicano junto a Monte Cristi.",
+          "Travesía en lancha rápida, esnórquel en Cayo Arena y buffet dominicano junto a Monte Cristi.",
         description:
-          "Descubre una de los tesoros naturales más preciosos de República Dominicana: Paradise Island, también conocida como Cayo Arena. Esta pequeña isla de coral frente a la costa de Punta Rucia es una joya tropical rodeada de aguas turquesas y una vida marina vibrante.\n\nTu aventura comienza con un paseo panorámico por el exuberante campo norteño antes de abordar una lancha rápida para un viaje emocionante por el Caribe. Al acercarte a la isla, las arenas blancas y el agua azul cristalina te dejarán sin palabras: es como entrar en una postal.\n\nPasa el tiempo esnórquelando en arrecifes poco profundos plagados de peces tropicales de colores, guiado por expertos locales. Relájate en la arena suave, nada en aguas cálidas o simplemente disfruta del sol con una bebida fría en la mano. Después de la visita a la isla, continuamos hacia la zona del Parque Nacional de Monte Cristi para un delicioso buffet típico dominicano y tiempo libre para descansar.\n\nEsta excursión de día completo combina relajación, aventura y belleza natural. Con transporte de ida y vuelta, equipo de esnórquel y guías profesionales incluidos, solo tienes que traer tu sentido de la maravilla y la cámara.",
+          "Descubre uno de los tesoros naturales más preciosos de República Dominicana: Paradise Island, también conocida como Cayo Arena. Esta pequeña isla de coral frente a la costa de Punta Rucia es una joya tropical rodeada de aguas turquesas y una vida marina vibrante.\n\nTu aventura comienza con un paseo panorámico por el exuberante campo norteño antes de abordar una lancha rápida para un viaje emocionante por el Caribe. Al acercarte a la isla, las arenas blancas y el agua azul cristalina te dejarán sin palabras: es como entrar en una postal.\n\nPasa el tiempo esnórquelando en arrecifes poco profundos repletos de peces tropicales de colores, guiado por expertos locales. Relájate en la arena suave, nada en aguas cálidas o simplemente disfruta del sol con una bebida fría en la mano. Después de la visita a la isla, continuamos hacia la zona del Parque Nacional de Monte Cristi para un delicioso buffet típico dominicano y tiempo libre para descansar.\n\nEsta excursión de día completo combina relajación, aventura y belleza natural. Con transporte de ida y vuelta, equipo de esnórquel y guías profesionales incluidos, solo tienes que traer tu sentido de la maravilla y la cámara.",
         seoTitle: "Excursión a Paradise Island / Cayo Arena | Desde $125",
         seoDescription:
           "Lanchazo a Cayo Arena, esnórquel en arrecifes poco profundos y buffet dominicano cerca de Monte Cristi. Transporte y equipo incluidos. Desde $125.",
@@ -708,7 +710,7 @@ export const testimonials = [
     rating: 5,
     tourSlug: "atv-adventure",
     textEs:
-      "El ATV fue súper divertido, te ensucias pero vale la pena. Salimos a las 8am y volvimos sin problemas al hotel. Organización de primera.",
+      "El ATV fue súper divertido, te ensucias pero vale la pena. Salimos a las 8:00 a. m. y volvimos sin problemas al hotel. Organización de primera.",
     textEn:
       "The ATV was so much fun — you get dirty but it's worth it. We left at 8am and got back to the hotel with no issues. First-rate organisation.",
   },

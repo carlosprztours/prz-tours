@@ -14,7 +14,6 @@
 
 import { redirect } from "next/navigation";
 
-import { verifySession } from "@/lib/auth/dal";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import {
   createSession,
@@ -54,11 +53,17 @@ export async function login(
     return { ok: false, error: "invalid" };
   }
 
-  const user = await queryOne<UserWithSecret>(
-    `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
-     FROM users WHERE email = ?`,
-    parsed.data.email,
-  );
+  let user;
+  try {
+    user = await queryOne<UserWithSecret>(
+      `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
+       FROM users WHERE email = ?`,
+      parsed.data.email,
+    );
+  } catch (err) {
+    console.error("[auth] login db error:", err);
+    return { ok: false, error: "server" };
+  }
 
   // Respuesta genérica para no revelar si el email existe.
   if (!user || user.is_active !== 1) return { ok: false, error: "invalid" };
@@ -70,7 +75,9 @@ export async function login(
   if (!passwordOk) return { ok: false, error: "invalid" };
 
   // Limpieza oportunista de sesiones expiradas (barata y sin cron).
-  pruneExpiredSessions().catch(() => {});
+  pruneExpiredSessions().catch((err) =>
+    console.error("[auth] prune sessions error:", err),
+  );
 
   await createSession(user.id, user.role);
   redirect(startUrl(user.role, locale, parsed.data.next));
@@ -96,20 +103,28 @@ export async function signup(
   const existing = await queryOne<{ id: number }>(
     `SELECT id FROM users WHERE email = ?`,
     parsed.data.email,
-  );
+  ).catch((err) => {
+    console.error("[auth] signup lookup error:", err);
+    return null;
+  });
   if (existing) return { ok: false, error: "email-taken" };
 
-  const passwordHash = await hashPassword(parsed.data.password);
-  const result = await execute(
-    `INSERT INTO users (email, name, password_hash, role, locale)
-     VALUES (?, ?, ?, 'customer', ?)`,
-    parsed.data.email,
-    parsed.data.name,
-    passwordHash,
-    locale,
-  );
-
-  const userId = Number(result.meta.last_row_id);
+  let userId = 0;
+  try {
+    const passwordHash = await hashPassword(parsed.data.password);
+    const result = await execute(
+      `INSERT INTO users (email, name, password_hash, role, locale)
+       VALUES (?, ?, ?, 'customer', ?)`,
+      parsed.data.email,
+      parsed.data.name,
+      passwordHash,
+      locale,
+    );
+    userId = Number(result.meta.last_row_id);
+  } catch (err) {
+    console.error("[auth] signup insert error:", err);
+    return { ok: false, error: "server" };
+  }
   if (!Number.isInteger(userId) || userId <= 0) {
     return { ok: false, error: "invalid-name" };
   }
@@ -120,14 +135,4 @@ export async function signup(
 export async function logout(locale: Locale): Promise<never> {
   await destroySession();
   redirect(`/${locale}/login`);
-}
-
-/** Acción para verificar desde el cliente si sigue habiendo sesión. */
-export async function checkSession(locale: Locale): Promise<boolean> {
-  try {
-    await verifySession(locale);
-    return true;
-  } catch {
-    return false;
-  }
 }

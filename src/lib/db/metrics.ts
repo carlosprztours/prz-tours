@@ -21,43 +21,40 @@ export const REVENUE_STATUSES: BookingStatus[] = ["confirmed", "completed"];
 const revenueWhere = `status IN ('confirmed','completed')`;
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  const counts = await query<{ status: BookingStatus; n: number }>(
-    `SELECT status, COUNT(*) AS n FROM bookings GROUP BY status`,
-  );
+  const [counts, revenue, month, lastMonth, guests, misc] = await Promise.all([
+    query<{ status: BookingStatus; n: number }>(
+      `SELECT status, COUNT(*) AS n FROM bookings GROUP BY status`,
+    ),
+    queryOne<{ total: number | null }>(
+      `SELECT SUM(total_price) AS total FROM bookings WHERE ${revenueWhere}`,
+    ),
+    queryOne<{ total: number | null }>(
+      `SELECT SUM(total_price) AS total FROM bookings
+       WHERE ${revenueWhere}
+         AND strftime('%Y-%m', booked_for || ' 00:00:00') = strftime('%Y-%m', 'now')`,
+    ),
+    queryOne<{ total: number | null }>(
+      `SELECT SUM(total_price) AS total FROM bookings
+       WHERE ${revenueWhere}
+         AND strftime('%Y-%m', booked_for || ' 00:00:00') =
+             strftime('%Y-%m', 'now', '-1 month')`,
+    ),
+    queryOne<{ total: number | null }>(
+      `SELECT SUM(guests) AS total FROM bookings WHERE ${revenueWhere}`,
+    ),
+    queryOne<{
+      unread: number;
+      tours: number;
+      total: number;
+    }>(
+      `SELECT
+         (SELECT COUNT(*) FROM messages WHERE is_read = 0) AS unread,
+         (SELECT COUNT(*) FROM tours WHERE is_published = 1) AS tours,
+         (SELECT COUNT(*) FROM bookings) AS total`,
+    ),
+  ]);
   const byStatus: Record<string, number> = {};
   for (const c of counts) byStatus[c.status] = c.n;
-
-  const revenue = await queryOne<{ total: number | null }>(
-    `SELECT SUM(total_price) AS total FROM bookings WHERE ${revenueWhere}`,
-  );
-
-  const month = await queryOne<{ total: number | null }>(
-    `SELECT SUM(total_price) AS total FROM bookings
-     WHERE ${revenueWhere}
-       AND strftime('%Y-%m', booked_for || ' 00:00:00') = strftime('%Y-%m', 'now')`,
-  );
-
-  const lastMonth = await queryOne<{ total: number | null }>(
-    `SELECT SUM(total_price) AS total FROM bookings
-     WHERE ${revenueWhere}
-       AND strftime('%Y-%m', booked_for || ' 00:00:00') =
-           strftime('%Y-%m', 'now', '-1 month')`,
-  );
-
-  const guests = await queryOne<{ total: number | null }>(
-    `SELECT SUM(guests) AS total FROM bookings WHERE ${revenueWhere}`,
-  );
-
-  const misc = await queryOne<{
-    unread: number;
-    tours: number;
-    total: number;
-  }>(
-    `SELECT
-       (SELECT COUNT(*) FROM messages WHERE is_read = 0) AS unread,
-       (SELECT COUNT(*) FROM tours WHERE is_published = 1) AS tours,
-       (SELECT COUNT(*) FROM bookings) AS total`,
-  );
 
   return {
     totalBookings: misc?.total ?? 0,

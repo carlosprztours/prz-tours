@@ -13,7 +13,12 @@ const BASE = "https://pereztours.cloud";
 const STATIC_ROUTES = ["", "/tours", "/transfers", "/about", "/contact", "/book"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const slugs = await listPublishedTourSlugs().catch(() => [] as string[]);
+  let slugs: string[] = [];
+  try {
+    slugs = await listPublishedTourSlugs();
+  } catch (err) {
+    console.error("[sitemap] slugs error:", err);
+  }
 
   const entries: MetadataRoute.Sitemap = [];
   for (const lang of locales) {

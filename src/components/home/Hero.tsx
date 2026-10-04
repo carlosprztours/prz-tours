@@ -19,7 +19,7 @@ export function Hero({ locale, dict, stats }: Props) {
     <section className="relative overflow-hidden bg-ocean-950 text-white">
       <Image
         src="/img/island-hero.jpg"
-        alt="Cayo Arena"
+        alt="Cayo Arena, Paradise Island"
         fill
         priority
         sizes="100vw"

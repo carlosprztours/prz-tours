@@ -26,7 +26,7 @@ export function Gallery({ dict, images }: Props) {
             >
               <Image
                 src={img.url}
-                alt={img.alt || dict.home.galleryTitle}
+                alt={img.alt || img.caption || "Perez Tours"}
                 fill
                 sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                 className="object-cover transition duration-500 group-hover:scale-105"

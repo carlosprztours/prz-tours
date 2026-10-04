@@ -19,7 +19,10 @@ export default async function EditRoutePage({
   const locale = lang as Locale;
   const es = locale === "es";
 
-  const route = await getAdminRoute(locale, Number(id));
+  const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) notFound();
+
+  const route = await getAdminRoute(locale, numericId);
   if (!route) notFound();
 
   return (

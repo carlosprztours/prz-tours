@@ -11,7 +11,7 @@ export const es = {
     siteName: "Perez Tours & Transfers",
     tagline: "Aventuras inolvidables en Puerto Plata",
     defaultDescription:
-      "Tours, excursiones y traslados en Puerto Plata, República Dominicana. Cascadas, ATV, city tour, Monkey Jungle, dune buggy, esnórquel y Cayo Arena con guías locales certificados.",
+      "Tours, excursiones y traslados en Puerto Plata, República Dominicana. Cascadas, ATV, City Tour, Monkey Jungle, dune buggy, esnórquel y Cayo Arena con guías locales certificados.",
   },
 
   nav: {
@@ -28,6 +28,7 @@ export const es = {
     adminPanel: "Panel de administración",
     signIn: "Entrar",
     myAccount: "Mi cuenta",
+    trackBooking: "Mi reserva",
   },
 
   common: {
@@ -45,7 +46,7 @@ export const es = {
     backToTours: "Volver a los tours",
     loading: "Cargando…",
     required: "Obligatorio",
-    optional: "opcional",
+    optional: "Opcional",
     yes: "Sí",
     no: "No",
     all: "Todos",
@@ -131,6 +132,7 @@ export const es = {
     itineraryTitle: "Detalles de la experiencia",
     relatedTitle: "También te puede interesar",
     pickupTitle: "Recogida",
+    minAge: "Edad mínima",
     ageMin: (n: number) => `A partir de ${n} años`,
     notFound: "No encontramos ese tour",
     notFoundHint: "Puede que el enlace esté equivocado o que ya no esté disponible.",
@@ -151,6 +153,7 @@ export const es = {
     anyTimeLabel: "Sin hora fija",
     guestsLabel: "Número de personas",
     guestsHint: "Mínimo 2 personas por tour.",
+    guestsHintTransfer: "Sin mínimo de personas.",
     nameLabel: "Nombre completo",
     namePlaceholder: "Tu nombre",
     emailLabel: "Correo electrónico",
@@ -189,7 +192,7 @@ export const es = {
       "Guardamos tu solicitud y te contactamos muy pronto para confirmar los detalles.",
     successReference: "Tu número de referencia",
     successWhatsapp: "Continuar por WhatsApp",
-    successEmail: "También te enviamos un correo con el resumen.",
+    successEmail: "Si el correo es válido, recibirás ahí el resumen.",
     errorTitle: "No pudimos enviar tu solicitud",
     errorHint: "Revisa los campos marcados e inténtalo de nuevo.",
     tourRequired: "Elige un tour para continuar.",
@@ -204,7 +207,7 @@ export const es = {
       phoneInvalid: "Ese teléfono no parece válido.",
       guestsRequired: "Indica cuántas personas viajan.",
       guestsRange: "Mínimo 2 personas en tours (1 en traslados). Máximo 60.",
-      dateInvalid: "Usa el formato AAAA-MM-DD.",
+      dateInvalid: "Elige una fecha válida del calendario.",
       messageTooLong: "El mensaje es demasiado largo.",
     },
   },
@@ -239,7 +242,7 @@ export const es = {
     qualityTitle: "Servicio de calidad",
     qualityImage: "Servicio de calidad",
     qualityText:
-      "Nos enorgullecemos de ofrecer un excelente servicio de principio a fin. Nuestro equipo es amable y profesional, y se asegura de que cada huésped disfute de comodidad, seguridad y atención personalizada.",
+      "Nos enorgullecemos de ofrecer un excelente servicio de principio a fin. Nuestro equipo es amable y profesional, y se asegura de que cada huésped disfrute de comodidad, seguridad y atención personalizada.",
     statsTitle: "En números",
     teamTitle: "Por qué nosotros",
     teamIntro:

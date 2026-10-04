@@ -38,16 +38,21 @@ export async function sendContactMessage(
 
   const data = parsed.data;
 
-  await execute(
-    `INSERT INTO messages (name, email, phone, subject, body, locale)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    data.name,
-    data.email,
-    data.phone ?? null,
-    data.subject ?? null,
-    data.message,
-    locale,
-  );
+  try {
+    await execute(
+      `INSERT INTO messages (name, email, phone, subject, body, locale)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      data.name,
+      data.email,
+      data.phone ?? null,
+      data.subject ?? null,
+      data.message,
+      locale,
+    );
+  } catch (err) {
+    console.error("[contact] no se pudo guardar el mensaje:", err);
+    return { ok: false, errors: { form: "validation.serverError" } };
+  }
 
   const notifyEmail = await getSetting("email", "");
   if (notifyEmail) {

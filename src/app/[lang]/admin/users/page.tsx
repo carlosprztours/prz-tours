@@ -60,6 +60,7 @@ export default async function UsersPage({ params }: Props) {
             "weak-password": "Contraseña débil (mín. 8).",
             "bad-role": "Rol inválido.",
             "email-taken": "Ese correo ya está registrado.",
+            "db-error": "Error de base de datos. Inténtalo de nuevo.",
           }
         : {
             "bad-name": "Name too short.",
@@ -67,6 +68,7 @@ export default async function UsersPage({ params }: Props) {
             "weak-password": "Weak password (min. 8).",
             "bad-role": "Invalid role.",
             "email-taken": "That email is already registered.",
+            "db-error": "Database error. Please try again.",
           },
     },
     row: {

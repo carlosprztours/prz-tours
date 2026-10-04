@@ -10,6 +10,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { getBookingByReference } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -53,7 +54,7 @@ export default async function TrackPage({ params, searchParams }: Props) {
       : "Enter your reference and email to see the status.",
     refLabel: es ? "Referencia (PRZ-XXXXXX)" : "Reference (PRZ-XXXXXX)",
     emailLabel: es ? "Correo de la reserva" : "Booking email",
-    submit: es ? "Consultar" : "Look up",
+    submit: es ? "Consultar" : "Track booking",
     notFound: es
       ? "No encontramos una reserva con esos datos. Revisa la referencia y el correo."
       : "We couldn't find a booking with those details. Check the reference and email.",
@@ -96,12 +97,10 @@ export default async function TrackPage({ params, searchParams }: Props) {
               className="h-12 rounded-xl border border-sand-200 px-4 text-sm outline-none focus:border-ocean-500"
             />
           </label>
-          <button
-            type="submit"
-            className="h-12 rounded-full bg-ocean-700 font-display text-base font-bold text-white transition hover:bg-ocean-800"
-          >
-            {copy.submit}
-          </button>
+          <SubmitButton
+            label={copy.submit}
+            pendingLabel={es ? "Buscando…" : "Looking up…"}
+          />
         </form>
 
         {notFoundError && (

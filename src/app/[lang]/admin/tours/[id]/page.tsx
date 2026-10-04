@@ -19,7 +19,10 @@ export default async function EditTourPage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const full = await getAdminTour(locale, Number(id));
+  const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) notFound();
+
+  const full = await getAdminTour(locale, numericId);
   if (!full) notFound();
 
   return (

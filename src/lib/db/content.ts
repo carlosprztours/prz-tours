@@ -11,7 +11,6 @@ import "server-only";
 import { query, queryOne } from "./client";
 import type {
   GalleryImage,
-  SiteSettings,
   Testimonial,
   TransferRoute,
 } from "@/types";
@@ -25,18 +24,6 @@ export async function listPublishedTransferRoutes(): Promise<TransferRoute[]> {
      FROM transfer_routes
      WHERE is_published = 1
      ORDER BY sort_order ASC, id ASC`,
-  );
-}
-
-export async function getTransferRouteById(
-  id: number,
-): Promise<TransferRoute | null> {
-  return queryOne<TransferRoute>(
-    `SELECT id, origin_key, origin_label, origin_airport, destination,
-            price_1_5, price_6_11, price_note, sort_order, is_published
-     FROM transfer_routes
-     WHERE id = ? AND is_published = 1`,
-    id,
   );
 }
 
@@ -74,14 +61,6 @@ export async function listPublishedGalleryImages(
 // ───────────────────────────── Ajustes ─────────────────────────────
 
 /** Todos los ajustes como objeto clave/valor. */
-export async function getSiteSettings(): Promise<SiteSettings> {
-  const rows = await query<{ key: string; value: string }>(
-    `SELECT key, value FROM settings`,
-  );
-  const out: SiteSettings = {};
-  for (const row of rows) out[row.key] = row.value;
-  return out;
-}
 
 /** Un ajuste con valor por defecto si no existe. */
 export async function getSetting(

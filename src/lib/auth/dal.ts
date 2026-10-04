@@ -116,11 +116,11 @@ async function loginOrClear(locale: Locale): Promise<string> {
 /** Devuelve la sesión verificada o `null` (sin redirigir). */
 export const getCurrentUser = cache(
   async (): Promise<VerifiedSession | null> => {
-    return loadVerifiedSession();
+    try {
+      return await loadVerifiedSession();
+    } catch (err) {
+      console.error("[auth] getCurrentUser error:", err);
+      return null;
+    }
   },
 );
-
-/** Solo el payload del JWT (comprobación optimista, sin BD). */
-export async function getTokenPayload(): Promise<SessionPayload | null> {
-  return readToken();
-}

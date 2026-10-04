@@ -175,8 +175,14 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
         `SELECT * FROM bookings WHERE reference = ?`,
         reference,
       );
-    } catch {
-      // Probable colisión de referencia: reintenta con una nueva.
+    } catch (err) {
+      // Solo las colisiones de referencia justifican reintentar; cualquier
+      // otro fallo (D1 caído, esquema) se registra y se propaga.
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!/UNIQUE constraint failed/i.test(msg)) {
+        console.error("[bookings] createBooking error:", err);
+        throw err;
+      }
       booking = null;
     }
   }
@@ -227,8 +233,8 @@ export async function countBookings(filters: BookingFilters): Promise<number> {
 
 export async function listBookings(filters: BookingFilters): Promise<Booking[]> {
   const { where, params } = buildWhere(filters);
-  const limit = Math.min(filters.limit ?? 25, 100);
-  const offset = filters.offset ?? 0;
+  const limit = Math.min(Math.max(Number(filters.limit) || 25, 1), 100);
+  const offset = Math.max(Number(filters.offset) || 0, 0);
   return query<Booking>(
     `SELECT * FROM bookings ${where}
      ORDER BY created_at DESC, id DESC
@@ -285,12 +291,13 @@ export async function listBookingsByEmail(
   email: string,
   limit = 25,
 ): Promise<Booking[]> {
+  const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
   return query<Booking>(
     `SELECT * FROM bookings WHERE customer_email = ? COLLATE NOCASE
      ORDER BY created_at DESC, id DESC
      LIMIT ?`,
     email,
-    Math.min(limit, 100),
+    safeLimit,
   );
 }
 

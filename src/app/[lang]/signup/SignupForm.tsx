@@ -32,6 +32,7 @@ export function SignupForm({
     invalidEmail: string;
     weakPassword: string;
     emailTaken: string;
+    server: string;
   };
 }) {
   const action = useMemo(() => signup.bind(null, locale), [locale]);
@@ -45,7 +46,9 @@ export function SignupForm({
           ? labels.invalidEmail
           : state.error === "weak-password"
             ? labels.weakPassword
-            : labels.invalidName
+            : state.error === "server"
+              ? labels.server
+              : labels.invalidName
       : null;
 
   return (

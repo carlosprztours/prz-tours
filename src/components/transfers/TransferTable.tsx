@@ -5,6 +5,7 @@
  */
 import Link from "next/link";
 
+import { formatPrice } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale, TransferRoute } from "@/types";
 
@@ -54,11 +55,11 @@ export function TransferTable({ locale, dict, routes }: Props) {
             </p>
             <p className="text-sm text-ink-900 md:text-right">
               <span className="font-semibold text-ink-500 md:hidden">{t.tableHeaders.small}: </span>
-              <strong className="font-display text-lg font-extrabold">${route.price_1_5}</strong>
+              <strong className="font-display text-lg font-extrabold">{formatPrice(route.price_1_5)}</strong>
             </p>
             <p className="text-sm text-ink-900 md:text-right">
               <span className="font-semibold text-ink-500 md:hidden">{t.tableHeaders.large}: </span>
-              <strong className="font-display text-lg font-extrabold">${route.price_6_11}</strong>
+              <strong className="font-display text-lg font-extrabold">{formatPrice(route.price_6_11)}</strong>
             </p>
             <div className="md:text-right">
               <Link

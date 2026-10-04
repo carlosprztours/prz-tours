@@ -75,8 +75,14 @@ export async function createStaffUser(
       role,
       locale,
     );
-  } catch {
-    return { ok: false, error: "email-taken" };
+  } catch (err) {
+    // Solo el conflicto UNIQUE es "email duplicado"; lo demás es fallo real.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/UNIQUE constraint failed/i.test(msg)) {
+      return { ok: false, error: "email-taken" };
+    }
+    console.error("[admin/users] create staff error:", err);
+    return { ok: false, error: "db-error" };
   }
 
   revalidatePath(`/${locale}/admin/users`);

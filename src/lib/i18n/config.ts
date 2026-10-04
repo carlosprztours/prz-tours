@@ -4,7 +4,7 @@
  * El sitio usa rutas con prefijo de idioma: /es/... y /en/...
  * `src/proxy.ts` redirige cualquier ruta sin locale hacia el idioma detectado.
  */
-import type { Locale, LocaleOption } from "@/types";
+import type { Locale } from "@/types";
 
 export const locales: Locale[] = ["es", "en"];
 
@@ -15,26 +15,19 @@ export const locales: Locale[] = ["es", "en"];
  */
 export const defaultLocale: Locale = "en";
 
-export const localeOptions: LocaleOption[] = [
-  {
-    code: "es",
-    label: "Español",
-    currency: "USD",
-    localeTag: "es-DO",
-  },
-  { code: "en", label: "English", currency: "USD", localeTag: "en-US" },
-];
-
 export function isLocale(value: string): value is Locale {
   return (locales as string[]).includes(value);
 }
 
-export function getLocaleOption(locale: Locale): LocaleOption {
-  return localeOptions.find((o) => o.code === locale) ?? localeOptions[0];
+/**
+ * Formatea un precio en USD sin decimales innecesarios ("$60", "$1,250").
+ * Un solo formato en todo el sitio (cards, detalle, traslados, WhatsApp).
+ */
+export function formatPrice(value: number, currency = "USD"): string {
+  const rounded = Math.round(value * 100) / 100;
+  const text = rounded.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return currency === "USD" ? `$${text}` : `${text} ${currency}`;
 }
-
-/** Nombre corto de la moneda para los precios. */
-export const currencySymbol = "$";
 
 /** Etiqueta de la unidad de precio ("por persona", "por buggy"...). */
 export function priceUnitLabel(

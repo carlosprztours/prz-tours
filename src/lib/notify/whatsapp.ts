@@ -72,26 +72,6 @@ export function bookingConfirmationMessage(
   return lines.join("\n");
 }
 
-/** Mensaje que el negocio envía al notificar una reserva nueva (interno). */
-export function newBookingAlertMessage(
-  data: BookingWhatsappData & { phone: string; email: string },
-): string {
-  return [
-    "Nueva reserva web",
-    "",
-    `Referencia: ${data.reference}`,
-    `Tour: ${data.tourTitle || data.transferLabel || "-"}`,
-    data.date ? `Fecha: ${data.date}` : null,
-    `Personas: ${data.guests}`,
-    `Cliente: ${data.name}`,
-    `Tel: ${data.phone}`,
-    `Email: ${data.email}`,
-    `Total: $${data.total} ${data.currency ?? "USD"}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
 export type CustomerStatusData = {
   name: string;
   reference: string;

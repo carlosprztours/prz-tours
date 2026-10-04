@@ -13,7 +13,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { TourCard, formatDuration } from "@/components/tours/TourCard";
 import { TourGallery } from "@/components/tours/TourGallery";
 import { TourInfo } from "@/components/tours/TourInfo";
-import { priceUnitLabel } from "@/lib/i18n/config";
+import { formatPrice, priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import { getBookingDefaults } from "@/lib/db/customer";
 import { getTourBySlug, listRelatedTours } from "@/lib/db/tours";
@@ -142,7 +142,7 @@ export default async function TourDetailPage({ params }: Props) {
               <div className="rounded-2xl border border-sand-200 bg-white p-6 shadow-lg">
                 <p className="text-sm text-ink-500">{dict.common.from}</p>
                 <p className="font-display text-4xl font-extrabold text-ink-900">
-                  ${tour.price}
+                  {formatPrice(tour.price)}
                   <span className="ml-2 align-middle font-sans text-sm font-medium text-ink-500">
                     {priceUnitLabel(tour.price_unit, locale)}
                   </span>

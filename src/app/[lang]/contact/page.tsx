@@ -40,7 +40,7 @@ export default async function ContactPage({ params }: Props) {
     getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
     getSetting("email", DEFAULT_EMAIL),
     getSetting("address", "Puerto Plata, República Dominicana"),
-    getSetting("hours", "Lun – Sáb · 7:00 AM – 8:00 PM"),
+    getSetting(`hours_${locale}`, locale === "es" ? "Lun – Sáb · 7:00 AM – 8:00 PM" : "Mon – Sat · 7:00 AM – 8:00 PM"),
     getSetting("whatsapp", DEFAULT_WHATSAPP),
   ]);
 

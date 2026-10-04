@@ -27,10 +27,20 @@ export function LoginForm({
     submitting: string;
     invalid: string;
     required: string;
+    server: string;
   };
 }) {
   const action = useMemo(() => login.bind(null, locale), [locale]);
   const [state, formAction, pending] = useActionState(action, initialState);
+
+  const message =
+    !state.ok && state.error
+      ? state.error === "invalid"
+        ? labels.invalid
+        : state.error === "server"
+          ? labels.server
+          : labels.required
+      : null;
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -62,9 +72,9 @@ export function LoginForm({
         />
       </div>
 
-      {!state.ok && state.error && (
+      {message && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
-          {state.error === "invalid" ? labels.invalid : labels.required}
+          {message}
         </p>
       )}
 

@@ -19,7 +19,10 @@ export default async function EditTestimonialPage({
   const locale = lang as Locale;
   const es = locale === "es";
 
-  const item = await getAdminTestimonial(locale, Number(id));
+  const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) notFound();
+
+  const item = await getAdminTestimonial(locale, numericId);
   if (!item) notFound();
 
   return (

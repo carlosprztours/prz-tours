@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${dict.meta.siteName} · ${dict.meta.tagline}`,
       description: dict.meta.defaultDescription,
       type: "website",
-      locale: lang === "es" ? "es_DO" : "en_US",
+      locale: lang === "es" ? "es_DO" : "en_GB",
       images: [{ url: "/img/island-hero.jpg", width: 1200, height: 630 }],
     },
   };

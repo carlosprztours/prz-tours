@@ -7,7 +7,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { priceUnitLabel } from "@/lib/i18n/config";
+import { formatPrice, priceUnitLabel } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale, TourWithContent } from "@/types";
 
@@ -110,7 +110,7 @@ export function TourCard({ tour, locale, dict }: Props) {
           <p className="text-sm text-ink-500">
             {dict.common.from}
             <span className="block font-display text-2xl font-extrabold text-ink-900">
-              ${tour.price}
+              {formatPrice(tour.price)}
               <span className="ml-1 align-middle font-sans text-xs font-medium text-ink-500">
                 {priceUnitLabel(tour.price_unit, locale)}
               </span>

@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { Dictionary } from "@/lib/i18n";
-import type { Locale, TourWithContent } from "@/types";
+import type { Locale } from "@/types";
 
 type Props = {
   locale: Locale;
@@ -20,7 +20,7 @@ type Props = {
     instagram: string;
     facebook: string;
   };
-  popularTours: Pick<TourWithContent, "slug" | "translation">[];
+  popularTours: { slug: string; title: string }[];
 };
 
 export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
@@ -60,7 +60,7 @@ export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
               { href: `${base}/tours`, label: dict.nav.tours },
               { href: `${base}/transfers`, label: dict.nav.transfers },
               { href: `${base}/book?type=custom`, label: dict.booking.customTitle },
-              { href: `${base}/track`, label: locale === "es" ? "Mi reserva" : "My booking" },
+              { href: `${base}/track`, label: dict.nav.trackBooking },
               { href: `${base}/about`, label: dict.nav.about },
               { href: `${base}/contact`, label: dict.nav.contact },
             ].map((link) => (
@@ -84,7 +84,7 @@ export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
                   href={`${base}/tours/${tour.slug}`}
                   className="text-white/85 transition hover:text-white hover:underline"
                 >
-                  {tour.translation.title}
+                  {tour.title}
                 </Link>
               </li>
             ))}

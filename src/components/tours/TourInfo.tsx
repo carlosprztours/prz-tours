@@ -22,7 +22,7 @@ export function TourInfo({ tour, dict }: Props) {
     { label: dict.common.duration, value: formatDuration(tour.duration_minutes, dict.common) },
     { label: dict.common.difficulty, value: difficultyLabel(tour.difficulty, dict.common) },
     ...(tour.age_min != null && tour.age_min > 0
-      ? [{ label: dict.common.groupSize, value: dict.tours.ageMin(tour.age_min) }]
+      ? [{ label: dict.tours.minAge, value: `${tour.age_min}+` }]
       : []),
   ];
 

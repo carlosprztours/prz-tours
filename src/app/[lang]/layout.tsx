@@ -13,7 +13,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { ConditionalFloat } from "@/components/layout/ConditionalFloat";
 import { ChromeSwitcher } from "@/components/layout/ChromeSwitcher";
 import { getSetting } from "@/lib/db/content";
-import { listPublishedTours } from "@/lib/db/tours";
+import { listTourNavItems } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import { DEFAULT_EMAIL, DEFAULT_PHONE_DISPLAY, DEFAULT_WHATSAPP } from "@/lib/site";
 
@@ -26,9 +26,9 @@ export default async function LangLayout({ children, params }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const [dict, tours] = await Promise.all([
+  const [dict, navTours] = await Promise.all([
     getDictionary(lang),
-    listPublishedTours(lang),
+    listTourNavItems(lang),
   ]);
 
   const [phoneDisplay, email, address, hours, whatsapp] =
@@ -36,7 +36,7 @@ export default async function LangLayout({ children, params }: Props) {
       getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
       getSetting("email", DEFAULT_EMAIL),
       getSetting("address", "Puerto Plata, República Dominicana"),
-      getSetting("hours", "Lun – Sáb · 7:00 AM – 8:00 PM"),
+      getSetting(`hours_${lang}`, lang === "es" ? "Lun – Sáb · 7:00 AM – 8:00 PM" : "Mon – Sat · 7:00 AM – 8:00 PM"),
       getSetting("whatsapp", DEFAULT_WHATSAPP),
     ]);
 
@@ -66,7 +66,7 @@ export default async function LangLayout({ children, params }: Props) {
             instagram: "https://instagram.com/pereztours",
             facebook: "https://facebook.com/pereztours",
           }}
-          popularTours={tours.slice(0, 5)}
+          popularTours={navTours}
         />
       }
     >

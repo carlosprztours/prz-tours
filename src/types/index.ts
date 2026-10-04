@@ -7,14 +7,6 @@
 
 export type Locale = "es" | "en";
 
-export type LocaleOption = {
-  code: Locale;
-  label: string;
-  /** Nombre de la moneda para formatear precios. */
-  currency: string;
-  localeTag: string;
-};
-
 /** Cómo se cobra el precio de un tour. */
 export type PriceUnit = "person" | "vehicle" | "group";
 
@@ -216,9 +208,6 @@ export type ContactMessage = {
   is_read: number;
   created_at: string;
 };
-
-/** Ajustes clave/valor del sitio. */
-export type SiteSettings = Record<string, string>;
 
 /** Métricas agregadas del dashboard. */
 export type DashboardMetrics = {
