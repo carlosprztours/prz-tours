@@ -36,7 +36,7 @@ export const tours = [
     durationMinutes: 480,
     category: "water",
     difficulty: "moderate",
-    ageMin: 8,
+    ageMin: null,
     isFeatured: 1,
     sortOrder: 1,
     translations: {
@@ -125,7 +125,7 @@ export const tours = [
     durationMinutes: 240,
     category: "adventure",
     difficulty: "easy",
-    ageMin: 16,
+    ageMin: null,
     isFeatured: 1,
     sortOrder: 2,
     translations: {
@@ -209,7 +209,7 @@ export const tours = [
     durationMinutes: 240,
     category: "culture",
     difficulty: "easy",
-    ageMin: 5,
+    ageMin: null,
     isFeatured: 1,
     sortOrder: 3,
     translations: {
@@ -283,7 +283,7 @@ export const tours = [
     durationMinutes: 240,
     category: "wildlife",
     difficulty: "easy",
-    ageMin: 4,
+    ageMin: null,
     isFeatured: 0,
     sortOrder: 4,
     translations: {
@@ -366,7 +366,7 @@ export const tours = [
     durationMinutes: 240,
     category: "adventure",
     difficulty: "easy",
-    ageMin: 16,
+    ageMin: null,
     isFeatured: 1,
     sortOrder: 5,
     translations: {
@@ -453,7 +453,7 @@ export const tours = [
     durationMinutes: 300,
     category: "water",
     difficulty: "easy",
-    ageMin: 6,
+    ageMin: null,
     isFeatured: 1,
     sortOrder: 6,
     translations: {
@@ -535,7 +535,7 @@ export const tours = [
     durationMinutes: 540,
     category: "beach",
     difficulty: "easy",
-    ageMin: 4,
+    ageMin: null,
     isFeatured: 1,
     sortOrder: 7,
     translations: {
