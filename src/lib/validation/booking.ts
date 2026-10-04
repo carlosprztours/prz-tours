@@ -63,7 +63,10 @@ export const bookingSchema = z.object({
   cruisePort: z.string().trim().max(80).optional(),
   meetingPoint: z.string().trim().max(160).optional(),
   notes: z.string().trim().max(2000).optional(),
-});
+}).refine(
+  (d) => d.kind === "transfer" || d.guests >= 2,
+  { error: "validation.guestsRange", path: ["guests"] },
+);
 
 export type BookingFormData = z.infer<typeof bookingSchema>;
 

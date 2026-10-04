@@ -114,7 +114,7 @@ export default async function ToursPage({ params, searchParams }: Props) {
             {dict.booking.customCtaBody}
           </p>
           <Link
-            href={`${base}/book?type=custom`}
+            href={`/${locale}/book?type=custom`}
             className="mt-5 inline-flex h-11 items-center rounded-full bg-ocean-700 px-6 text-sm font-bold text-white transition hover:bg-ocean-800"
           >
             {dict.booking.customCtaButton}

@@ -217,12 +217,15 @@ export function BookingForm({
             id="guests"
             name="guests"
             type="number"
-            min={1}
+            min={kind === "transfer" ? 1 : 2}
             max={60}
             defaultValue={2}
             required
             className={inputClass}
           />
+          {kind !== "transfer" && (
+            <p className="mt-1 text-xs text-ink-500">{t.guestsHint}</p>
+          )}
           <FieldError message={errors.guests && resolveError(t, errors.guests)} />
         </div>
       </div>
