@@ -140,6 +140,9 @@ function parseBase(form: FormData) {
     category: (["water", "adventure", "culture", "wildlife", "beach", "other"].includes(category) ? category : "other") as TourCategory,
     difficulty: (["easy", "moderate", "challenging"].includes(difficulty) ? difficulty : "easy") as Difficulty,
     age_min: str(form, "age_min") === "" ? null : Math.max(0, Math.round(num(form, "age_min", 0))),
+    max_group: Math.max(1, Math.round(num(form, "max_group", 20))),
+    cruise_friendly: form.get("cruise_friendly") === "on" ? 1 : 0,
+    deposit_percent: Math.min(100, Math.max(0, Math.round(num(form, "deposit_percent", 0)))),
     pickup_note: str(form, "pickup_note") || null,
     is_featured: form.get("is_featured") === "on" ? 1 : 0,
     is_published: form.get("is_published") === "on" ? 1 : 0,
@@ -206,8 +209,9 @@ async function writeTour(
     const result = await execute(
       `INSERT INTO tours
          (slug, price, price_unit, duration_minutes, category, difficulty,
-          age_min, pickup_note, is_featured, is_published, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          age_min, max_group, cruise_friendly, deposit_percent,
+          pickup_note, is_featured, is_published, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       base.slug,
       base.price,
       base.price_unit,
@@ -215,6 +219,9 @@ async function writeTour(
       base.category,
       base.difficulty,
       base.age_min,
+      base.max_group,
+      base.cruise_friendly,
+      base.deposit_percent,
       base.pickup_note,
       base.is_featured,
       base.is_published,
@@ -224,7 +231,8 @@ async function writeTour(
   } else {
     await execute(
       `UPDATE tours SET slug = ?, price = ?, price_unit = ?, duration_minutes = ?,
-         category = ?, difficulty = ?, age_min = ?, pickup_note = ?,
+         category = ?, difficulty = ?, age_min = ?, max_group = ?,
+         cruise_friendly = ?, deposit_percent = ?, pickup_note = ?,
          is_featured = ?, is_published = ?, sort_order = ?,
          updated_at = datetime('now')
        WHERE id = ?`,
@@ -235,6 +243,9 @@ async function writeTour(
       base.category,
       base.difficulty,
       base.age_min,
+      base.max_group,
+      base.cruise_friendly,
+      base.deposit_percent,
       base.pickup_note,
       base.is_featured,
       base.is_published,

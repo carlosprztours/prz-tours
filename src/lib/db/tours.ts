@@ -24,7 +24,8 @@ const OTHER_LOCALE: Record<Locale, Locale> = { es: "en", en: "es" };
 /** Columnas base de `tours` (para no repetir el SELECT). */
 const TOUR_COLUMNS = `
   id, slug, price, price_unit, duration_minutes, category, difficulty,
-  age_min, pickup_note, is_featured, is_published, sort_order,
+  age_min, pickup_note, max_group, cruise_friendly, deposit_percent,
+  is_featured, is_published, sort_order,
   created_at, updated_at
 `;
 

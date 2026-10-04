@@ -37,6 +37,10 @@ export type BookTourResult =
       reference: string;
       total: number;
       whatsappUrl: string;
+      email: string;
+      currency: string;
+      depositDue: number;
+      canPayDeposit: boolean;
     }
   | {
       ok: false;
@@ -88,6 +92,7 @@ export async function bookTour(
       tourId: data.tourId,
       tourSlug: data.tourSlug,
       transferRouteId: data.transferRouteId,
+      promoCode: data.promoCode,
       customerName: data.customerName,
       customerEmail: data.customerEmail,
       customerPhone: data.customerPhone,
@@ -106,6 +111,13 @@ export async function bookTour(
     });
   } catch (err) {
     console.error("[bookTour] no se pudo crear la reserva:", err);
+    const code = err instanceof Error && "code" in err ? String((err as { code?: string }).code ?? "") : "";
+    if (code === "sold-out") {
+      return { ok: false, errors: { bookedFor: "validation.soldOut" } };
+    }
+    if (code.startsWith("promo-")) {
+      return { ok: false, errors: { promoCode: "validation.promoInvalid" } };
+    }
     return { ok: false, errors: { form: "validation.serverError" } };
   }
 
@@ -141,11 +153,19 @@ export async function bookTour(
     console.error("[bookTour] fallo enviando correos:", err),
   );
 
+  const { isStripeEnabled } = await import("@/lib/payments/stripe");
+  const canPayDeposit =
+    booking.deposit_due > 0 && (await isStripeEnabled().catch(() => false));
+
   return {
     ok: true,
     reference: booking.reference,
     total: booking.total_price,
     whatsappUrl,
+    email: booking.customer_email,
+    currency: booking.currency,
+    depositDue: booking.deposit_due,
+    canPayDeposit,
   };
 }
 

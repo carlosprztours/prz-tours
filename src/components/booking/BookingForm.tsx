@@ -13,13 +13,15 @@
  */
 "use client";
 
-import { useActionState, useMemo } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import { bookTour, type BookTourResult } from "@/lib/actions/book-tour";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { TimePicker } from "@/components/ui/TimePicker";
+import { AvailabilityNote } from "./AvailabilityNote";
+import { DepositButton } from "./DepositButton";
 
 export type BookingOption = {
   id: number;
@@ -87,6 +89,10 @@ export function BookingForm({
     [locale],
   );
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [date, setDate] = useState("");
+  const [tourSel, setTourSel] = useState(
+    preselectedTourId ? String(preselectedTourId) : "",
+  );
 
   if (state.ok) {
     return (
@@ -106,6 +112,22 @@ export function BookingForm({
         <p className="mt-1 font-display text-3xl font-extrabold tracking-wide text-ocean-700">
           {state.reference}
         </p>
+        {state.canPayDeposit && state.depositDue > 0 && (
+          <div className="mx-auto mt-5 max-w-sm rounded-2xl border border-ocean-100 bg-ocean-50 p-4">
+            <p className="mb-3 text-xs text-ink-600">{t.depositInfo}</p>
+            <DepositButton
+              reference={state.reference}
+              email={state.email}
+              amount={state.depositDue}
+              currency={state.currency}
+              labels={{
+                pay: t.depositPay,
+                paying: t.depositPaying,
+                failed: t.depositFailed,
+              }}
+            />
+          </div>
+        )}
         <a
           href={state.whatsappUrl}
           target="_blank"
@@ -134,7 +156,8 @@ export function BookingForm({
             id="tourId"
             name="tourId"
             required
-            defaultValue={preselectedTourId ?? ""}
+            value={tourSel}
+            onChange={(e) => setTourSel(e.target.value)}
             className={inputClass}
           >
             <option value="" disabled>
@@ -198,6 +221,8 @@ export function BookingForm({
             id="bookedFor-button"
             name="bookedFor"
             locale={locale}
+            value={date}
+            onChange={setDate}
             labels={{
               placeholder: t.datePlaceholder,
               today: t.todayLabel,
@@ -207,6 +232,17 @@ export function BookingForm({
             }}
           />
           <p className="mt-1 text-xs text-ink-500">{t.dateHint}</p>
+          {kind === "tour" && tourSel && date && (
+            <AvailabilityNote
+              tourId={Number(tourSel)}
+              date={date}
+              labels={{
+                available: t.spotsLeft,
+                lastSpots: t.lastSpots,
+                soldOut: t.soldOutHint,
+              }}
+            />
+          )}
           <FieldError message={errors.bookedFor && resolveError(t, errors.bookedFor)} />
         </div>
         <div>
@@ -303,6 +339,21 @@ export function BookingForm({
             labels={{ placeholder: t.timePlaceholder, clear: t.anyTimeLabel }}
           />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="promoCode" className="mb-1.5 block text-sm font-bold text-ink-900">
+          {t.promoLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+        </label>
+        <input
+          id="promoCode"
+          name="promoCode"
+          type="text"
+          autoComplete="off"
+          placeholder={t.promoPlaceholder}
+          className={`${inputClass} uppercase`}
+        />
+        <FieldError message={errors.promoCode && resolveError(t, errors.promoCode)} />
       </div>
 
       {kind !== "custom" && (

@@ -20,6 +20,9 @@ type Props = {
   defaultValue?: string;
   /** Fecha mínima seleccionable (por defecto: hoy). null = sin límite. */
   min?: string | null;
+  /** Modo controlado: valor externo + aviso de cambios. */
+  value?: string;
+  onChange?: (iso: string) => void;
   labels: {
     placeholder: string;
     today: string;
@@ -46,9 +49,14 @@ function todayISO(): string {
   return toISO(new Date());
 }
 
-export function DatePicker({ id, name, locale, defaultValue, min, labels }: Props) {
+export function DatePicker({ id, name, locale, defaultValue, min, value: controlled, onChange, labels }: Props) {
   const minISO = min === null ? null : (min ?? todayISO());
-  const [value, setValue] = useState<string>(defaultValue ?? "");
+  const [inner, setInner] = useState<string>(defaultValue ?? "");
+  const value = controlled ?? inner;
+  const setValue = (v: string) => {
+    if (controlled === undefined) setInner(v);
+    onChange?.(v);
+  };
   const [open, setOpen] = useState(false);
 
   const selected = parseISO(value);

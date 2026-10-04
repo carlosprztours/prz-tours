@@ -5,8 +5,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ContactForm } from "@/components/contact/ContactForm";
+import { FaqAccordion } from "@/components/faq/FaqAccordion";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { getSetting } from "@/lib/db/content";
+import { listPublishedFaqs } from "@/lib/db/faqs";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import { DEFAULT_EMAIL, DEFAULT_PHONE_DISPLAY, DEFAULT_WHATSAPP } from "@/lib/site";
 import { whatsappLink } from "@/lib/notify/whatsapp";
@@ -35,13 +37,14 @@ export default async function ContactPage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const [dict, phoneDisplay, email, address, hours, whatsapp] = await Promise.all([
+  const [dict, phoneDisplay, email, address, hours, whatsapp, faqs] = await Promise.all([
     getDictionary(locale),
     getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
     getSetting("email", DEFAULT_EMAIL),
     getSetting("address", "Puerto Plata, República Dominicana"),
     getSetting(`hours_${locale}`, locale === "es" ? "Lun – Sáb · 7:00 AM – 8:00 PM" : "Mon – Sat · 7:00 AM – 8:00 PM"),
     getSetting("whatsapp", DEFAULT_WHATSAPP),
+    listPublishedFaqs(),
   ]);
 
   const cards = [
@@ -81,6 +84,12 @@ export default async function ContactPage({ params }: Props) {
             <ContactForm locale={locale} contact={dict.contact} />
           </div>
         </div>
+
+        <FaqAccordion
+          faqs={faqs}
+          locale={locale}
+          title={locale === "es" ? "Preguntas frecuentes" : "Frequently asked questions"}
+        />
       </div>
     </div>
   );

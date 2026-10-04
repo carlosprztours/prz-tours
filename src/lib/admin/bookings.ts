@@ -24,10 +24,10 @@ const NEXT_STATUS: Record<BookingStatus, BookingStatus[]> = {
 
 export type AdminActionResult = { ok: true } | { ok: false; error: string };
 
-async function staffLocale(raw: string): Promise<Locale> {
+async function staffLocale(raw: string) {
   const locale: Locale = isLocale(raw) ? raw : "en";
-  await verifySession(locale);
-  return locale;
+  const session = await verifySession(locale);
+  return { loc: locale, me: session.user.id, email: session.user.email };
 }
 
 export async function setBookingStatus(
@@ -36,7 +36,7 @@ export async function setBookingStatus(
   to: BookingStatus,
   actorNote?: string,
 ): Promise<AdminActionResult> {
-  const loc = await staffLocale(locale);
+  const { loc, me, email } = await staffLocale(locale);
   const booking = await getBookingById(bookingId);
   if (!booking) return { ok: false, error: "not-found" };
 
@@ -70,6 +70,13 @@ export async function setBookingStatus(
 
   revalidatePath(`/${loc}/admin/bookings`);
   revalidatePath(`/${loc}/admin`);
+  const { logActivity } = await import("./activity");
+  await logActivity(
+    `booking.${to}`,
+    `${booking.reference} (${booking.status} → ${to})`,
+    me,
+    email,
+  );
   return { ok: true };
 }
 
@@ -78,7 +85,7 @@ export async function setBookingPayment(
   bookingId: number,
   payment: PaymentStatus,
 ): Promise<AdminActionResult> {
-  const loc = await staffLocale(locale);
+  const { loc, me, email } = await staffLocale(locale);
   const booking = await getBookingById(bookingId);
   if (!booking) return { ok: false, error: "not-found" };
 
@@ -99,5 +106,7 @@ export async function setBookingPayment(
 
   revalidatePath(`/${loc}/admin/bookings`);
   revalidatePath(`/${loc}/admin`);
+  const { logActivity } = await import("./activity");
+  await logActivity(`booking.pay-${payment}`, booking.reference, me, email);
   return { ok: true };
 }

@@ -43,6 +43,8 @@ export type StringEnvKey =
   | "RESEND_API_TOKEN"
   | "RESEND_FROM"
   | "NOTIFY_EMAIL"
+  | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET"
   | "NEXTJS_ENV";
 
 /** Lee una variable de entorno de Cloudflare (secretos incluidos). */

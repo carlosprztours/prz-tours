@@ -28,14 +28,21 @@ export default async function AdminLayout({ children, params }: Props) {
   const nav = [
     { href: base, label: locale === "es" ? "Panel" : "Dashboard", exact: true },
     { href: `${base}/bookings`, label: locale === "es" ? "Reservas" : "Bookings" },
+    { href: `${base}/occupancy`, label: locale === "es" ? "Ocupación" : "Occupancy" },
     { href: `${base}/tours`, label: locale === "es" ? "Tours" : "Tours" },
     { href: `${base}/transfers`, label: locale === "es" ? "Traslados" : "Transfers" },
     { href: `${base}/testimonials`, label: locale === "es" ? "Opiniones" : "Reviews" },
+    { href: `${base}/promos`, label: locale === "es" ? "Promos" : "Promos" },
+    { href: `${base}/blog`, label: "Blog" },
+    { href: `${base}/faq`, label: "FAQ" },
     { href: `${base}/gallery`, label: locale === "es" ? "Galería" : "Gallery" },
     { href: `${base}/messages`, label: locale === "es" ? "Mensajes" : "Messages" },
     { href: `${base}/settings`, label: locale === "es" ? "Ajustes" : "Settings" },
     ...(session.user.role === "admin"
-      ? [{ href: `${base}/users`, label: locale === "es" ? "Usuarios" : "Users" }]
+      ? [
+          { href: `${base}/users`, label: locale === "es" ? "Usuarios" : "Users" },
+          { href: `${base}/activity`, label: locale === "es" ? "Actividad" : "Activity" },
+        ]
       : []),
   ];
 

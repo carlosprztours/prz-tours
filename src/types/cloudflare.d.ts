@@ -23,6 +23,10 @@ declare global {
     AUTH_SECRET?: string;
     /** Clave de la API de Resend para enviar correos. */
     RESEND_API_TOKEN?: string;
+    /** Clave secreta de Stripe (cobros). */
+    STRIPE_SECRET_KEY?: string;
+    /** Secreto del webhook de Stripe (verificación de firma). */
+    STRIPE_WEBHOOK_SECRET?: string;
     /** Dominio remitente verificado en Resend. */
     RESEND_FROM?: string;
     /** Correo al que se notifican las reservas nuevas. */

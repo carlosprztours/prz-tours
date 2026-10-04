@@ -14,6 +14,7 @@ import { listBookingsByEmail } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { ProfileForm } from "./ProfileForm";
+import { PasswordForm } from "./PasswordForm";
 
 type Props = {
   params: Promise<{ lang: string }>;
@@ -114,6 +115,43 @@ export default async function AccountPage({ params }: Props) {
               phone: profile?.phone ?? "",
             }}
             labels={copy.profile}
+          />
+        </div>
+
+        <div className="mt-5">
+          <PasswordForm
+            locale={locale}
+            labels={
+              es
+                ? {
+                    title: "Cambiar contraseña",
+                    current: "Contraseña actual",
+                    next: "Nueva contraseña",
+                    hint: "Mínimo 8 caracteres. Se cerrarán tus otras sesiones.",
+                    save: "Cambiar contraseña",
+                    saving: "Cambiando…",
+                    saved: "Contraseña actualizada.",
+                    errors: {
+                      weak: "La nueva debe tener al menos 8 caracteres.",
+                      same: "La nueva debe ser distinta a la actual.",
+                      wrong: "La actual no es correcta.",
+                    },
+                  }
+                : {
+                    title: "Change password",
+                    current: "Current password",
+                    next: "New password",
+                    hint: "At least 8 characters. Your other sessions will close.",
+                    save: "Change password",
+                    saving: "Changing…",
+                    saved: "Password updated.",
+                    errors: {
+                      weak: "The new one must be at least 8 characters.",
+                      same: "The new one must differ from the current.",
+                      wrong: "The current one is incorrect.",
+                    },
+                  }
+            }
           />
         </div>
 

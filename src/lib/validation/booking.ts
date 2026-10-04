@@ -51,6 +51,7 @@ export const bookingSchema = z.object({
   tourId: z.coerce.number().int().positive().optional(),
   tourSlug: z.string().trim().max(120).optional(),
   transferRouteId: z.coerce.number().int().positive().optional(),
+  promoCode: z.string().trim().max(30).optional(),
   customerName: nameSchema,
   customerEmail: emailSchema,
   customerPhone: phoneSchema,

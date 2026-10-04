@@ -67,9 +67,30 @@ export default async function BookingsPage({ params, searchParams }: Props) {
 
   return (
     <div className="grid gap-5">
-      <h1 className="font-display text-2xl font-extrabold text-ink-900">
-        {t.bookings} · {total}
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl font-extrabold text-ink-900">
+          {t.bookings} · {total}
+        </h1>
+        <span className="flex gap-2">
+          <Link
+            href={`/${locale}/admin/occupancy`}
+            className="inline-flex h-10 items-center rounded-full border border-sand-200 bg-white px-4 text-sm font-bold text-ink-700 transition hover:ring-1 hover:ring-ocean-300"
+          >
+            {locale === "es" ? "Ocupación" : "Occupancy"}
+          </Link>
+          <a
+            href={`/api/admin/export/bookings?${new URLSearchParams({
+              ...(status !== "all" ? { estado: status } : {}),
+              ...(sp.q ? { q: sp.q } : {}),
+              ...(sp.desde ? { desde: sp.desde } : {}),
+              ...(sp.hasta ? { hasta: sp.hasta } : {}),
+            }).toString()}`}
+            className="inline-flex h-10 items-center rounded-full bg-ocean-700 px-4 text-sm font-bold text-white transition hover:bg-ocean-800"
+          >
+            CSV ↓
+          </a>
+        </span>
+      </div>
 
       <form method="get" className="flex flex-wrap items-end gap-3 rounded-2xl border border-sand-200 bg-white p-4">
         <label className="grid gap-1 text-xs font-bold text-ink-500">

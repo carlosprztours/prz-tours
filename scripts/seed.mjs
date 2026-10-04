@@ -14,7 +14,7 @@ import { randomBytes } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { tours, transferRoutes, testimonials, gallery, settings } from "./seed-data.mjs";
+import { articles, faqs, tours, transferRoutes, testimonials, gallery, settings } from "./seed-data.mjs";
 import { d1ExecuteFile } from "./lib/run-wrangler.mjs";
 
 const remote = process.argv.includes("--remote");
@@ -43,6 +43,9 @@ const wipeTables = [
   "transfer_routes",
   "testimonials",
   "gallery_images",
+  "faqs",
+  "article_translations",
+  "articles",
   "messages",
   "settings",
 ];
@@ -67,10 +70,12 @@ for (const tour of tours) {
   sql(`
     INSERT INTO tours
       (slug, price, price_unit, duration_minutes, category, difficulty,
-       age_min, pickup_note, is_featured, is_published, sort_order)
+       age_min, max_group, cruise_friendly, deposit_percent,
+       pickup_note, is_featured, is_published, sort_order)
     VALUES
       (${q(tour.slug)}, ${tour.price}, ${q(tour.priceUnit)}, ${tour.durationMinutes},
        ${q(tour.category)}, ${q(tour.difficulty)}, ${tour.ageMin ?? "NULL"},
+       ${tour.maxGroup ?? 20}, ${tour.cruiseFriendly ?? 0}, ${tour.depositPercent ?? 0},
        ${q(tour.pickupNote ?? null)}, ${tour.isFeatured}, 1, ${tour.sortOrder});
   `);
 
@@ -146,6 +151,36 @@ gallery.forEach((g, i) => {
     VALUES (${q(g.url)}, ${q(g.alt)}, ${q(g.caption ?? null)}, 1, ${i});
   `);
 });
+
+// ── 7. FAQs ───────────────────────────────────────────────────────────────
+faqs.forEach((f, i) => {
+  sql(`
+    INSERT INTO faqs
+      (question_es, answer_es, question_en, answer_en, sort_order, is_published)
+    VALUES
+      (${q(f.questionEs)}, ${q(f.answerEs)}, ${q(f.questionEn)}, ${q(f.answerEn)},
+       ${f.sortOrder ?? i}, 1);
+  `);
+});
+
+// ── 8. Artículos ──────────────────────────────────────────────────────────
+for (const a of articles) {
+  sql(`
+    INSERT INTO articles (slug, cover_url, is_published, sort_order)
+    VALUES (${q(a.slug)}, ${q(a.coverUrl ?? null)}, 1, ${a.sortOrder ?? 0});
+  `);
+  const rowId = `(SELECT id FROM articles WHERE slug = ${q(a.slug)})`;
+  for (const locale of ["es", "en"]) {
+    const t = a.translations[locale];
+    sql(`
+      INSERT INTO article_translations
+        (article_id, locale, title, excerpt, body, seo_title, seo_description)
+      VALUES
+        (${rowId}, ${q(locale)}, ${q(t.title)}, ${q(t.excerpt)}, ${q(t.description)},
+         ${q(t.seoTitle ?? null)}, ${q(t.seoDescription ?? null)});
+    `);
+  }
+}
 
 // ── Ejecutar ────────────────────────────────────────────────────────────────
 // Chunking para no exceder el límite de longitud de sentencia de SQLite

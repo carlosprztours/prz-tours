@@ -75,6 +75,11 @@ export function TourCard({ tour, locale, dict }: Props) {
         <span className="absolute left-3 top-3 rounded-full bg-ocean-950/80 px-3 py-1 text-xs font-bold text-white backdrop-blur">
           {categoryIcons[tour.category] ?? ""} {categoryLabel(tour.category, dict.tours)}
         </span>
+        {tour.cruise_friendly === 1 && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-ocean-800 backdrop-blur">
+            🛳️ {dict.tours.cruiseBadge}
+          </span>
+        )}
       </Link>
 
       <div className="flex flex-1 flex-col p-5">

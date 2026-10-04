@@ -6,7 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { adminTexts } from "@/lib/admin/texts";
-import { getBookingById, listBookingEvents } from "@/lib/db/bookings";
+import { getBookingById, listBookingEvents, listBookingsByEmail } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { BookingActions } from "./BookingActions";
@@ -26,7 +26,11 @@ export default async function BookingDetailPage({ params }: Props) {
 
   const booking = await getBookingById(numericId);
   if (!booking) notFound();
-  const events = await listBookingEvents(booking.id);
+  const [events, history] = await Promise.all([
+    listBookingEvents(booking.id),
+    listBookingsByEmail(booking.customer_email, 10),
+  ]);
+  const others = history.filter((h) => h.id !== booking.id);
 
   const rows: [string, string][] = [
     [t.reference, booking.reference],
@@ -89,6 +93,31 @@ export default async function BookingDetailPage({ params }: Props) {
               {events.length === 0 && <li className="text-ink-500">{t.noData}</li>}
             </ul>
           </section>
+
+          {others.length > 0 && (
+            <section className="rounded-2xl border border-sand-200 bg-white p-5">
+              <h2 className="font-display text-lg font-bold text-ink-900">
+                {locale === "es" ? "Otras reservas del cliente" : "Other bookings by this customer"}
+              </h2>
+              <ul className="mt-3 space-y-2 text-sm">
+                {others.map((o) => (
+                  <li key={o.id}>
+                    <Link
+                      href={`/${locale}/admin/bookings/${o.id}`}
+                      className="flex items-center justify-between gap-3 border-b border-sand-100 pb-2 font-semibold text-ocean-700 hover:underline last:border-0"
+                    >
+                      <span>
+                        {o.reference} · {o.tour_title || o.transfer_label || "—"}
+                      </span>
+                      <span className="shrink-0 text-ink-600">
+                        {o.status} · ${o.total_price}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         <aside className="h-fit rounded-2xl border border-sand-200 bg-white p-5 lg:sticky lg:top-24">

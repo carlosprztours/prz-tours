@@ -53,7 +53,7 @@ export async function createStaffUser(
   _prevState: UsersResult | undefined,
   formData: FormData,
 ): Promise<UsersResult> {
-  const { locale } = await requireAdmin(rawLocale);
+  const { locale, me } = await requireAdmin(rawLocale);
 
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -86,6 +86,8 @@ export async function createStaffUser(
   }
 
   revalidatePath(`/${locale}/admin/users`);
+  const { logActivity } = await import("./activity");
+  await logActivity("user.create", `${email} (${role})`, me, "admin");
   return { ok: true };
 }
 
@@ -100,6 +102,8 @@ export async function setStaffRole(
 
   await execute(`UPDATE users SET role = ?, updated_at = datetime('now') WHERE id = ?`, role, userId);
   revalidatePath(`/${locale}/admin/users`);
+  const { logActivity } = await import("./activity");
+  await logActivity("user.role", `#${userId} → ${role}`, me, "admin");
   return { ok: true };
 }
 
@@ -109,7 +113,7 @@ export async function promoteCustomer(
   userId: number,
   role: Extract<UserRole, "admin" | "editor"> = "editor",
 ): Promise<UsersResult> {
-  const { locale } = await requireAdmin(rawLocale);
+  const { locale, me } = await requireAdmin(rawLocale);
   await execute(
     `UPDATE users SET role = ?, updated_at = datetime('now')
      WHERE id = ? AND role = 'customer'`,
@@ -117,6 +121,8 @@ export async function promoteCustomer(
     userId,
   );
   revalidatePath(`/${locale}/admin/users`);
+  const { logActivity } = await import("./activity");
+  await logActivity("user.promote", `#${userId} → ${role}`, me, "admin");
   return { ok: true };
 }
 
@@ -135,6 +141,8 @@ export async function setUserActive(
   );
   if (!active) await revokeAllUserSessions(userId);
   revalidatePath(`/${locale}/admin/users`);
+  const { logActivity } = await import("./activity");
+  await logActivity(active ? "user.activate" : "user.deactivate", `#${userId}`, me, "admin");
   return { ok: true };
 }
 
@@ -143,7 +151,7 @@ export async function resetUserPassword(
   userId: number,
   formData: FormData,
 ): Promise<UsersResult> {
-  const { locale } = await requireAdmin(rawLocale);
+  const { locale, me } = await requireAdmin(rawLocale);
   const password = String(formData.get("password") ?? "");
   if (password.length < 8) return { ok: false, error: "weak-password" };
 
@@ -154,6 +162,8 @@ export async function resetUserPassword(
   );
   await revokeAllUserSessions(userId);
   revalidatePath(`/${locale}/admin/users`);
+  const { logActivity } = await import("./activity");
+  await logActivity("user.password-reset", `#${userId}`, me, "admin");
   return { ok: true };
 }
 
@@ -167,5 +177,7 @@ export async function deleteUser(
   await revokeAllUserSessions(userId);
   await execute(`DELETE FROM users WHERE id = ?`, userId);
   revalidatePath(`/${locale}/admin/users`);
+  const { logActivity } = await import("./activity");
+  await logActivity("user.delete", `#${userId}`, me, "admin");
   return { ok: true };
 }

@@ -31,7 +31,20 @@ export async function listPublishedTransferRoutes(): Promise<TransferRoute[]> {
 
 export async function listPublishedTestimonials(
   limit = 12,
+  tourSlug?: string,
 ): Promise<Testimonial[]> {
+  if (tourSlug) {
+    return query<Testimonial>(
+      `SELECT id, author_name, author_origin, rating, text_es, text_en,
+              tour_slug, avatar_url, is_published, sort_order, created_at
+       FROM testimonials
+       WHERE is_published = 1 AND tour_slug = ?
+       ORDER BY sort_order ASC, id ASC
+       LIMIT ?`,
+      tourSlug,
+      limit,
+    );
+  }
   return query<Testimonial>(
     `SELECT id, author_name, author_origin, rating, text_es, text_en,
             tour_slug, avatar_url, is_published, sort_order, created_at

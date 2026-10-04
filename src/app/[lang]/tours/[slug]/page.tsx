@@ -13,9 +13,11 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { TourCard, formatDuration } from "@/components/tours/TourCard";
 import { TourGallery } from "@/components/tours/TourGallery";
 import { TourInfo } from "@/components/tours/TourInfo";
+import { TourReviews } from "@/components/tours/TourReviews";
 import { formatPrice, priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import { getBookingDefaults } from "@/lib/db/customer";
+import { listPublishedTestimonials } from "@/lib/db/content";
 import { getTourBySlug, listRelatedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
@@ -58,10 +60,11 @@ export default async function TourDetailPage({ params }: Props) {
   const tour = await getTourBySlug(slug, locale);
   if (!tour) notFound();
 
-  const [dict, related, defaults] = await Promise.all([
+  const [dict, related, defaults, tourReviews] = await Promise.all([
     getDictionary(locale),
     listRelatedTours(tour.id, tour.category, locale),
     getBookingDefaults(),
+    listPublishedTestimonials(6, slug),
   ]);
 
   const paragraphs = tour.translation.description
@@ -116,8 +119,10 @@ export default async function TourDetailPage({ params }: Props) {
               </h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-500">
                 <span>{formatDuration(tour.duration_minutes, dict.common)}</span>
-                {tour.age_min != null && tour.age_min > 0 && (
-                  <span>{dict.tours.ageMin(tour.age_min)}</span>
+                {tour.cruise_friendly === 1 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-ocean-50 px-2.5 py-0.5 text-xs font-bold text-ocean-800">
+                    🛳️ {dict.tours.cruiseBadge}
+                  </span>
                 )}
               </p>
 
@@ -178,6 +183,43 @@ export default async function TourDetailPage({ params }: Props) {
               </div>
             </section>
           )}
+
+          <TourReviews
+            locale={locale}
+            tourSlug={slug}
+            reviews={tourReviews}
+            labels={
+              locale === "es"
+                ? {
+                    title: "Opiniones de este tour",
+                    formTitle: "¿Hiciste este tour? Cuéntanos",
+                    nameLabel: "Tu nombre",
+                    namePlaceholder: "Tu nombre",
+                    ratingLabel: "Tu valoración",
+                    messageLabel: "Tu opinión",
+                    messagePlaceholder: "Cuéntanos qué tal estuvo… (mínimo 10 caracteres)",
+                    submit: "Publicar opinión",
+                    submitting: "Publicando…",
+                    successTitle: "¡Gracias por tu opinión!",
+                    successBody: "La revisaremos y la publicaremos enseguida.",
+                    errorBody: "No pudimos guardar tu opinión. Inténtalo de nuevo.",
+                  }
+                : {
+                    title: "Reviews of this tour",
+                    formTitle: "Did this tour? Tell us about it",
+                    nameLabel: "Your name",
+                    namePlaceholder: "Your name",
+                    ratingLabel: "Your rating",
+                    messageLabel: "Your review",
+                    messagePlaceholder: "Tell us how it went… (at least 10 characters)",
+                    submit: "Post review",
+                    submitting: "Posting…",
+                    successTitle: "Thanks for your review!",
+                    successBody: "We'll review it and publish it shortly.",
+                    errorBody: "We couldn't save your review. Please try again.",
+                  }
+            }
+          />
         </div>
       </div>
     </>

@@ -20,6 +20,7 @@ export type CreateBookingInput = {
   tourId?: number;
   tourSlug?: string;
   transferRouteId?: number;
+  promoCode?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -43,6 +44,10 @@ export type BookingQuote = {
   currency: string;
   tourTitle: string;
   transferLabel: string | null;
+  discount: number;
+  promoId: number | null;
+  promoCode: string | null;
+  depositDue: number;
 };
 
 function makeReference(): string {
@@ -60,6 +65,14 @@ function makeReference(): string {
 export async function quoteBooking(input: CreateBookingInput): Promise<BookingQuote> {
   const currency = "USD";
 
+  let unitPrice = 0;
+  let baseTotal = 0;
+  let tourTitle = "";
+  let transferLabel: string | null = null;
+  let depositPercent = 0;
+  let maxGroup = 20;
+  let tourId: number | null = null;
+
   if (input.kind === "transfer" && input.transferRouteId) {
     const route = await queryOne<{
       destination: string;
@@ -72,22 +85,21 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
       input.transferRouteId,
     );
     if (!route) throw new Error("Transfer route not found");
-    const unitPrice = input.guests <= 5 ? route.price_1_5 : route.price_6_11;
-    return {
-      unitPrice,
-      totalPrice: unitPrice,
-      currency,
-      tourTitle: "",
-      transferLabel: `${route.origin_label} → ${route.destination}`,
-    };
-  }
-
-  if (input.tourId) {
+    unitPrice = input.guests <= 5 ? route.price_1_5 : route.price_6_11;
+    baseTotal = unitPrice;
+    transferLabel = `${route.origin_label} → ${route.destination}`;
+  } else if (input.tourId) {
     const tour = await queryOne<{
       price: number;
       price_unit: string;
       is_published: number;
-    }>(`SELECT price, price_unit, is_published FROM tours WHERE id = ?`, input.tourId);
+      deposit_percent: number;
+      max_group: number;
+    }>(
+      `SELECT price, price_unit, is_published, deposit_percent, max_group
+       FROM tours WHERE id = ?`,
+      input.tourId,
+    );
     if (!tour || tour.is_published !== 1) throw new Error("Tour not found");
 
     const text = await queryOne<{ title: string }>(
@@ -103,25 +115,65 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
         );
 
     // Precio por vehículo o grupo: se cobra una vez. Por persona: por huésped.
-    const totalPrice =
+    baseTotal =
       tour.price_unit === "person" ? tour.price * input.guests : tour.price;
-    return {
-      unitPrice: tour.price,
-      totalPrice: Math.round(totalPrice * 100) / 100,
-      currency,
-      tourTitle: text?.title ?? fallback?.title ?? "",
-      transferLabel: null,
-    };
+    unitPrice = tour.price;
+    tourTitle = text?.title ?? fallback?.title ?? "";
+    depositPercent = tour.deposit_percent ?? 0;
+    maxGroup = tour.max_group ?? 20;
+    tourId = input.tourId;
+  } else {
+    // Reserva personalizada: sin precio automático (lo fija el admin).
+    tourTitle = input.locale === "es" ? "Tour personalizado" : "Custom tour";
   }
 
-  // Reserva personalizada: sin precio automático (lo fija el admin).
-  // El título visible es genérico; el detalle va en `notes`.
+  // Capacidad: si hay fecha y tour, no se puede exceder el cupo del día.
+  if (tourId && input.bookedFor && /^\d{4}-\d{2}-\d{2}$/.test(input.bookedFor)) {
+    const { getBookedGuests } = await import("./availability");
+    const booked = await getBookedGuests(tourId, input.bookedFor);
+    const remaining = Math.max(0, (maxGroup || 20) - booked);
+    if (input.guests > remaining) {
+      const err = new Error("Sold out for this date") as Error & {
+        code?: string;
+        remaining?: number;
+      };
+      err.code = "sold-out";
+      err.remaining = remaining;
+      throw err;
+    }
+  }
+
+  // Promo: se valida y descuenta del total.
+  let discount = 0;
+  let promoId: number | null = null;
+  let promoCode: string | null = null;
+  if (input.promoCode?.trim()) {
+    const { checkPromo } = await import("./promos");
+    const checked = await checkPromo(input.promoCode, baseTotal);
+    if (!checked.ok) {
+      const err = new Error("Invalid promo") as Error & { code?: string };
+      err.code = `promo-${checked.error}`;
+      throw err;
+    }
+    discount = checked.discount;
+    promoId = checked.promo.id;
+    promoCode = checked.promo.code;
+  }
+
+  const totalPrice = Math.round((baseTotal - discount) * 100) / 100;
+  const depositDue =
+    depositPercent > 0 ? Math.round(((totalPrice * depositPercent) / 100) * 100) / 100 : 0;
+
   return {
-    unitPrice: 0,
-    totalPrice: 0,
+    unitPrice,
+    totalPrice,
     currency,
-    tourTitle: input.locale === "es" ? "Tour personalizado" : "Custom tour",
-    transferLabel: null,
+    tourTitle,
+    transferLabel,
+    discount: Math.round(discount * 100) / 100,
+    promoId,
+    promoCode,
+    depositDue,
   };
 }
 
@@ -141,10 +193,11 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
             transfer_route_id, transfer_label,
             customer_name, customer_email, customer_phone, customer_country,
             guests, unit_price, total_price, currency,
+            promo_code, discount_amount, deposit_due,
             booked_for, pickup_time, hotel, airport, cruise_port, meeting_point,
             locale, notes, status, payment_status, source, client_ip)
          VALUES
-           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
+           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
         reference,
         input.kind,
         input.tourId ?? null,
@@ -160,6 +213,9 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
         quote.unitPrice,
         quote.totalPrice,
         quote.currency,
+        quote.promoCode,
+        quote.discount,
+        quote.depositDue,
         input.bookedFor ?? null,
         input.pickupTime ?? null,
         input.hotel ?? null,
@@ -188,6 +244,13 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   }
 
   if (!booking) throw new Error("Could not create booking");
+
+  if (quote.promoId) {
+    const { consumePromoUse } = await import("./promos");
+    await consumePromoUse(quote.promoId).catch((err) =>
+      console.error("[bookings] consumePromoUse error:", err),
+    );
+  }
 
   await execute(
     `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
@@ -233,7 +296,7 @@ export async function countBookings(filters: BookingFilters): Promise<number> {
 
 export async function listBookings(filters: BookingFilters): Promise<Booking[]> {
   const { where, params } = buildWhere(filters);
-  const limit = Math.min(Math.max(Number(filters.limit) || 25, 1), 100);
+  const limit = Math.min(Math.max(Number(filters.limit) || 25, 1), 2000);
   const offset = Math.max(Number(filters.offset) || 0, 0);
   return query<Booking>(
     `SELECT * FROM bookings ${where}

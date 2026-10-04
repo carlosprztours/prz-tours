@@ -3,6 +3,7 @@
  */
 import type { MetadataRoute } from "next";
 
+import { listPublishedArticleSlugs } from "@/lib/db/articles";
 import { listPublishedTourSlugs } from "@/lib/db/tours";
 import { locales } from "@/lib/i18n/config";
 
@@ -10,7 +11,7 @@ import { locales } from "@/lib/i18n/config";
 export const dynamic = "force-dynamic";
 
 const BASE = "https://pereztours.cloud";
-const STATIC_ROUTES = ["", "/tours", "/transfers", "/about", "/contact", "/book"];
+const STATIC_ROUTES = ["", "/tours", "/transfers", "/about", "/contact", "/book", "/blog", "/track"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let slugs: string[] = [];
@@ -18,6 +19,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     slugs = await listPublishedTourSlugs();
   } catch (err) {
     console.error("[sitemap] slugs error:", err);
+  }
+  let articleSlugs: string[] = [];
+  try {
+    articleSlugs = await listPublishedArticleSlugs();
+  } catch (err) {
+    console.error("[sitemap] article slugs error:", err);
   }
 
   const entries: MetadataRoute.Sitemap = [];
@@ -36,6 +43,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(),
         changeFrequency: "weekly",
         priority: 0.8,
+      });
+    }
+    for (const slug of articleSlugs) {
+      entries.push({
+        url: `${BASE}/${lang}/blog/${slug}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.6,
       });
     }
   }

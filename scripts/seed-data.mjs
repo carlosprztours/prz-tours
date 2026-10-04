@@ -37,7 +37,9 @@ export const tours = [
     category: "water",
     difficulty: "moderate",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 1,
+    cruiseFriendly: 1,
     sortOrder: 1,
     translations: {
       es: {
@@ -126,7 +128,9 @@ export const tours = [
     category: "adventure",
     difficulty: "easy",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 1,
+    cruiseFriendly: 1,
     sortOrder: 2,
     translations: {
       es: {
@@ -210,7 +214,9 @@ export const tours = [
     category: "culture",
     difficulty: "easy",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 1,
+    cruiseFriendly: 1,
     sortOrder: 3,
     translations: {
       es: {
@@ -284,7 +290,9 @@ export const tours = [
     category: "wildlife",
     difficulty: "easy",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 0,
+    cruiseFriendly: 1,
     sortOrder: 4,
     translations: {
       es: {
@@ -367,7 +375,9 @@ export const tours = [
     category: "adventure",
     difficulty: "easy",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 1,
+    cruiseFriendly: 1,
     sortOrder: 5,
     translations: {
       es: {
@@ -454,7 +464,9 @@ export const tours = [
     category: "water",
     difficulty: "easy",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 1,
+    cruiseFriendly: 1,
     sortOrder: 6,
     translations: {
       es: {
@@ -536,7 +548,9 @@ export const tours = [
     category: "beach",
     difficulty: "easy",
     ageMin: null,
+    maxGroup: 20,
     isFeatured: 1,
+    cruiseFriendly: 0,
     sortOrder: 7,
     translations: {
       es: {
@@ -786,5 +800,110 @@ export const gallery = [
     url: "/img/about-quality.jpg",
     alt: "Guía local durante una excursión",
     caption: "Atención personalizada",
+  },
+];
+
+export const faqs = [
+  {
+    questionEs: "¿Buscan y devuelven al hotel?",
+    answerEs:
+      "Sí. Todos nuestros tours y traslados incluyen recogida y regreso en tu hotel, resort o terminal de cruceros de la zona de Puerto Plata. Solo indícanos dónde te hospedas al reservar.",
+    questionEn: "Do you pick up and drop off at the hotel?",
+    answerEn:
+      "Yes. All our tours and transfers include pickup and drop-off at your hotel, resort or cruise terminal in the Puerto Plata area. Just tell us where you're staying when you book.",
+    sortOrder: 1,
+  },
+  {
+    questionEs: "¿Cómo confirmo mi reserva?",
+    answerEs:
+      "Al reservar recibirás un número de referencia y un enlace de WhatsApp. Escríbenos por ahí y te confirmamos en minutos. También puedes consultar el estado cuando quieras en la página Mi reserva.",
+    questionEn: "How do I confirm my booking?",
+    answerEn:
+      "When you book you'll get a reference number and a WhatsApp link. Message us there and we'll confirm within minutes. You can also check the status anytime on the My booking page.",
+    sortOrder: 2,
+  },
+  {
+    questionEs: "¿Qué debo llevar a los tours?",
+    answerEs:
+      "Depende del tour: cada ficha indica qué incluye y qué llevar. En general: bañador, toalla, protector solar, zapatos cómodos y efectivo para recuerdos o propinas. Nosotros ponemos el equipo de seguridad y los guías.",
+    questionEn: "What should I bring on the tours?",
+    answerEn:
+      "It depends on the tour: each page lists what's included and what to bring. Generally: swimwear, towel, sunscreen, comfortable shoes and cash for souvenirs or tips. We provide the safety gear and guides.",
+    sortOrder: 3,
+  },
+  {
+    questionEs: "¿Los tours sirven si llego en crucero?",
+    answerEs:
+      "Sí. Los tours marcados como aptos para cruceros están calculados para volver al puerto con margen. Indícanos tu barco y hora de salida al reservar y lo coordinamos.",
+    questionEn: "Do the tours work if I arrive by cruise ship?",
+    answerEn:
+      "Yes. Tours marked as cruise friendly are timed to get you back to port with margin. Tell us your ship and departure time when you book and we'll coordinate.",
+    sortOrder: 4,
+  },
+  {
+    questionEs: "¿Cómo funcionan los traslados?",
+    answerEs:
+      "Traslados privados puerta a puerta desde cualquier aeropuerto del país. El precio es por trayecto según el tamaño del grupo (1–5 o 6–11 personas). Te esperamos con un cartel con tu nombre.",
+    questionEn: "How do transfers work?",
+    answerEn:
+      "Private door-to-door transfers from any airport in the country. The price is per trip based on group size (1–5 or 6–11 people). We'll be waiting with a sign with your name.",
+    sortOrder: 5,
+  },
+];
+
+export const articles = [
+  {
+    slug: "que-hacer-puerto-plata",
+    coverUrl: "/img/city-card.png",
+    sortOrder: 1,
+    translations: {
+      es: {
+        title: "Qué hacer en Puerto Plata: guía de un día perfecto",
+        excerpt:
+          "Cascadas por la mañana, centro histórico al mediodía y playa al atardecer: así se arma el día ideal en la costa norte.",
+        description:
+          "Empieza temprano en las Cascadas de Damajagua, cuando el agua está más fresca y hay menos gente. Al mediodía recorre el centro histórico: Fortaleza de San Felipe, Umbrella Street y una cata de ron. Cierra el día en la playa de Sosúa o con un paseo por el malecón.\n\nSi vienes en crucero, el city tour de medio día te devuelve al puerto con margen de sobra. Y si te quedas varios días, reserva Cayo Arena para el mejor día de playa de tu viaje.",
+        seoTitle: "Qué hacer en Puerto Plata en 1 día | Guía local",
+        seoDescription:
+          "Guía local de un día perfecto en Puerto Plata: cascadas, centro histórico y playa, con tiempos y consejos.",
+      },
+      en: {
+        title: "What to do in Puerto Plata: a perfect-day guide",
+        excerpt:
+          "Waterfalls in the morning, historic downtown at noon, beach at sunset: how to build the ideal day on the north coast.",
+        description:
+          "Start early at the Damajagua Waterfalls, when the water is freshest and crowds are thinnest. At noon walk the historic center: San Felipe Fortress, Umbrella Street and a rum tasting. End the day at Sosúa beach or strolling the boardwalk.\n\nIf you're arriving by cruise ship, the half-day city tour gets you back to port with plenty of margin. And if you're staying several days, save Cayo Arena for the best beach day of your trip.",
+        seoTitle: "What to do in Puerto Plata in 1 day | Local guide",
+        seoDescription:
+          "Local guide to a perfect day in Puerto Plata: waterfalls, historic center and beach, with timing and tips.",
+      },
+    },
+  },
+  {
+    slug: "damajagua-consejos",
+    coverUrl: "/img/waterfall-hero.png",
+    sortOrder: 2,
+    translations: {
+      es: {
+        title: "Damajagua sin estrés: 7 consejos antes de ir",
+        excerpt:
+          "Zapatos, nivel de agua, qué salto evitar y cómo sale la foto: todo lo que conviene saber antes de las 27 cascadas.",
+        description:
+          "Primero: los zapatos de agua con buen agarre son obligatorios, no opcionales. Segundo: no necesitas saber nadar como profesional, pero sí sentirte cómodo en el agua; hay rutas para todos los niveles. Tercero: lleva poco encima, todo se moja.\n\nNuestros guías hacen el recorrido todos los días y adaptan la ruta al grupo. Después del descenso te espera un almuerzo típico dominicano que entra de maravilla.",
+        seoTitle: "Consejos para las Cascadas de Damajagua | Qué llevar",
+        seoDescription:
+          "7 consejos prácticos para disfrutar las 27 cascadas de Damajagua: zapatos, niveles, fotos y almuerzo.",
+      },
+      en: {
+        title: "Damajagua stress-free: 7 tips before you go",
+        excerpt:
+          "Shoes, water levels, which jump to skip and how the photo turns out: everything worth knowing before the 27 waterfalls.",
+        description:
+          "First: grippy water shoes are mandatory, not optional. Second: you don't need to swim like a pro, but you should feel comfortable in the water; there are routes for every level. Third: carry little with you — everything gets wet.\n\nOur guides run the route every day and adapt it to the group. After the descent, a Dominican lunch hits the spot.",
+        seoTitle: "Tips for the Damajagua Waterfalls | What to bring",
+        seoDescription:
+          "7 practical tips for enjoying the 27 waterfalls of Damajagua: shoes, levels, photos and lunch.",
+      },
+    },
   },
 ];

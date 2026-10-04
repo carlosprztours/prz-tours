@@ -11,7 +11,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { settings, testimonials, tours } from "./seed-data.mjs";
+import { settings, testimonials, tours, articles, faqs } from "./seed-data.mjs";
 import { d1ExecuteFile } from "./lib/run-wrangler.mjs";
 
 const q = (v) =>
@@ -41,6 +41,32 @@ for (const [key, value] of Object.entries(settings)) {
   out.push(
     `INSERT INTO settings (key, value, updated_at) VALUES (${q(key)}, ${q(value)}, datetime('now')) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now');`,
   );
+}
+
+for (const f of faqs) {
+  // Sin UNIQUE en faqs: inserta solo si la pregunta no existe.
+  out.push(
+    `INSERT INTO faqs (question_es, answer_es, question_en, answer_en, sort_order, is_published)
+     SELECT ${q(f.questionEs)}, ${q(f.answerEs)}, ${q(f.questionEn)}, ${q(f.answerEn)}, ${f.sortOrder ?? 0}, 1
+     WHERE NOT EXISTS (SELECT 1 FROM faqs WHERE question_es = ${q(f.questionEs)});`,
+  );
+}
+
+for (const a of articles) {
+  out.push(
+    `INSERT INTO articles (slug, cover_url, is_published, sort_order)
+     VALUES (${q(a.slug)}, ${q(a.coverUrl ?? null)}, 1, ${a.sortOrder ?? 0})
+     ON CONFLICT(slug) DO UPDATE SET cover_url = excluded.cover_url, sort_order = excluded.sort_order;`,
+  );
+  const rowId = `(SELECT id FROM articles WHERE slug = ${q(a.slug)})`;
+  for (const locale of ["es", "en"]) {
+    const t = a.translations[locale];
+    out.push(
+      `INSERT INTO article_translations (article_id, locale, title, excerpt, body, seo_title, seo_description)
+       VALUES (${rowId}, ${q(locale)}, ${q(t.title)}, ${q(t.excerpt)}, ${q(t.description)}, ${q(t.seoTitle ?? null)}, ${q(t.seoDescription ?? null)})
+       ON CONFLICT(article_id, locale) DO UPDATE SET title = excluded.title, excerpt = excluded.excerpt, body = excluded.body, seo_title = excluded.seo_title, seo_description = excluded.seo_description;`,
+    );
+  }
 }
 
 const sql = out.join("\n");

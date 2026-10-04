@@ -53,6 +53,9 @@ export type Tour = {
   difficulty: Difficulty;
   age_min: number | null;
   pickup_note: string | null;
+  max_group: number;
+  cruise_friendly: number;
+  deposit_percent: number;
   is_featured: number;
   is_published: number;
   sort_order: number;
@@ -141,6 +144,11 @@ export type Booking = {
   unit_price: number;
   total_price: number;
   currency: string;
+  promo_code: string | null;
+  discount_amount: number;
+  deposit_due: number;
+  deposit_paid: number;
+  stripe_session_id: string | null;
   booked_for: string | null;
   pickup_time: string | null;
   hotel: string | null;
@@ -240,4 +248,63 @@ export type RevenueByTour = {
   tour_title: string;
   revenue: number;
   bookings: number;
+};
+
+export type PromoCode = {
+  id: number;
+  code: string;
+  kind: "percent" | "amount";
+  value: number;
+  max_uses: number | null;
+  used_count: number;
+  valid_from: string | null;
+  valid_to: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Article = {
+  id: number;
+  slug: string;
+  cover_url: string | null;
+  is_published: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ArticleTranslation = {
+  id: number;
+  article_id: number;
+  locale: Locale;
+  title: string;
+  excerpt: string;
+  body: string;
+  seo_title: string | null;
+  seo_description: string | null;
+};
+
+export type ArticleWithContent = Article & {
+  translation: ArticleTranslation;
+};
+
+export type Faq = {
+  id: number;
+  question_es: string;
+  answer_es: string;
+  question_en: string;
+  answer_en: string;
+  sort_order: number;
+  is_published: number;
+};
+
+export type ActivityEntry = {
+  id: number;
+  user_id: number | null;
+  actor: string | null;
+  action: string;
+  detail: string | null;
+  created_at: string;
+  actor_email?: string | null;
 };

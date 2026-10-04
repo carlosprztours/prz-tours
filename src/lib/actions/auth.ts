@@ -80,6 +80,8 @@ export async function login(
   );
 
   await createSession(user.id, user.role);
+  const { logActivity } = await import("@/lib/admin/activity");
+  await logActivity("login", user.email, user.id, user.email);
   redirect(startUrl(user.role, locale, parsed.data.next));
 }
 
