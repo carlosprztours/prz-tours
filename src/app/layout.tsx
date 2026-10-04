@@ -4,7 +4,7 @@
  * El idioma viene de la cabecera `x-locale` que inyecta el proxy (ver
  * src/proxy.ts). Todo el contenido vive bajo `app/[lang]/`.
  */
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 
@@ -40,6 +40,13 @@ export const metadata: Metadata = {
     default: "Perez Tours & Transfers · Puerto Plata",
     template: "%s · Perez Tours",
   },
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0e7490",
 };
 
 export default async function RootLayout({
@@ -55,6 +62,11 @@ export default async function RootLayout({
     <html lang={lang} className={`${display.variable} ${sans.variable}`}>
       <body className="flex min-h-full flex-col bg-white antialiased">
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}`,
+          }}
+        />
       </body>
     </html>
   );
