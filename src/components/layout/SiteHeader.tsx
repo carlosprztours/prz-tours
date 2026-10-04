@@ -81,7 +81,7 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
             href={`https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(dict.whatsapp.defaultMessage)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden h-10 items-center gap-2 rounded-full bg-[#25d366]/10 px-4 text-sm font-bold text-[#128c4b] transition hover:bg-[#25d366]/20 md:inline-flex"
+            className="hidden h-10 items-center gap-2 rounded-full bg-[#25d366]/10 px-4 text-sm font-bold text-[#166534] transition hover:bg-[#25d366]/20 md:inline-flex"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
               <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0 1 12 4zm-3.2 3.5c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.9 3 4.7 4 .6.3 1.1.4 1.5.6.6.2 1.2.1 1.6-.2.5-.3 1-1.3 1.1-1.7.1-.4.1-.8 0-.9l-.3-.2-1.9-.9c-.2-.1-.4 0-.6.2l-.8 1c-.1.2-.3.2-.5.1a7.5 7.5 0 0 1-2.2-1.3 8.2 8.2 0 0 1-1.5-1.9c-.2-.3 0-.5.1-.6l.5-.6c.1-.2.2-.4.1-.6L9.4 6c-.1-.3-.4-.5-.6-.5z" />
