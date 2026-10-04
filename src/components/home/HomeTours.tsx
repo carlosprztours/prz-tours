@@ -1,5 +1,10 @@
 /**
- * Tours destacados de la home (rejilla de TourCard + enlace al catálogo).
+ * Todas las excursiones publicadas en la home (rejilla de TourCard +
+ * enlace al catálogo con filtros).
+ *
+ * Usa `listPublishedTours`: todo tour con "Publicado" aparece aquí
+ * automáticamente, incluidos los nuevos. El campo "Orden" del panel
+ * controla el orden.
  */
 import Link from "next/link";
 
@@ -14,12 +19,12 @@ type Props = {
   tours: TourWithContent[];
 };
 
-export function FeaturedTours({ locale, dict, tours }: Props) {
+export function HomeTours({ locale, dict, tours }: Props) {
   if (tours.length === 0) return null;
   return (
     <section className="py-16 sm:py-20">
       <div className="container-site">
-        <SectionHeading title={dict.home.featuredTitle} subtitle={dict.home.featuredSubtitle} />
+        <SectionHeading title={dict.home.allToursTitle} subtitle={dict.home.allToursSubtitle} />
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {tours.map((tour) => (
             <TourCard key={tour.id} tour={tour} locale={locale} dict={dict} />

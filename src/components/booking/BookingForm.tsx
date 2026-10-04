@@ -215,7 +215,7 @@ export function BookingForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="bookedFor-button" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.dateLabel}
+            {kind === "transfer" ? t.dateLabelTransfer : t.dateLabel}
           </label>
           <DatePicker
             id="bookedFor-button"
@@ -325,20 +325,29 @@ export function BookingForm({
           <label htmlFor="hotel" className="mb-1.5 block text-sm font-bold text-ink-900">
             {t.hotelLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
           </label>
-          <input id="hotel" name="hotel" type="text" placeholder={t.hotelPlaceholder} className={inputClass} />
+          <input id="hotel" name="hotel" type="text" maxLength={160} placeholder={t.hotelPlaceholder} className={inputClass} />
           <p className="mt-1 text-xs text-ink-500">{t.hotelHint}</p>
         </div>
         <div>
-          <label htmlFor="pickupTime-button" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.pickupTimeLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+          <label htmlFor="cruisePort" className="mb-1.5 block text-sm font-bold text-ink-900">
+            {t.cruisePortLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
           </label>
-          <TimePicker
-            id="pickupTime-button"
-            name="pickupTime"
-            locale={locale}
-            labels={{ placeholder: t.timePlaceholder, clear: t.anyTimeLabel }}
-          />
+          <input id="cruisePort" name="cruisePort" type="text" maxLength={160} placeholder={t.cruisePortPlaceholder} className={inputClass} />
+          <p className="mt-1 text-xs text-ink-500">{t.cruisePortHint}</p>
+          <FieldError message={errors.cruisePort && resolveError(t, errors.cruisePort)} />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="pickupTime-button" className="mb-1.5 block text-sm font-bold text-ink-900">
+          {t.pickupTimeLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+        </label>
+        <TimePicker
+          id="pickupTime-button"
+          name="pickupTime"
+          locale={locale}
+          labels={{ placeholder: t.timePlaceholder, clear: t.anyTimeLabel }}
+        />
       </div>
 
       <div>

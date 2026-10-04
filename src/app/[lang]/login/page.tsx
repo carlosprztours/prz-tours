@@ -65,11 +65,11 @@ export default async function LoginPage({ params, searchParams }: Props) {
       <div className="w-full max-w-md rounded-2xl border border-sand-200 bg-white p-8 shadow-xl">
         <div className="mb-6 text-center">
           <Image
-            src="/img/logo.jpg"
+            src="/img/logo.png"
             alt="Perez Tours"
-            width={200}
-            height={64}
-            className="mx-auto h-16 w-auto object-contain"
+            width={220}
+            height={240}
+            className="mx-auto h-20 w-auto object-contain"
           />
           <h1 className="mt-4 font-display text-2xl font-extrabold text-ink-900">
             {labels.title}

@@ -42,6 +42,7 @@ export default async function BookingDetailPage({ params }: Props) {
     [t.guests, String(booking.guests)],
     [t.date, booking.booked_for ?? "—"],
     [t.hotel, booking.hotel || "—"],
+    [t.cruisePort, booking.cruise_port || "—"],
     [t.total, `$${booking.total_price} ${booking.currency}`],
     [t.created, booking.created_at],
   ];

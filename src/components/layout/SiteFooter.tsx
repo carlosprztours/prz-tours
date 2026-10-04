@@ -33,11 +33,11 @@ export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
         <div>
           <div className="flex items-center gap-3">
             <Image
-              src="/img/logo.jpg"
+              src="/img/logo.png"
               alt={dict.meta.siteName}
-              width={200}
-              height={64}
-              className="h-16 w-auto object-contain rounded-lg bg-white p-1"
+              width={220}
+              height={240}
+              className="h-20 w-auto object-contain rounded-lg bg-white p-1"
             />
             <p className="font-display text-xl font-bold leading-tight">
               Perez Tours

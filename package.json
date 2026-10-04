@@ -18,6 +18,8 @@
     "db:seed:local": "node scripts/seed.mjs --local",
     "db:seed:remote": "node scripts/seed.mjs --remote",
     "db:reset:local": "wrangler d1 execute prz-tours --local --file=./scripts/reset.sql && npm run db:migrate:local",
+    "test:mobile": "node scripts/mobile-test.mjs",
+    "test:desktop": "node scripts/mobile-test.mjs --desktop",
     "create-admin": "node scripts/create-admin.mjs",
     "secrets": "node scripts/with-secrets.mjs",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
@@ -40,6 +42,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.8",
+    "playwright-core": "^1.63.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^4.147.0"

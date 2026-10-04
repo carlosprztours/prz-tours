@@ -5,12 +5,12 @@
  * el teléfono y el CTA de reserva. El menú móvil es un componente de cliente
  * aparte (`MobileMenu`).
  */
-import Image from "next/image";
 import Link from "next/link";
 
 import { getCurrentUser } from "@/lib/auth/dal";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { HeaderMiniLogo } from "./HeaderMiniLogo";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileMenu } from "./MobileMenu";
 
@@ -39,35 +39,33 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-white/90 backdrop-blur">
-      <div className="container-site relative flex h-[88px] items-center justify-between gap-3">
-        <Link href={base} className="flex items-center gap-3" aria-label={dict.meta.siteName}>
-          <Image
-            src="/img/logo.jpg"
-            alt={dict.meta.siteName}
-            width={200}
-            height={64}
-            className="h-16 w-auto object-contain"
-            priority
+      <div className="container-site relative flex h-20 items-center justify-between gap-3 md:h-24">
+        <div className="flex min-w-0 items-center gap-3">
+          <MobileMenu
+            locale={locale}
+            dict={dict.nav}
+            links={[{ href: base, label: dict.nav.home }, ...links, accountLink]}
+            bookHref={`${base}/tours`}
           />
-        </Link>
-
-        <nav className="hidden items-center gap-1 lg:flex" aria-label={dict.nav.menu}>
-          <Link
-            href={base}
-            className="rounded-full px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
-          >
-            {dict.nav.home}
-          </Link>
-          {links.map((link) => (
+          <HeaderMiniLogo href={base} siteName={dict.meta.siteName} />
+          <nav className="hidden items-center gap-1 lg:flex" aria-label={dict.nav.menu}>
             <Link
-              key={link.href}
-              href={link.href}
+              href={base}
               className="rounded-full px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
             >
-              {link.label}
+              {dict.nav.home}
             </Link>
-          ))}
-        </nav>
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-full px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher locale={locale} label={dict.nav.switchLanguage} />
@@ -98,12 +96,6 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
             </svg>
             {session ? session.user.name.split(" ")[0] : accountLink.label}
           </Link>
-          <MobileMenu
-            locale={locale}
-            dict={dict.nav}
-            links={[{ href: base, label: dict.nav.home }, ...links, accountLink]}
-            bookHref={`${base}/tours`}
-          />
         </div>
       </div>
     </header>

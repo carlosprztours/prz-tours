@@ -42,7 +42,7 @@ export function MobileMenu({ locale, dict, links, bookHref }: Props) {
       </button>
 
       {open && (
-        <div className="absolute inset-x-0 top-full border-t border-sand-200 bg-white/95 shadow-xl backdrop-blur">
+        <div className="absolute inset-x-0 top-full border-t border-sand-200 bg-white shadow-xl">
           <nav className="container-site flex flex-col gap-1 py-4" aria-label={dict.menu}>
             {links.map((link) => (
               <Link

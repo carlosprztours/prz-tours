@@ -28,7 +28,17 @@ export function Hero({ locale, dict, stats }: Props) {
       <div className="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/40 to-transparent" aria-hidden="true" />
 
       <div className="container-site relative flex min-h-[540px] flex-col justify-center py-20 sm:min-h-[600px]">
-        <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] backdrop-blur">
+        <div className="mx-auto w-fit rounded-3xl bg-white/95 px-8 py-6 shadow-2xl backdrop-blur will-change-transform md:px-10 md:py-8" id="hero-logo">
+          <Image
+            src="/img/logo.png"
+            alt={dict.meta.siteName}
+            width={440}
+            height={480}
+            className="h-48 w-auto object-contain md:h-64"
+            priority
+          />
+        </div>
+        <p className="mt-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] backdrop-blur">
           {dict.hero.badge}
         </p>
         <h1 className="mt-5 max-w-3xl font-display text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">

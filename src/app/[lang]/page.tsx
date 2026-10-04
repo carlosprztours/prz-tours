@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CtaBanner } from "@/components/home/CtaBanner";
-import { FeaturedTours } from "@/components/home/FeaturedTours";
+import { HomeTours } from "@/components/home/HomeTours";
 import { Gallery } from "@/components/home/Gallery";
 import { Hero } from "@/components/home/Hero";
 import { Testimonials } from "@/components/home/Testimonials";
@@ -13,7 +13,7 @@ import { WhyUs } from "@/components/home/WhyUs";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { listPublishedGalleryImages, listPublishedTestimonials } from "@/lib/db/content";
 import { getSetting } from "@/lib/db/content";
-import { listFeaturedTours, listPublishedTours } from "@/lib/db/tours";
+import { listPublishedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import type { Locale } from "@/types";
@@ -48,9 +48,8 @@ export default async function HomePage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const [dict, featured, all, testimonials, gallery, phoneDisplay] = await Promise.all([
+  const [dict, all, testimonials, gallery, phoneDisplay] = await Promise.all([
     getDictionary(locale),
-    listFeaturedTours(locale),
     listPublishedTours(locale),
     listPublishedTestimonials(6),
     listPublishedGalleryImages(8),
@@ -78,7 +77,7 @@ export default async function HomePage({ params }: Props) {
       <JsonLd data={orgJsonLd} />
       <Hero locale={locale} dict={dict} stats={{ tours: all.length }} />
       <WhyUs dict={dict} />
-      <FeaturedTours locale={locale} dict={dict} tours={featured} />
+      <HomeTours locale={locale} dict={dict} tours={all} />
       <Testimonials locale={locale} dict={dict} testimonials={testimonials} />
       <Gallery dict={dict} images={gallery} />
       <CtaBanner locale={locale} dict={dict} />

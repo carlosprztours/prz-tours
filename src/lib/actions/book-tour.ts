@@ -189,6 +189,15 @@ async function sendBookingEmails(
       es ? "Personas" : "Guests",
       String(booking.guests),
     ),
+    booking.hotel
+      ? definitionRow(es ? "Hotel" : "Hotel", booking.hotel)
+      : "",
+    booking.cruise_port
+      ? definitionRow(
+          es ? "Terminal de cruceros" : "Cruise terminal",
+          booking.cruise_port,
+        )
+      : "",
     definitionRow(es ? "Nombre" : "Name", booking.customer_name),
     definitionRow(
       es ? "Total estimado" : "Estimated total",

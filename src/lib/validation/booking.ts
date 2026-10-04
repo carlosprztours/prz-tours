@@ -61,7 +61,7 @@ export const bookingSchema = z.object({
   pickupTime: z.string().trim().max(20).optional(),
   hotel: z.string().trim().max(160).optional(),
   airport: z.string().trim().max(40).optional(),
-  cruisePort: z.string().trim().max(80).optional(),
+  cruisePort: z.string().trim().max(160).optional(),
   meetingPoint: z.string().trim().max(160).optional(),
   notes: z.string().trim().max(2000).optional(),
 }).refine(

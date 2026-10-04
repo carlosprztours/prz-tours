@@ -48,7 +48,7 @@ export async function GET(request: Request) {
     "reference", "kind", "tour", "transfer", "name", "email", "phone",
     "country", "guests", "unit_price", "total_price", "currency",
     "promo", "discount", "deposit_due", "deposit_paid",
-    "date", "hotel", "status", "payment", "created",
+    "date", "hotel", "cruise_port", "status", "payment", "created",
   ];
   const lines = [header.join(",")];
   for (const b of bookings) {
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         b.customer_country ?? "", b.guests, b.unit_price, b.total_price,
         b.currency, b.promo_code ?? "", b.discount_amount,
         b.deposit_due, b.deposit_paid, b.booked_for ?? "", b.hotel ?? "",
-        b.status, b.payment_status, b.created_at,
+        b.cruise_port ?? "", b.status, b.payment_status, b.created_at,
       ]
         .map(cell)
         .join(","),
