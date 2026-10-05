@@ -7,9 +7,13 @@
 "use server";
 
 import { execute } from "@/lib/db/client";
-import { getSetting } from "@/lib/db/content";
 import { contactSchema } from "@/lib/validation/contact";
-import { definitionRow, emailLayout, sendEmail } from "@/lib/notify/email";
+import {
+  definitionRow,
+  emailLayout,
+  getInternalRecipients,
+  sendEmail,
+} from "@/lib/notify/email";
 import type { Locale } from "@/types";
 
 export type ContactResult =
@@ -54,8 +58,8 @@ export async function sendContactMessage(
     return { ok: false, errors: { form: "validation.serverError" } };
   }
 
-  const notifyEmail = await getSetting("email", "");
-  if (notifyEmail) {
+  const recipients = await getInternalRecipients();
+  if (recipients.length > 0) {
     const rows = [
       definitionRow("Nombre", data.name),
       definitionRow("Email", data.email),
@@ -65,7 +69,7 @@ export async function sendContactMessage(
     ].join("");
 
     sendEmail({
-      to: notifyEmail,
+      to: recipients,
       subject: `Contacto web: ${data.subject ?? data.name}`,
       html: emailLayout(`Nuevo mensaje de ${data.name}`, rows),
       replyTo: data.email,

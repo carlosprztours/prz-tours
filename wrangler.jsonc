@@ -14,6 +14,19 @@
       "service": "prz-tours"
     }
   ],
+  // Dominio propio. `custom_domain` hace que Cloudflare cree el registro DNS
+  // y el certificado SSL automáticamente; no hay que añadir CNAME a mano.
+  // `workers.dev` sigue activo como red de seguridad mientras tanto.
+  "routes": [
+    {
+      "pattern": "perez-tours.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.perez-tours.com",
+      "custom_domain": true
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",

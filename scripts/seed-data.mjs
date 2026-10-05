@@ -15,7 +15,11 @@ export const settings = {
     "Tours, excursiones y traslados en Puerto Plata, República Dominicana. Cascadas, ATV, City Tour, Monkey Jungle, dune buggy, esnórquel y Cayo Arena con guías locales certificados.",
   phone_display: "+1 (809) 835-4101",
   whatsapp: "18098354101",
-  email: "carlosdavidpere@gmail.com",
+  email: "asistencia@perez-tours.com",
+  // Avisos automáticos (reservas, pagos, contacto) a esta lista, separada por
+  // comas. Si se borra, quedan solo los de `email`.
+  notify_emails:
+    "asistencia@perez-tours.com,pereztoursandtransfer@gmail.com,carlosdavidpere@gmail.com",
   address: "Puerto Plata, República Dominicana",
   hours: "Lun – Sáb · 7:00 AM – 8:00 PM",
   hours_es: "Lun – Sáb · 7:00 AM – 8:00 PM",

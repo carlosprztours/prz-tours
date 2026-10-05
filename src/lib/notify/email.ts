@@ -11,6 +11,7 @@
 import "server-only";
 
 import { getEnvVar } from "@/lib/db/client";
+import { getSetting } from "@/lib/db/content";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 
 export type EmailPayload = {
@@ -90,6 +91,35 @@ export function emailLayout(
   </div>
 </body>
 </html>`;
+}
+
+/**
+ * Destinatarios internos del aviso (reservas nuevas, pagos, contacto).
+ *
+ * Se leen del ajuste `notify_emails` (lista separada por comas) y, si no
+ * existe, del ajuste `email` de siempre. Así el aviso llega a más de una
+ * persona sin tocar código ni desplegar: se edita en `/admin/settings`.
+ *
+ * Filtra entradas vacías y direcciones que no parezcan un correo, para que un
+ * valor mal escrito en el panel no rompa el envío entero.
+ */
+export async function getInternalRecipients(): Promise<string[]> {
+  const [list, legacy] = await Promise.all([
+    getSetting("notify_emails", ""),
+    getSetting("email", ""),
+  ]);
+
+  const raw = list.trim() || legacy.trim();
+  if (!raw) return [];
+
+  return [
+    ...new Set(
+      raw
+        .split(/[,;\s]+/)
+        .map((v) => v.trim())
+        .filter((v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)),
+    ),
+  ];
 }
 
 export function escapeHtml(value: string): string {

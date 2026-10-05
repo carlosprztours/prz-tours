@@ -40,7 +40,12 @@ function loadTokens() {
 
 const origin = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
 const loginEmail = process.argv[3] ?? "dev@suprime.xyz";
-const customerEmail = process.argv[4] ?? loginEmail;
+const customerEmail = process.argv[4]?.trim() || loginEmail;
+if (!process.argv[4]) {
+  console.warn(
+    "Aviso: no pasaste el correo del cliente (4º argumento); se usa el del login.",
+  );
+}
 const outDir = process.argv[5] ?? mkdtempSync(join(tmpdir(), "prz-prod-"));
 const password = loadTokens().PROD_ADMIN_PASSWORD;
 if (!password) {

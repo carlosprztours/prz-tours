@@ -8,6 +8,23 @@ El idioma lo inyecta el proxy (`src/proxy.ts`) vía cabecera `x-locale`.
 
 ---
 
+## 0. Dominio, correo e infraestructura
+
+| Qué | Dónde | Detalle |
+|---|---|---|
+| Dominio en producción | `wrangler.jsonc` → `routes` | `perez-tours.com` y `www.perez-tours.com` como `custom_domain` (Cloudflare crea DNS y SSL solo). `*.workers.dev` sigue vivo como red de seguridad |
+| Redirección canónica | `src/proxy.ts` → `HOST_REDIRECTS` | `www.perez-tours.com` → `perez-tours.com` con 301, conservando ruta y query. Se hace en el Worker porque el API de Page Rules de Cloudflare rechaza los tokens de cuenta |
+| Envío de correo | Resend | Dominio `perez-tours.com` **verificado**. Remitente único en `RESEND_FROM` = `Perez Tours & Transfers <reservas@perez-tours.com>` (secreto de Cloudflare **y** `.dev.vars`, mismo formato en los dos sitios; `scripts/sync-dev-vars.mjs` los mantiene iguales) |
+| Buzón del dominio | Spacemail (Spaceship) | `asistencia@perez-tours.com`. DNS en Cloudflare: `MX @ → mx1/mx2.spacemail.com` (prio 10) y `TXT @ → v=spf1 include:spacemail.com ~all`. IMAP `mail.spacemail.com:993`, SMTP `smtp.spacemail.com:465` |
+| Reparto interno | ajuste `notify_emails` | Lista separada por comas de a quién avisa la web (reservas nuevas, pagos, contacto). Se lee en `getInternalRecipients()` (`lib/notify/email.ts`) y se edita en `/admin/settings`, sin desplegar |
+| Registros DNS de Resend | `send`, `rsend` y `resend._domainkey` | `MX send → feedback-smtp.us-east-1.amazonses.com`, `TXT send → v=spf1 include:amazonses.com ~all`, `CNAME rsend → send.forge.rmta.net`, `TXT resend._domainkey → p=MIGf…`. Ojo: el CNAME va en **`rsend`**, no en `send` (en `send` chocaría con el MX y el TXT) |
+| Pruebas de correo | `npm run test:email` | Envía un correo real al buzón del dominio y al Gmail del cliente, e informa del estado de cada envío |
+| R2 (fotos del panel) | `wrangler.jsonc` (bloque comentado) | **Sigue deshabilitado:** la cuenta está en plan `free` sin R2 activado. Hay que habilitarlo en el panel y añadir un método de pago |
+
+**Spacemail no sustituye a Resend.** La API pública de Spaceship solo cubre dominios, DNS y SellerHub; no tiene buzón ni envío programático. Spacemail = buzón humano (IMAP/SMTP). Resend = correos automáticos a clientes. Conviven porque los registros DNS no se pisan: `MX`/`TXT` de la raíz para Spacemail, subdominio `send` para Resend.
+
+---
+
 ## 1. Páginas públicas (URL → archivo)
 
 | URL | Archivo | Qué es |
@@ -147,6 +164,12 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   - `useSyncExternalStore` para `isStandalone()`/`isIos()`/`PushManager`: el servidor renderiza vacío y tras hidratar aparece, para no romper la hidratación.
   - Sin claves VAPID el sitio funciona igual (solo se pierde el push al móvil).
 - **Entrar con Google**: la URI de redirección autorizada en Google Cloud debe ser exactamente `https://<host>/api/auth/google/callback`. Si no coincide, Google responde `redirect_uri_mismatch`.
+  Con el dominio propio hay que añadir **tres URIs** (una por host; la de `workers.dev` se puede quitar cuando Google la acepte):
+  - `https://perez-tours.com/api/auth/google/callback`
+  - `https://www.perez-tours.com/api/auth/google/callback`
+  - `https://prz-tours.carlosprz-tours.workers.dev/api/auth/google/callback`
+
+  Y en *Orígenes JS autorizados*: `https://perez-tours.com`, `https://www.perez-tours.com` y el `workers.dev`.
 
 ## 9. Cambios recientes (referencia rápida)
 
@@ -210,14 +233,21 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   borra los tours, la clave VAPID, el 401 sin sesión y que el cliente ve el
   aviso de instalar la PWA (`scripts/test-categories.mjs`).
 
-## 11. Pendientes (cuando compre el dominio)
+## 11. Pendientes
 
-- **Resend con dominio propio**: hoy `RESEND_FROM=onboarding@resend.dev`
-  solo entrega al correo de la cuenta Resend (`david-dev@suprime.xyz`).
-  Verificar el dominio en resend.com → Domains, agregar sus DNS y cambiar
-  `RESEND_FROM` a `Perez Tours <reservas@TUDOMINIO>` (secret de producción).
-  Envío probado de punta a punta (`email_sent=1`).
-- **R2 (imágenes del panel)**: desactivado porque la cuenta aún no lo tiene
-  habilitado. Pasos en `wrangler.jsonc` (líneas 25-29): habilitar R2 en el
-  dashboard → `wrangler r2 bucket create prz-media` → descomentar el bloque
-  → desplegar. Sin esto, la subida de fotos del panel no funciona.
+- ~~**Resend con dominio propio**~~ — **hecho.** Dominio `perez-tours.com`
+  verificado, `RESEND_FROM=Perez Tours & Transfers <reservas@perez-tours.com>`
+  y envío probado de punta a punta (`npm run test:email` y una reserva real).
+- **R2 (imágenes del panel)**: sigue pendiente. La cuenta está en plan `free`
+  sin R2, y la API devuelve 403 al pedir el bucket. Pasos: dashboard →
+  R2 → *Enable* (hace falta un método de pago) → `wrangler r2 bucket create
+  prz-media` → descomentar el bloque de `wrangler.jsonc` → desplegar. Sin
+  esto, la subida de fotos del panel no funciona.
+- **DKIM de Spacemail**: solo hay SPF. Para mejorar la entrega del buzón,
+  añadir el registro DKIM que muestra Spacemail Manager (suele ser un CNAME
+  en `<selector>._domainkey`). No es imprescindible.
+- **Google OAuth**: añadir la URI y los orígenes del dominio propio (ver
+  `## 8`), o el botón «Continuar con Google» seguirá fallando con
+  `redirect_uri_mismatch`.
+- **ImageKit**: falta la Private Key y el URL Endpoint para subir fotos desde
+  el móvil y el PC.

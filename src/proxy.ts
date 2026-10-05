@@ -93,8 +93,29 @@ async function readTokenPayload(
   }
 }
 
+/** Host que usamos como canónico. Los alias redirigen aquí. */
+const CANONICAL_HOST = "perez-tours.com";
+
+/** Alias que deben redirigir al host canónico (301). */
+const HOST_REDIRECTS: Record<string, string> = {
+  "www.perez-tours.com": CANONICAL_HOST,
+};
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // 0) Host canónico: si la petición llega por un alias (p. ej. www), se
+  //    redirige a la raíz conservando ruta y query. Se hace aquí y no con
+  //    reglas de Cloudflare porque su API de Page Rules no acepta los tokens
+  //    de cuenta; así la lógica viaja con el código.
+  const host = (request.headers.get("host") ?? "").toLowerCase();
+  const canonical = HOST_REDIRECTS[host];
+  if (canonical) {
+    const url = new URL(request.url);
+    url.protocol = "https:";
+    url.hostname = canonical;
+    return NextResponse.redirect(url, 301);
+  }
 
   // 1) Normalizar idioma
   if (!hasLocalePrefix(pathname)) {

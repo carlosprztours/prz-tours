@@ -23,6 +23,7 @@ import {
 import {
   definitionRow,
   emailLayout,
+  getInternalRecipients,
   sendEmail,
 } from "@/lib/notify/email";
 import {
@@ -226,11 +227,12 @@ async function sendBookingEmails(
   });
   if (customerResult.sent) await markBookingNotified(booking.id, "email");
 
-  // 2) Aviso interno al negocio (la clave `email` es el correo del negocio).
-  const notifyEmail = await getSetting("email", "");
-  if (notifyEmail) {
+  // 2) Aviso interno al negocio: buzón del dominio + correos del personal
+  //    (ajuste `notify_emails`, con `email` como respaldo).
+  const recipients = await getInternalRecipients();
+  if (recipients.length > 0) {
     await sendEmail({
-      to: notifyEmail,
+      to: recipients,
       subject: `Nueva reserva web ${booking.reference} · ${experience}`,
       html: emailLayout(
         `Nueva reserva ${booking.reference}`,
