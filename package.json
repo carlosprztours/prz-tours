@@ -24,6 +24,7 @@
     "test:auth": "node scripts/test-auth.mjs",
     "test:loyalty": "node scripts/test-loyalty.mjs",
     "test:prod": "node scripts/test-prod-booking.mjs",
+    "test:pages": "node scripts/test-pages.mjs",
     "create-admin": "node scripts/create-admin.mjs",
     "secrets": "node scripts/with-secrets.mjs",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"

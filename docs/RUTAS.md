@@ -172,3 +172,16 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - Test de auth (`npm run test:auth -- [origen] [carpeta]`): recordar-email,
   fallback de Google y ceremonia passkey completa con autenticador virtual
   (`scripts/test-auth.mjs`). Crea UN usuario de prueba en local.
+- Test de fidelidad (`npm run test:loyalty -- [origen] [carpeta]`):
+  invitado → cupón → descuento, anti-abuso por propiedad, recurrente cada
+  2 viajes, consumo y cupón manual del admin (`scripts/test-loyalty.mjs`).
+- Test en producción (`npm run test:prod -- [origen] [login] [cliente]`):
+  login real y reserva real (`scripts/test-prod-booking.mjs`).
+
+## 11. Pendientes
+
+- **Resend con dominio propio**: hoy `RESEND_FROM=onboarding@resend.dev`
+  solo entrega al correo de la cuenta Resend (`david-dev@suprime.xyz`).
+  Verificar el dominio en resend.com → Domains, agregar sus DNS y cambiar
+  `RESEND_FROM` a `Perez Tours <reservas@TUDOMINIO>` (secret de producción).
+  Envío probado de punta a punta (`email_sent=1`).

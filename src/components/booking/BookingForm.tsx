@@ -302,6 +302,7 @@ export function BookingForm({
   const modalEmail = loginEmail;
 
   return (
+    <>
     <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
       <input type="hidden" name="kind" value={kind} />
 
@@ -572,6 +573,7 @@ export function BookingForm({
         {pending ? t.submitting : t.submit}
       </button>
       {pending && <p className="text-center text-xs text-ink-500">{t.submittingHint}</p>}
+    </form>
 
       {showLogin && (
         <div
@@ -608,6 +610,6 @@ export function BookingForm({
           </div>
         </div>
       )}
-    </form>
+    </>
   );
 }
