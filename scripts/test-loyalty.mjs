@@ -35,6 +35,25 @@ if (!executablePath) {
 const origin = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
 const outDir = process.argv[3] ?? mkdtempSync(join(tmpdir(), "prz-loyalty-"));
 
+/**
+ * Correo de los usuarios de prueba.
+ *
+ * Por defecto `example.com`, que Resend rechaza a propósito, así que la
+ * batería normal no genera correo real. Para comprobar que los correos de
+ * confirmación/completado salen de verdad, pasa una dirección real como 4º
+ * argumento; cada usuario recibe una etiqueta distinta (`+a`, `+b`) porque el
+ * registro es único por correo y Gmail entrega las etiquetas al mismo buzón.
+ *
+ *   node scripts/test-loyalty.mjs http://localhost:3000 <png> correo@real.com
+ */
+const emailReal = process.argv[4] ?? "";
+const stamp = Date.now();
+const tagged = (user) => {
+  if (!emailReal) return `test-loy-${user}-${stamp}@example.com`;
+  const [nombre, dom] = emailReal.split("@");
+  return `${nombre}+${user}@${dom}`;
+};
+
 // En producción hay que leer la D1 remota (con el token correcto).
 const REMOTE = !/localhost|127\.0\.0\.1/.test(origin);
 const WR = REMOTE
@@ -63,9 +82,8 @@ function dq(sql) {
 }
 
 const browser = await chromium.launch({ executablePath, args: ["--no-sandbox"] });
-const stamp = Date.now();
-const emailA = `test-loy-a-${stamp}@example.com`;
-const emailB = `test-loy-b-${stamp}@example.com`;
+const emailA = tagged("a");
+const emailB = tagged("b");
 
 async function signup(page, name, email) {
   await page.goto(`${origin}/es/signup`, { waitUntil: "networkidle", timeout: 60000 });

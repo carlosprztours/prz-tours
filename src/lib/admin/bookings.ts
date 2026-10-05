@@ -103,6 +103,11 @@ export async function setBookingStatus(
             `/${bl}/account`,
             bl,
           );
+
+          // Correo al cliente, con copia oculta al buzón del dominio y al
+          // personal, para que quede constancia de la reserva confirmada.
+          const { sendBookingUpdateEmail } = await import("@/lib/notify/booking-email");
+          await sendBookingUpdateEmail(booking, "confirmed", bl).catch(() => false);
         } else {
           const coupon = await handleTripCompleted(owner.id);
           if (!coupon) {
@@ -124,7 +129,7 @@ export async function setBookingStatus(
     }
   }
 
-  // Cancelar: avisamos al cliente (web + push) para que no se entere tarde.
+  // Cancelar: avisamos al cliente (web + push + correo) para que no se entere tarde.
   if (to === "cancelled") {
     try {
       const { notifyUser, resolveBookingUser } = await import("@/lib/db/loyalty");
@@ -143,6 +148,11 @@ export async function setBookingStatus(
           `/${bl}/account`,
           bl,
         );
+
+        // Correo al cliente (con copia oculta a los internos) para que la
+        // cancelacion quede registrada y no se entere tarde.
+        const { sendBookingUpdateEmail } = await import("@/lib/notify/booking-email");
+        await sendBookingUpdateEmail(booking, "cancelled", bl).catch(() => false);
       }
     } catch (err) {
       console.error("[bookings] cancel notify error:", err);
@@ -202,6 +212,14 @@ export async function setBookingPayment(
           `/${bl}/account`,
           bl,
         );
+
+        // Correo de recibo (con copia oculta a los internos).
+        const { sendBookingUpdateEmail } = await import("@/lib/notify/booking-email");
+        await sendBookingUpdateEmail(
+          booking,
+          payment === "paid" ? "paid" : "partial",
+          bl,
+        ).catch(() => false);
       }
     } catch (err) {
       console.error("[bookings] payment notify error:", err);

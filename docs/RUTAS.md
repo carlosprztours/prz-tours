@@ -17,7 +17,8 @@ El idioma lo inyecta el proxy (`src/proxy.ts`) vía cabecera `x-locale`.
 | Envío de correo | Resend | Dominio `perez-tours.com` **verificado**. Remitente único en `RESEND_FROM` = `Perez Tours & Transfers <reservas@perez-tours.com>` (secreto de Cloudflare **y** `.dev.vars`, mismo formato en los dos sitios; `scripts/sync-dev-vars.mjs` los mantiene iguales) |
 | Buzón del dominio | Spacemail (Spaceship) | `asistencia@perez-tours.com`. DNS en Cloudflare: `MX @ → mx1/mx2.spacemail.com` (prio 10) y `TXT @ → v=spf1 include:spacemail.com ~all`. IMAP `mail.spacemail.com:993`, SMTP `smtp.spacemail.com:465` |
 | Reparto interno | ajuste `notify_emails` | Lista separada por comas de a quién avisa la web (reservas nuevas, pagos, contacto). Se lee en `getInternalRecipients()` (`lib/notify/email.ts`) y se edita en `/admin/settings`, sin desplegar |
-| Copia de todo correo | `sendEmail()` en `lib/notify/email.ts` | Todo lo que sale de la web (reservas, cancelaciones, pagos, cupones) se copia **en BCC** a `notify_emails`. El aviso interno al negocio va con `copyToInternal: false` para no duplicarse |
+| Copia de todo correo | `sendEmail()` en `lib/notify/email.ts` | Todo lo que sale de la web (reservas, cancelaciones, cambios de estado, pagos, cupones) se copia **en BCC** a `notify_emails`. El aviso interno al negocio va con `copyToInternal: false` para no duplicarse |
+| Correo de cambios de estado | `sendBookingUpdateEmail()` en `lib/notify/booking-email.ts` | Al confirmar, cancelar o registrar un pago se manda correo al cliente con el resumen de la reserva. La copia interna la añade `sendEmail` sola. Nunca lanza: si Resend falla, el cambio de estado ya está guardado |
 | Registros DNS de Resend | `send`, `rsend` y `resend._domainkey` | `MX send → feedback-smtp.us-east-1.amazonses.com`, `TXT send → v=spf1 include:amazonses.com ~all`, `CNAME rsend → send.forge.rmta.net`, `TXT resend._domainkey → p=MIGf…`. Ojo: el CNAME va en **`rsend`**, no en `send` (en `send` chocaría con el MX y el TXT) |
 | Pruebas de correo | `npm run test:email` | Envía un correo real al buzón del dominio y al Gmail del cliente, e informa del estado de cada envío |
 | R2 (fotos del panel) | `wrangler.jsonc` (bloque comentado) | **Sigue deshabilitado:** la cuenta está en plan `free` sin R2 activado. Hay que habilitarlo en el panel y añadir un método de pago |
@@ -229,10 +230,13 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   al subir, menú hamburguesa con tap real, y cero errores JS. Guarda PNG
   (`01-top`, `02-scrolled`, `03-menu`) + `report.json` en la carpeta dada
   (por defecto un temporal). Requiere el dev corriendo.
-- Test de reserva (`npm run test:booking -- [url] [carpeta]`): modal de login
-  sin sesión, borrador tras registro, reserva directa, desplegable 2–11 y
-  animación (`scripts/test-booking.mjs`). Crea reservas reales (bórralas en
-  el panel si quieres).
+- Test de reserva (`npm run test:booking -- [url] [carpeta] [correo-real]`): modal
+  de login sin sesión, borrador tras registro, reserva directa, desplegable 2–11
+  y animación (`scripts/test-booking.mjs`). Crea reservas reales (bórralas en
+  el panel si quieres). El 4º argumento es **opcional**: sin él usa
+  `example.com`, que Resend rechaza a propósito, así que la batería no genera
+  correo. Con una dirección real cada fase usa una etiqueta distinta
+  (`+1`, `+2`) y llega todo al mismo buzón.
 - Test de auth (`npm run test:auth -- [origen] [carpeta]`): recordar-email,
   Google (fallback o cableado) y ceremonia passkey completa con
   autenticador virtual (`scripts/test-auth.mjs`). Crea UN usuario de prueba.
@@ -242,9 +246,12 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - Test de páginas (`npm run test:pages -- [origen] [salida] [--mobile|--desktop]`):
   barrido de TODAS las páginas públicas (es+en) y del panel como admin
   (`scripts/test-pages.mjs`). El contacto crea UN mensaje real.
-- Test de fidelidad (`npm run test:loyalty -- [origen] [carpeta]`):
+- Test de fidelidad (`npm run test:loyalty -- [origen] [carpeta] [correo-real]`):
   invitado → cupón → descuento, anti-abuso por propiedad, recurrente cada
   2 viajes, consumo y cupón manual del admin (`scripts/test-loyalty.mjs`).
+  Es el que confirma reservas, así que es el que dispara el correo de
+  «Reserva confirmada». El 3er argumento es opcional y funciona como en
+  `test:booking` (etiquetas `+a` y `+b`).
 - Test de categorías + push (`npm run test:categories -- [origen] [carpeta]`):
   crea una categoría solo en español y verifica la auto-traducción, el slug,
   que aparezca en el formulario, el aviso de duplicado, que desactivar no

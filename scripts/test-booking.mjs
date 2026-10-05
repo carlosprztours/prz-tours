@@ -32,6 +32,27 @@ const url = process.argv[2] ?? "http://localhost:3000/es/book";
 const outDir = process.argv[3] ?? mkdtempSync(join(tmpdir(), "prz-booking-"));
 const origin = new URL(url).origin;
 
+/**
+ * Correo de las reservas de prueba.
+ *
+ * Por defecto se usa `example.com` porque Resend rechaza ese dominio a
+ * propósito (protege contra envíos de prueba a direcciones falsas), así que la
+ * batería normal no genera correo real. Para comprobar el envío de verdad hay
+ * que pasar una dirección real como 4º argumento:
+ *
+ *   node scripts/test-booking.mjs http://localhost:3000/es/book <png> correo@real.com
+ *
+ * Cada fase usa una variante distinta (`+fase1`, `+fase2`) porque las dos crean
+ * usuario y el registro es único por correo. Gmail entrega las etiquetas `+` al
+ * mismo buzón, así que todo llega al mismo sitio.
+ */
+const emailReal = process.argv[4] ?? "";
+const testEmail = (fase) => {
+  if (!emailReal) return `test-book-${fase}-${Date.now()}@example.com`;
+  const [user, dominio] = emailReal.split("@");
+  return `${user}+${fase}@${dominio}`;
+};
+
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok, detail });
@@ -77,8 +98,7 @@ async function submitAndWaitSuccess(page, shotPrefix) {
   const pageErrors = [];
   page.on("pageerror", (err) => pageErrors.push(String(err).split("\n")[0].slice(0, 200)));
 
-  const stamp = Date.now();
-  const email = `test-book-${stamp}@example.com`;
+  const email = testEmail("1");
   await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
   await fillBookingForm(page, { name: "Test Borrador", email });
   await page.getByRole("button", { name: /solicitar reserva/i }).click();
@@ -115,8 +135,7 @@ async function submitAndWaitSuccess(page, shotPrefix) {
   const pageErrors = [];
   page.on("pageerror", (err) => pageErrors.push(String(err).split("\n")[0].slice(0, 200)));
 
-  const stamp = Date.now();
-  const email = `test-book2-${stamp}@example.com`;
+  const email = testEmail("2");
   await page.goto(`${origin}/es/signup`, { waitUntil: "networkidle", timeout: 60000 });
   await page.locator("#name").fill("Test Directo");
   await page.locator("#email").fill(email);
