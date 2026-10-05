@@ -155,6 +155,13 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - Login con Google + passkeys + recordar último usuario (ver sección 8).
 - Reserva con login obligatorio y borrador persistente (`ModalLoginForm.tsx`, `usePasskeyLogin.ts`, `loginJson`, signup con `?next=`).
 - Fidelidad completa: invitados 10 %, recurrentes cada 2 viajes, cupones manuales del admin con envío por correo, campana + sección de avisos (`npm run test:loyalty` 8/8).
+- Panel responsive: regla anti-overflow — `grid` solo nunca lleva columna
+  implícita con contenido largo (`truncate`/nowrap la estira); usar
+  `grid-cols-1` (pista `minmax(0,1fr)`), `min-w-0` en items,
+  `break-words/break-all` en textos largos y `overflow-x-auto` en tablas.
+  Vigilado por `test:pages` (`sin overflow` en cada página del panel).
+- Referencias cliqueables: recuadro mono con anillo en dashboard recientes,
+  lista y tabla de reservas.
 - Imágenes protegidas contra descarga casual (menú contextual y arrastre): CSS en `globals.css` + `components/ui/ImageGuard.tsx` montado en el layout raíz.
 - Hero centrado (logo, etiqueta, título, CTAs) y menú móvil que se cierra solo al deslizar (`MobileMenu.tsx`).
 

@@ -40,7 +40,7 @@ export default async function AdminMessagesPage({
   };
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-extrabold text-ink-900">
           {es ? "Mensajes" : "Messages"} · {messages.length}
@@ -59,8 +59,8 @@ export default async function AdminMessagesPage({
         </Link>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[320px_1fr]">
-        <ul className="grid min-w-0 content-start gap-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <ul className="grid min-w-0 grid-cols-1 content-start gap-2">
           {messages.map((m) => (
             <li key={m.id}>
               <Link
@@ -87,7 +87,7 @@ export default async function AdminMessagesPage({
           )}
         </ul>
 
-        <div className="h-fit rounded-2xl border border-sand-200 bg-white p-6 lg:sticky lg:top-24">
+        <div className="h-fit min-w-0 rounded-2xl border border-sand-200 bg-white p-6 lg:sticky lg:top-24">
           {!selected ? (
             <p className="text-sm text-ink-500">{es ? "Elige un mensaje." : "Pick a message."}</p>
           ) : (
@@ -125,14 +125,14 @@ export default async function AdminMessagesPage({
                   />
                 </span>
               </div>
-              <p className="mt-2 text-sm text-ink-500">
+              <p className="mt-2 text-sm break-words text-ink-500">
                 {selected.name} ·{" "}
-                <a href={`mailto:${selected.email}`} className="font-bold text-ocean-700 hover:underline">
+                <a href={`mailto:${selected.email}`} className="font-bold break-all text-ocean-700 hover:underline">
                   {selected.email}
                 </a>
                 {selected.phone ? ` · ${selected.phone}` : ""} · {selected.created_at.slice(0, 16)}
               </p>
-              <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ink-700">
+              <p className="mt-4 whitespace-pre-line break-words text-sm leading-relaxed text-ink-700">
                 {selected.body}
               </p>
             </>

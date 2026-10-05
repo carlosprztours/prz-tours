@@ -58,7 +58,7 @@ export default async function AdminDashboard({ params }: Props) {
   const maxTour = Math.max(1, ...byTour.map((r) => r.revenue));
 
   return (
-    <div className="grid gap-6">
+    <div className="grid grid-cols-1 gap-6">
       <h1 className="font-display text-2xl font-extrabold text-ink-900">{t.dashboard}</h1>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -139,7 +139,7 @@ export default async function AdminDashboard({ params }: Props) {
             {recent.map((b) => (
               <li key={b.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
                 <div className="min-w-0">
-                  <Link href={`/${locale}/admin/bookings/${b.id}`} className="font-bold text-ink-900 hover:text-ocean-700 hover:underline">
+                  <Link href={`/${locale}/admin/bookings/${b.id}`} className="inline-block rounded-lg bg-ocean-50 px-2 py-0.5 font-mono text-sm font-bold text-ocean-800 ring-1 ring-inset ring-ocean-200 transition hover:bg-ocean-100 hover:ring-ocean-300" title={b.reference}>
                     {b.reference}
                   </Link>
                   <p className="truncate text-ink-500">

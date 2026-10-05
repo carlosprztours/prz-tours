@@ -159,6 +159,10 @@ for (const mode of only === "both" ? ["mobile", "desktop"] : [only]) {
     const body = (await page.textContent("body")) ?? "";
     const stayed = new URL(page.url()).pathname === path;
     check(`[${mode}] ${path}`, res?.status() === 200 && body.length > 1500 && stayed, `status=${res?.status()}`);
+    const noOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+    );
+    check(`[${mode}] ${path} sin overflow`, noOverflow === true);
   }
   // Detalle de la primera reserva (si hay).
   await page.goto(`${origin}/es/admin/bookings`, { waitUntil: "networkidle", timeout: 60000 });

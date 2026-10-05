@@ -48,32 +48,32 @@ export default async function BookingDetailPage({ params }: Props) {
   ];
 
   return (
-    <div className="grid gap-5">
-      <div className="flex items-center gap-3">
-        <Link href={`/${locale}/admin/bookings`} className="text-sm font-bold text-ocean-700 hover:underline">
+    <div className="grid grid-cols-1 gap-5">
+      <div className="flex min-w-0 items-center gap-3">
+        <Link href={`/${locale}/admin/bookings`} className="shrink-0 text-sm font-bold text-ocean-700 hover:underline">
           ← {t.back}
         </Link>
-        <h1 className="font-display text-2xl font-extrabold text-ink-900">
+        <h1 className="truncate font-display text-2xl font-extrabold text-ink-900">
           {t.bookingDetail} {booking.reference}
         </h1>
         <StatusBadge status={booking.status} locale={locale} />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid min-w-0 content-start gap-5">
-          <section className="rounded-2xl border border-sand-200 bg-white p-5">
-            <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+          <section className="min-w-0 rounded-2xl border border-sand-200 bg-white p-5">
+            <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
               {rows.map(([label, value]) => (
-                <div key={label}>
+                <div key={label} className="min-w-0">
                   <dt className="text-xs font-bold uppercase tracking-wider text-ink-500">{label}</dt>
-                  <dd className="mt-0.5 text-sm font-semibold text-ink-900">{value}</dd>
+                  <dd className="mt-0.5 break-words text-sm font-semibold text-ink-900">{value}</dd>
                 </div>
               ))}
             </dl>
             {booking.notes && (
               <div className="mt-4 border-t border-sand-100 pt-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-ink-500">{t.notes}</p>
-                <p className="mt-1 whitespace-pre-line text-sm text-ink-700">{booking.notes}</p>
+                <p className="mt-1 whitespace-pre-line break-words text-sm text-ink-700">{booking.notes}</p>
               </div>
             )}
           </section>

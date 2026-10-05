@@ -156,7 +156,7 @@ export default async function BookingsPage({ params, searchParams }: Props) {
           {bookings.map((b) => (
             <li key={b.id} className="p-4">
               <div className="flex items-center justify-between gap-2">
-                <Link href={`/${locale}/admin/bookings/${b.id}`} className="font-display text-base font-extrabold text-ocean-700">
+                <Link href={`/${locale}/admin/bookings/${b.id}`} className="inline-block rounded-lg bg-ocean-50 px-2 py-0.5 font-mono text-sm font-bold text-ocean-800 ring-1 ring-inset ring-ocean-200 transition hover:bg-ocean-100 hover:ring-ocean-300">
                   {b.reference}
                 </Link>
                 <StatusBadge status={b.status} locale={locale} />
@@ -198,10 +198,10 @@ export default async function BookingsPage({ params, searchParams }: Props) {
             {bookings.map((b) => (
               <tr key={b.id} className="transition hover:bg-sand-50">
                 <td className="px-4 py-3">
-                  <Link href={`/${locale}/admin/bookings/${b.id}`} className="font-bold text-ocean-700 hover:underline">
+                  <Link href={`/${locale}/admin/bookings/${b.id}`} className="inline-block rounded-lg bg-ocean-50 px-2 py-0.5 font-mono text-sm font-bold text-ocean-800 ring-1 ring-inset ring-ocean-200 transition hover:bg-ocean-100 hover:ring-ocean-300">
                     {b.reference}
                   </Link>
-                  <p className="text-xs text-ink-500">{b.created_at.slice(0, 10)}</p>
+                  <p className="mt-1 text-xs text-ink-500">{b.created_at.slice(0, 10)}</p>
                 </td>
                 <td className="px-4 py-3">
                   <p className="font-semibold text-ink-900">{b.customer_name}</p>
