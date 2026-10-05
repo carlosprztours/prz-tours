@@ -18,6 +18,20 @@ import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { usePasskeyLogin } from "./usePasskeyLogin";
 
+/** Último email usado en este dispositivo (para recordarlo). */
+const LAST_EMAIL_KEY = "prz-last-email";
+
+/** Guarda el email en este dispositivo (para el próximo login). */
+function rememberEmail(email: string): void {
+  try {
+    if (email.includes("@")) {
+      localStorage.setItem(LAST_EMAIL_KEY, email.trim().toLowerCase());
+    }
+  } catch {
+    /* almacenamiento no disponible */
+  }
+}
+
 type AuthDict = Dictionary["booking"];
 
 export function ModalLoginForm({
@@ -53,6 +67,7 @@ export function ModalLoginForm({
         setError(dict.authModalInvalid ?? dict.authRequired);
         return;
       }
+      rememberEmail(email);
       onSuccess();
     } catch {
       setError(dict.authRequired);
@@ -65,6 +80,7 @@ export function ModalLoginForm({
     setError(null);
     const result = await passkey.login(email, locale);
     if (result.ok) {
+      rememberEmail(email);
       onSuccess();
       return;
     }
@@ -148,6 +164,7 @@ export function ModalLoginForm({
         </div>
         <a
           href={googleHref}
+          onClick={() => rememberEmail(email)}
           className="inline-flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-sand-200 bg-white px-8 font-display text-base font-bold text-ink-900 shadow-sm transition hover:border-ocean-300 hover:bg-sand-50"
         >
           {dict.authGoogle}

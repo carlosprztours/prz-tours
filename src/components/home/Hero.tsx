@@ -27,7 +27,7 @@ export function Hero({ locale, dict, stats }: Props) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/40 to-transparent" aria-hidden="true" />
 
-      <div className="container-site relative flex min-h-[540px] flex-col justify-center py-20 sm:min-h-[600px]">
+      <div className="container-site relative flex min-h-[540px] flex-col items-center justify-center py-20 text-center sm:min-h-[600px]">
         <div className="mx-auto w-fit rounded-3xl bg-white/95 px-8 py-6 shadow-2xl backdrop-blur will-change-transform md:px-10 md:py-8" id="hero-logo">
           <Image
             src="/img/logo.png"
@@ -48,7 +48,7 @@ export function Hero({ locale, dict, stats }: Props) {
           {dict.hero.subtitle}
         </p>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href={`${base}/tours`}
             className="inline-flex h-12 items-center rounded-full bg-coral-700 px-7 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-800"
@@ -63,7 +63,7 @@ export function Hero({ locale, dict, stats }: Props) {
           </Link>
         </div>
 
-        <dl className="mt-12 grid max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
+        <dl className="mt-12 grid w-full max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
           {[
             { value: String(stats.tours), label: dict.hero.statTours },
             { value: "10+", label: dict.hero.statYears },

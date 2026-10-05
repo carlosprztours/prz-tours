@@ -56,12 +56,10 @@ export function LoginForm({
   const [pkBusy, setPkBusy] = useState(false);
   const [pkError, setPkError] = useState<string | null>(null);
 
-  // Entrada con passkey (huella, Face ID o PIN): usa el email escrito.
+  // Entrada con passkey (huella, Face ID o PIN). Sin email escrito usa la
+  // ceremonia descubrible (el dispositivo muestra tus cuentas).
   async function passkeyLogin() {
-    if (!email.includes("@")) {
-      setPkError(labels.emailRequired);
-      return;
-    }
+    const mail = email.includes("@") ? email : "";
     setPkBusy(true);
     setPkError(null);
     try {
@@ -72,7 +70,7 @@ export function LoginForm({
       const optsRes = await fetch("/api/webauthn/login/options", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: mail }),
       });
       const options = (await optsRes.json().catch(() => null)) as {
         error?: string;
@@ -93,7 +91,7 @@ export function LoginForm({
       const verRes = await fetch("/api/webauthn/login/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, credential, locale }),
+        body: JSON.stringify({ email: mail, credential, locale }),
       });
       const ver = (await verRes.json().catch(() => null)) as {
         ok?: boolean;
@@ -103,10 +101,12 @@ export function LoginForm({
         setPkError(labels.passkeyFailed);
         return;
       }
-      try {
-        localStorage.setItem(LAST_EMAIL_KEY, email.trim().toLowerCase());
-      } catch {
-        /* almacenamiento no disponible */
+      if (mail) {
+        try {
+          localStorage.setItem(LAST_EMAIL_KEY, mail.trim().toLowerCase());
+        } catch {
+          /* almacenamiento no disponible */
+        }
       }
       window.location.href = ver.redirect;
     } catch {

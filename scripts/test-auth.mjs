@@ -219,6 +219,21 @@ if (loggedIn?.redirect) {
   check("sesión activa en /account", who.includes(email), page.url());
 }
 
+// Sin email escrito: ceremonia descubrible (el dispositivo elige la cuenta).
+await page.getByRole("button", { name: /cerrar sesión|sign out/i }).click();
+await page.waitForURL("**/es/login", { timeout: 30000 });
+await page.goto(`${origin}/es/login`, { waitUntil: "networkidle", timeout: 60000 });
+await page.getByRole("button", { name: /huella o face id|fingerprint or face id/i }).click();
+await page.waitForFunction(
+  () => /^\/(es|en)\/(account|admin)/.test(new URL(window.location.href).pathname),
+  { timeout: 60000 },
+).catch(() => {});
+check(
+  "passkey descubrible sin email",
+  /^\/(es|en)\/(account|admin)/.test(new URL(page.url()).pathname),
+  page.url(),
+);
+
 check("sin pageerrors", pageErrors.length === 0, pageErrors[0] ?? "");
 await browser.close();
 

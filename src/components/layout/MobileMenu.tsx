@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { Dictionary } from "@/lib/i18n";
@@ -20,6 +20,15 @@ type Props = {
 
 export function MobileMenu({ locale, dict, links, bookHref }: Props) {
   const [open, setOpen] = useState(false);
+
+  // Si se abre y el usuario desliza, el menú se cierra solo: no debe
+  // quedar flotando sobre el contenido ni pelear con el header.
+  useEffect(() => {
+    if (!open) return;
+    const onScroll = () => setOpen(false);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [open]);
 
   return (
     <div className="lg:hidden">

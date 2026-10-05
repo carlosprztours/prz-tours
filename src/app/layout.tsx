@@ -9,6 +9,7 @@ import localFont from "next/font/local";
 import { headers } from "next/headers";
 
 import { defaultLocale, isLocale } from "@/lib/i18n/config";
+import { ImageGuard } from "@/components/ui/ImageGuard";
 import "./globals.css";
 
 /*
@@ -66,6 +67,7 @@ export default async function RootLayout({
     <html lang={lang} className={`${display.variable} ${sans.variable}`}>
       <body className="flex min-h-full flex-col bg-white antialiased">
         {children}
+        <ImageGuard />
         <script
           dangerouslySetInnerHTML={{
             __html: `if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){});});}`,

@@ -128,8 +128,9 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - **Ver reserva**: `track/page.tsx` (ref+email) o `account/page.tsx` (sesión) → `lib/db/bookings.ts`.
 - **Gestionar reserva**: `admin/bookings/[id]/page.tsx` → `lib/admin/bookings.ts`.
 - **Entrar con Google**: botón `components/auth/GoogleButton.tsx` en login/signup → `GET /api/auth/google` → callback (`api/auth/google/callback`) que vincula o crea al usuario (`lib/auth/google.ts`, columna `users.google_id`, migración `0005`). Secretos `GOOGLE_CLIENT_ID/SECRET`. Sin configurar, el botón vuelve al login.
-- **Passkeys** (huella/Face ID/PIN): registro en cuenta (`components/auth/PasskeysSection.tsx` + `POST /api/webauthn/register/*`), entrada en login (`LoginForm.tsx` + `POST /api/webauthn/login/*`), tabla `webauthn_credentials` (migración `0006`), lógica en `lib/auth/webauthn.ts`.
-- **Recuerda el último usuario** del dispositivo: `localStorage prz-last-email` en `LoginForm.tsx`/`SignupForm.tsx` (pre-rellena el email).
+- **Passkeys** (huella/Face ID/PIN): registro en cuenta (`components/auth/PasskeysSection.tsx` + `POST /api/webauthn/register/*`), entrada en login (`LoginForm.tsx` + `POST /api/webauthn/login/*`) con email o **descubrible sin email** (el dispositivo elige la cuenta vía `userHandle`), tabla `webauthn_credentials` (migración `0006`), lógica en `lib/auth/webauthn.ts`.
+- **Recuerda el último usuario** del dispositivo: `localStorage prz-last-email` en `LoginForm.tsx`/`SignupForm.tsx`/`ModalLoginForm.tsx` (contraseña, passkey y Google del modal pre-rellenan el login).
+- **WhatsApp confirma con tus reservas**: el menú flotante (`WhatsAppMenu.tsx` + `GET /api/bookings/mine`) lista tus pendientes para elegir y autorrellena la referencia; con una sola la pone directa.
 - **Textos visibles**: casi todo está en `lib/i18n/dictionaries/{es,en}.ts` (misma estructura en ambos; si falta una clave en `en.ts`, falla el tipo).
 - **Ajustes del negocio** (WhatsApp, email, dirección): tabla `settings` vía `admin/settings/page.tsx`, con fallback en `lib/site.ts`.
 
@@ -154,6 +155,8 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - Login con Google + passkeys + recordar último usuario (ver sección 8).
 - Reserva con login obligatorio y borrador persistente (`ModalLoginForm.tsx`, `usePasskeyLogin.ts`, `loginJson`, signup con `?next=`).
 - Fidelidad completa: invitados 10 %, recurrentes cada 2 viajes, cupones manuales del admin con envío por correo, campana + sección de avisos (`npm run test:loyalty` 8/8).
+- Imágenes protegidas contra descarga casual (menú contextual y arrastre): CSS en `globals.css` + `components/ui/ImageGuard.tsx` montado en el layout raíz.
+- Hero centrado (logo, etiqueta, título, CTAs) y menú móvil que se cierra solo al deslizar (`MobileMenu.tsx`).
 
 ## 10. Tests
 
@@ -181,10 +184,14 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   invitado → cupón → descuento, anti-abuso por propiedad, recurrente cada
   2 viajes, consumo y cupón manual del admin (`scripts/test-loyalty.mjs`).
 
-## 11. Pendientes
+## 11. Pendientes (cuando compre el dominio)
 
 - **Resend con dominio propio**: hoy `RESEND_FROM=onboarding@resend.dev`
   solo entrega al correo de la cuenta Resend (`david-dev@suprime.xyz`).
   Verificar el dominio en resend.com → Domains, agregar sus DNS y cambiar
   `RESEND_FROM` a `Perez Tours <reservas@TUDOMINIO>` (secret de producción).
   Envío probado de punta a punta (`email_sent=1`).
+- **R2 (imágenes del panel)**: desactivado porque la cuenta aún no lo tiene
+  habilitado. Pasos en `wrangler.jsonc` (líneas 25-29): habilitar R2 en el
+  dashboard → `wrangler r2 bucket create prz-media` → descomentar el bloque
+  → desplegar. Sin esto, la subida de fotos del panel no funciona.

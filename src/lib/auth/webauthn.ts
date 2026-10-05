@@ -34,6 +34,7 @@ export type StoredCredential = {
 export type ChallengeData = {
   challenge: string;
   type: "register" | "login";
+  /** 0 = ceremonia descubrible (usuario aún sin identificar). */
   userId: number;
 };
 
@@ -61,7 +62,11 @@ export function readChallenge(request: NextRequest): ChallengeData | null {
     const raw = request.cookies.get(WEBAUTHN_CHALLENGE_COOKIE)?.value;
     if (!raw) return null;
     const data = JSON.parse(raw) as ChallengeData;
-    if (!data.challenge || !data.userId || (data.type !== "register" && data.type !== "login")) {
+    if (
+      !data.challenge ||
+      typeof data.userId !== "number" ||
+      (data.type !== "register" && data.type !== "login")
+    ) {
       return null;
     }
     return data;

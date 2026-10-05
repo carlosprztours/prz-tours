@@ -39,6 +39,7 @@ const desktop = rawArgs.includes("--desktop");
 const args = rawArgs.filter((a) => a !== "--desktop");
 const url = args[0] ?? "http://localhost:3000/es";
 const outDir = args[1] ?? mkdtempSync(join(tmpdir(), "prz-web-"));
+const origin = new URL(url).origin;
 
 const results = [];
 const check = (name, ok, detail = "") => {
@@ -173,9 +174,64 @@ if (desktop) {
     };
   });
   check("menú: abre con tap", menu.open === true, `links=[${menu.links.join("|")}]`);
+
+  // 5) Con sesión: campana dentro de la pantalla y menú que se cierra
+  // solo al deslizar. Requiere admin local (dev@suprime.xyz).
+  await page.goto(`${origin}/es/login`, { waitUntil: "networkidle", timeout: 60000 });
+  await page.locator("#email").fill("dev@suprime.xyz");
+  await page.locator("#password").fill("Ultra1255");
+  await page.getByRole("button", { name: /^entrar$/i }).click();
+  await page.waitForFunction(
+    () => /^\/(es|en)\/admin/.test(new URL(window.location.href).pathname),
+    { timeout: 60000 },
+  ).catch(() => {});
+  check(
+    "móvil: login admin",
+    /^\/(es|en)\/admin/.test(new URL(page.url()).pathname),
+    page.url(),
+  );
+
+  await page.goto(`${origin}/es`, { waitUntil: "networkidle", timeout: 60000 });
+  await page.waitForTimeout(1200);
+  await page.getByRole("button", { name: /avisos|notifications/i }).tap();
+  await page.waitForTimeout(800);
+  const bellBox = await page.evaluate(() => {
+    const dd = [...document.querySelectorAll("header div")].find((d) =>
+      /fixed inset-x-4/.test(d.className) || /absolute right-0/.test(d.className),
+    );
+    if (!dd) return null;
+    const r = dd.getBoundingClientRect();
+    return { left: Math.round(r.left), right: Math.round(r.right), vw: window.innerWidth };
+  });
+  check(
+    "móvil: campana dentro de la pantalla",
+    bellBox != null && bellBox.left >= 0 && bellBox.right <= bellBox.vw,
+    JSON.stringify(bellBox),
+  );
+  await page.screenshot({ path: join(outDir, "04-bell.png") });
+
+  // Menú abierto + scroll → se cierra solo.
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: /abrir menú|open menu/i }).tap();
+  await page.waitForTimeout(500);
+  const menuVisible = await page.evaluate(() => {
+    const nav = document.querySelector("header nav");
+    if (!nav) return false;
+    const r = nav.getBoundingClientRect();
+    return r.width > 0 && r.bottom > 0 && r.top < window.innerHeight;
+  });
+  await page.evaluate(() => window.scrollTo({ top: 500, behavior: "instant" }));
+  await page.waitForTimeout(600);
+  const menuAfter = await page.evaluate(() => {
+    const nav = document.querySelector("header nav");
+    if (!nav) return "sin-nav";
+    const r = nav.getBoundingClientRect();
+    return r.width > 0 && r.bottom > 0 && r.top < window.innerHeight ? "abierto" : "cerrado";
+  });
+  check("móvil: menú se cierra al deslizar", menuVisible && menuAfter === "cerrado", menuAfter);
 }
 
-// 5) Sin errores JS.
+// 6) Sin errores JS.
 check("sin pageerrors", pageErrors.length === 0, pageErrors[0] ?? "");
 check("sin console.error", consoleErrors.length === 0, consoleErrors[0] ?? "");
 

@@ -1,9 +1,9 @@
 /**
  * POST /api/webauthn/login/verify — verifica el passkey y crea la sesión.
  *
- * Body: `{ email, credential }` (respuesta de `startAuthentication`).
- * Actualiza el `counter` (anti-replay) y crea la sesión local igual que
- * el login con contraseña. Devuelve `{ ok, redirect }`.
+ * Body: `{ email?, credential, locale? }`. Con email se valida contra esa
+ * cuenta; sin email (ceremonia descubrible) se identifica por `userHandle`.
+ * Actualiza el `counter` (anti-replay) y devuelve `{ ok, redirect }`.
  */
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { NextResponse, type NextRequest } from "next/server";
@@ -22,6 +22,20 @@ import { queryOne } from "@/lib/db/client";
 import { defaultLocale, isLocale } from "@/lib/i18n/config";
 import type { Locale, UserWithSecret } from "@/types";
 
+/** `userHandle` (id de usuario) desde la ceremonia descubrible. */
+function userIdFromHandle(handle: string | null | undefined): number | null {
+  if (typeof handle !== "string" || !handle) return null;
+  try {
+    let s = handle.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    const bin = atob(s);
+    const id = Number(bin);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const saved = readChallenge(request);
   if (!saved || saved.type !== "login") {
@@ -34,26 +48,45 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "bad-request" }, { status: 400 });
   }
-  const email =
+  const rawEmail =
     typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  if (!email.includes("@") || !body.credential || typeof body.credential !== "object") {
+  const email = rawEmail.includes("@") ? rawEmail : "";
+  if (!body.credential || typeof body.credential !== "object") {
     return NextResponse.json({ error: "bad-request" }, { status: 400 });
   }
   const locale: Locale = isLocale(body.locale ?? "") ? (body.locale as Locale) : defaultLocale;
 
-  const user = await queryOne<UserWithSecret>(
-    `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
-     FROM users WHERE email = ? AND id = ?`,
-    email,
-    saved.userId,
-  ).catch(() => null);
-  if (!user || user.is_active !== 1) {
-    return NextResponse.json({ error: "invalid" }, { status: 401 });
-  }
-
   const response = body.credential as Parameters<
     typeof verifyAuthenticationResponse
   >[0]["response"];
+
+  // Identifica al usuario: por email si vino, o por userHandle si es
+  // ceremonia descubrible (sin email).
+  let user: UserWithSecret | null = null;
+  if (email) {
+    user = await queryOne<UserWithSecret>(
+      `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
+       FROM users WHERE email = ?`,
+      email,
+    ).catch(() => null);
+    if (!user || user.is_active !== 1) {
+      return NextResponse.json({ error: "invalid" }, { status: 401 });
+    }
+    if (saved.userId !== 0 && saved.userId !== user.id) {
+      return NextResponse.json({ error: "invalid" }, { status: 401 });
+    }
+  } else {
+    const id = userIdFromHandle(response.response?.userHandle ?? null);
+    if (!id) return NextResponse.json({ error: "invalid" }, { status: 401 });
+    user = await queryOne<UserWithSecret>(
+      `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
+       FROM users WHERE id = ?`,
+      id,
+    ).catch(() => null);
+    if (!user || user.is_active !== 1) {
+      return NextResponse.json({ error: "invalid" }, { status: 401 });
+    }
+  }
   const stored = await getCredential(response.id).catch(() => null);
   if (!stored || stored.user_id !== user.id) {
     return NextResponse.json({ error: "invalid" }, { status: 401 });

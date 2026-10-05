@@ -151,6 +151,30 @@ async function submitAndWaitSuccess(page, shotPrefix) {
     });
   }
   check("reserva guarda 5 invitados", guestsOk === true);
+
+  // Menú flotante de WhatsApp: con reservas, ofrece elegir y autorrellena.
+  await page.goto(`${origin}/es`, { waitUntil: "networkidle", timeout: 60000 });
+  await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: /escríbenos por whatsapp/i }).click();
+  await page.waitForTimeout(500);
+  await page.getByRole("menuitem", { name: /confirmar mi reserva|confirm my booking/i }).click();
+  await page.waitForFunction(
+    () => !/buscando tus reservas|finding your bookings/i.test(document.body.innerText),
+    { timeout: 30000 },
+  ).catch(() => {});
+  const waMenu = await page.evaluate(() => document.body.innerText);
+  const waRef = (waMenu.match(/PRZ-[A-Z0-9]{6}/g) ?? []).filter((v, i, a) => a.indexOf(v) === i);
+  check("whatsapp: lista reservas para confirmar", waRef.length >= 1, waRef.join(","));
+  if (waRef.length > 0) {
+    const first = waRef[0];
+    const btn = page.getByRole("button", { name: new RegExp(first) }).first();
+    if ((await btn.count()) > 0) await btn.click();
+    else await page.locator('input[placeholder*="PRZ"]').fill(first);
+    await page.waitForTimeout(400);
+    const goHref = await page.getByRole("link", { name: /continuar|continue/i }).first().getAttribute("href").catch(() => "");
+    check("whatsapp: autorrellena la referencia", (goHref ?? "").includes(encodeURIComponent(first)), (goHref ?? "").slice(-60));
+  }
+  await page.screenshot({ path: join(outDir, "B-whatsapp.png") });
   check("sin pageerrors (fase B)", pageErrors.length === 0, pageErrors[0] ?? "");
   await page.close();
 }

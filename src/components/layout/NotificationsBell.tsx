@@ -128,7 +128,7 @@ export function NotificationsBell({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[85vw] rounded-2xl border border-sand-200 bg-white p-2 shadow-2xl">
+        <div className="fixed inset-x-4 top-[88px] z-50 rounded-2xl border border-sand-200 bg-white p-2 shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80">
           <p className="px-3 pb-1 pt-2 font-display text-sm font-bold text-ink-900">
             {labels.title}
           </p>
