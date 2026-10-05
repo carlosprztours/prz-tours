@@ -19,6 +19,7 @@ export const signupSchema = z.object({
     .min(8, { error: "tooShort" })
     .max(128, { error: "tooLong" }),
   next: z.string().trim().max(200).optional(),
+  ref: z.string().trim().max(8).optional(),
 });
 
 export type SignupFormData = z.infer<typeof signupSchema>;

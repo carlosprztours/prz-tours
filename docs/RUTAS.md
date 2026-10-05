@@ -43,7 +43,8 @@ Layout con sidebar y verificación de sesión: `admin/layout.tsx`.
 | `/es/admin/tours`, `/new`, `/[id]` | `admin/tours/page.tsx`, `new/page.tsx`, `[id]/page.tsx`, `TourForm.tsx` |
 | `/es/admin/transfers`, `/new`, `/[id]` | `admin/transfers/page.tsx`, `new/page.tsx`, `[id]/page.tsx`, `TransferForm.tsx` |
 | `/es/admin/testimonials`, `/new`, `/[id]` | `admin/testimonials/...` + `TestimonialForm.tsx` |
-| `/es/admin/promos`, `/new`, `/[id]` | `admin/promos/...` + `PromoForm.tsx` |
+| `/es/admin/coupons` | `admin/coupons/page.tsx` + `CouponCreateForm.tsx` | Cupones personales: crear manual, enviar correo, cancelar |
+| `/es/admin/promos`, `/new`, `/[id]` | `admin/promos/...` + `PromoForm.tsx` | Códigos genéricos (cualquiera puede usarlos) |
 | `/es/admin/blog`, `/new`, `/[id]` | `admin/blog/...` + `ArticleForm.tsx` |
 | `/es/admin/faq`, `/new`, `/[id]` | `admin/faq/...` + `FaqForm.tsx` |
 | `/es/admin/gallery` | `admin/gallery/page.tsx` + `AddImageForm.tsx` |
@@ -67,7 +68,8 @@ Layout con sidebar y verificación de sesión: `admin/layout.tsx`.
 
 | Carpeta | Archivos | Uso |
 |---|---|---|
-| `layout/` | `SiteHeader.tsx` (nav + CTAs; el logo lo pone `HeaderMiniLogo`), `HeaderMiniLogo.tsx` (mini-logo que aparece al bajar, ligado al scroll), `SiteFooter.tsx`, `MobileMenu.tsx`, `LanguageSwitcher.tsx`, `WhatsAppMenu.tsx`, `ConditionalFloat.tsx`, `ChromeSwitcher.tsx` | Estructura global |
+| `auth/` | `GoogleButton.tsx`, `ModalLoginForm.tsx` (login sin navegar para el modal), `PasskeysSection.tsx`, `CouponsSection.tsx`, `InviteLink.tsx`, `NotificationsSection.tsx`, `usePasskeyLogin.ts` | Auth y fidelidad (cliente) |
+| `layout/` | `SiteHeader.tsx` (nav + CTAs; el logo lo pone `HeaderMiniLogo`), `HeaderMiniLogo.tsx` (mini-logo que aparece al bajar, ligado al scroll), `NotificationsBell.tsx` (campana con no leídos), `SiteFooter.tsx`, `MobileMenu.tsx`, `LanguageSwitcher.tsx`, `WhatsAppMenu.tsx`, `ConditionalFloat.tsx`, `ChromeSwitcher.tsx` | Estructura global |
 | `home/` | `Hero.tsx` (foto + logo grande `#hero-logo` + CTAs + stats), `HomeTours.tsx` (todas las publicadas + enlace al catálogo), `WhyUs.tsx`, `Testimonials.tsx`, `Gallery.tsx`, `CtaBanner.tsx` | Secciones de la home |
 | `tours/` | `TourCard.tsx` (tarjeta catálogo), `TourGallery.tsx`, `TourInfo.tsx`, `TourReviews.tsx` | Tours |
 | `booking/` | `BookingForm.tsx` (formulario de reserva tour/traslado/custom), `AvailabilityNote.tsx`, `DepositButton.tsx` | Reservas |
@@ -120,7 +122,9 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 ## 8. Flujos clave (de punta a punta)
 
 - **Reservar tour/traslado**: `book/page.tsx` o `tours/[slug]/page.tsx` → `BookingForm.tsx` → Server Action `lib/actions/book-tour.ts` → valida `lib/validation/booking.ts` → `lib/db/bookings.ts` (`quoteBooking` + `createBooking`) → WhatsApp (`lib/notify/whatsapp.ts`) + emails (`lib/notify/email.ts`).
+- **Programa de fidelidad** (`lib/db/loyalty.ts`, migración `0007`): cupón 10 % por invitado (registro con `?ref=`), cupón automático cada 2 viajes `completed` (máx. 1 activo por cuenta, contador se reinicia), cupones manuales del admin (`admin/coupons`: crear, enviar correo, cancelar). Los personales se validan por propiedad en la cotización antes que los genéricos (`promo_codes`).
 - **Reserva exige cuenta**: sin sesión, el envío abre el modal (`components/auth/ModalLoginForm.tsx`: contraseña JSON `loginJson`, passkey, Google, registro) y guarda el borrador en `sessionStorage` (se restaura al volver, incluso tras Google/signup con `?next=`). El servidor lo garantiza en `bookTour` (`validation.authRequired`).
+- **Avisos**: campana del header (`NotificationsBell.tsx` + `GET /api/notifications`) y sección en Mi cuenta. Se generan al confirmar, pagar y emitir cupones (ver `lib/admin/bookings.ts`, webhook Stripe).
 - **Ver reserva**: `track/page.tsx` (ref+email) o `account/page.tsx` (sesión) → `lib/db/bookings.ts`.
 - **Gestionar reserva**: `admin/bookings/[id]/page.tsx` → `lib/admin/bookings.ts`.
 - **Entrar con Google**: botón `components/auth/GoogleButton.tsx` en login/signup → `GET /api/auth/google` → callback (`api/auth/google/callback`) que vincula o crea al usuario (`lib/auth/google.ts`, columna `users.google_id`, migración `0005`). Secretos `GOOGLE_CLIENT_ID/SECRET`. Sin configurar, el botón vuelve al login.
@@ -149,6 +153,7 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   con número 1–60). Grupos de 12+ coordinan por WhatsApp.
 - Login con Google + passkeys + recordar último usuario (ver sección 8).
 - Reserva con login obligatorio y borrador persistente (`ModalLoginForm.tsx`, `usePasskeyLogin.ts`, `loginJson`, signup con `?next=`).
+- Fidelidad completa: invitados 10 %, recurrentes cada 2 viajes, cupones manuales del admin con envío por correo, campana + sección de avisos (`npm run test:loyalty` 8/8).
 
 ## 10. Tests
 

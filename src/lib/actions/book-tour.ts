@@ -116,6 +116,7 @@ export async function bookTour(
       notes: data.notes,
       source: "web",
       clientIp,
+      userId: session.user.id,
     });
   } catch (err) {
     console.error("[bookTour] no se pudo crear la reserva:", err);

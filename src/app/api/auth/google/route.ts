@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
     rawNext.startsWith(`/${locale}/`) && !rawNext.includes("..")
       ? rawNext
       : undefined;
+  const rawRef = (url.searchParams.get("ref") ?? "").trim().toUpperCase();
+  const inviteRef = /^[A-Z0-9]{1,8}$/.test(rawRef) ? rawRef : undefined;
 
   const client = await getGoogleClient();
   if (!client) {
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
   const res = NextResponse.redirect(
     googleAuthUrl(client.id, redirectUri, state),
   );
-  res.cookies.set("prz_oauth_state", JSON.stringify({ state, locale, next }), {
+  res.cookies.set("prz_oauth_state", JSON.stringify({ state, locale, next, inviteRef }), {
     httpOnly: true,
     secure: url.protocol === "https:",
     sameSite: "lax",

@@ -346,6 +346,12 @@ export const es = {
     optDriverMessage: "¡Hola! Soy un cliente en tour y necesito contactar a mi chofer.",
   },
 
+  notify: {
+    title: "Avisos",
+    empty: "Sin avisos por ahora.",
+    viewAll: "Ver todos en Mi cuenta",
+  },
+
   errors: {
     notFoundTitle: "Página no encontrada",
     notFoundBody:

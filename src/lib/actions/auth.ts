@@ -143,6 +143,26 @@ export async function signup(
   if (!Number.isInteger(userId) || userId <= 0) {
     return { ok: false, error: "invalid-name" };
   }
+
+  // Fidelidad: código de invitado propio + cupón si vino referido.
+  try {
+    const {
+      findUserByInviteCode,
+      getOrCreateInviteCode,
+      issueCoupon,
+    } = await import("@/lib/db/loyalty");
+    await getOrCreateInviteCode(userId);
+    if (parsed.data.ref) {
+      const inviterId = await findUserByInviteCode(parsed.data.ref);
+      if (inviterId && inviterId !== userId) {
+        await execute(`UPDATE users SET referred_by = ? WHERE id = ?`, inviterId, userId);
+        await issueCoupon({ userId, reason: "invite", locale });
+      }
+    }
+  } catch (err) {
+    console.error("[auth] signup loyalty error:", err);
+  }
+
   await createSession(userId, "customer");
   // Vuelta a la reserva si venía del modal (ruta interna validada).
   const next = parsed.data.next;

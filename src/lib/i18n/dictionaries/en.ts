@@ -354,6 +354,12 @@ export const en: typeof es = {
     optDriverMessage: "Hi! I'm a client on tour and I need to contact my driver.",
   },
 
+  notify: {
+    title: "Notifications",
+    empty: "No notifications yet.",
+    viewAll: "View all in My account",
+  },
+
   errors: {
     notFoundTitle: "Page not found",
     notFoundBody:

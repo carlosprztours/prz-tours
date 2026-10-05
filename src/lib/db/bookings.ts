@@ -36,6 +36,8 @@ export type CreateBookingInput = {
   notes?: string;
   source?: string;
   clientIp?: string | null;
+  /** Cuenta que reserva (la reserva ya exige sesión). */
+  userId?: number | null;
 };
 
 export type BookingQuote = {
@@ -47,6 +49,7 @@ export type BookingQuote = {
   discount: number;
   promoId: number | null;
   promoCode: string | null;
+  loyaltyCouponId: number | null;
   depositDue: number;
 };
 
@@ -143,21 +146,30 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
     }
   }
 
-  // Promo: se valida y descuenta del total.
+  // Promo: primero el cupón personal (propiedad estricta), luego el genérico.
   let discount = 0;
   let promoId: number | null = null;
   let promoCode: string | null = null;
+  let loyaltyCouponId: number | null = null;
   if (input.promoCode?.trim()) {
-    const { checkPromo } = await import("./promos");
-    const checked = await checkPromo(input.promoCode, baseTotal);
-    if (!checked.ok) {
-      const err = new Error("Invalid promo") as Error & { code?: string };
-      err.code = `promo-${checked.error}`;
-      throw err;
+    const { checkCoupon } = await import("./loyalty");
+    const personal = await checkCoupon(input.promoCode, input.userId ?? null, baseTotal);
+    if (personal.ok) {
+      discount = personal.discount;
+      promoCode = personal.coupon.code;
+      loyaltyCouponId = personal.coupon.id;
+    } else {
+      const { checkPromo } = await import("./promos");
+      const checked = await checkPromo(input.promoCode, baseTotal);
+      if (!checked.ok) {
+        const err = new Error("Invalid promo") as Error & { code?: string };
+        err.code = `promo-${checked.error}`;
+        throw err;
+      }
+      discount = checked.discount;
+      promoId = checked.promo.id;
+      promoCode = checked.promo.code;
     }
-    discount = checked.discount;
-    promoId = checked.promo.id;
-    promoCode = checked.promo.code;
   }
 
   const totalPrice = Math.round((baseTotal - discount) * 100) / 100;
@@ -173,6 +185,7 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
     discount: Math.round(discount * 100) / 100,
     promoId,
     promoCode,
+    loyaltyCouponId,
     depositDue,
   };
 }
@@ -190,14 +203,14 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
       await execute(
         `INSERT INTO bookings
            (reference, kind, tour_id, tour_slug, tour_title,
-            transfer_route_id, transfer_label,
+            transfer_route_id, transfer_label, user_id,
             customer_name, customer_email, customer_phone, customer_country,
             guests, unit_price, total_price, currency,
             promo_code, discount_amount, deposit_due,
             booked_for, pickup_time, hotel, airport, cruise_port, meeting_point,
             locale, notes, status, payment_status, source, client_ip)
          VALUES
-           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
+           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
         reference,
         input.kind,
         input.tourId ?? null,
@@ -205,6 +218,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
         quote.tourTitle,
         input.transferRouteId ?? null,
         quote.transferLabel,
+        input.userId ?? null,
         input.customerName,
         input.customerEmail,
         input.customerPhone,
@@ -249,6 +263,12 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
     const { consumePromoUse } = await import("./promos");
     await consumePromoUse(quote.promoId).catch((err) =>
       console.error("[bookings] consumePromoUse error:", err),
+    );
+  }
+  if (quote.loyaltyCouponId) {
+    const { consumeCoupon } = await import("./loyalty");
+    await consumeCoupon(quote.loyaltyCouponId, booking.id).catch((err) =>
+      console.error("[bookings] consumeCoupon error:", err),
     );
   }
 

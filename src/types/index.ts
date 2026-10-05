@@ -136,6 +136,7 @@ export type Booking = {
   tour_title: string;
   transfer_route_id: number | null;
   transfer_label: string | null;
+  user_id: number | null;
   customer_name: string;
   customer_email: string;
   customer_phone: string;

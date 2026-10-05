@@ -33,6 +33,7 @@ export default async function AdminLayout({ children, params }: Props) {
     { href: `${base}/transfers`, label: locale === "es" ? "Traslados" : "Transfers" },
     { href: `${base}/testimonials`, label: locale === "es" ? "Opiniones" : "Reviews" },
     { href: `${base}/promos`, label: locale === "es" ? "Promos" : "Promos" },
+    { href: `${base}/coupons`, label: locale === "es" ? "Cupones" : "Coupons" },
     { href: `${base}/blog`, label: "Blog" },
     { href: `${base}/faq`, label: "FAQ" },
     { href: `${base}/gallery`, label: locale === "es" ? "Galería" : "Gallery" },

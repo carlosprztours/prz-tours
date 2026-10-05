@@ -7,10 +7,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { CouponsSection } from "@/components/auth/CouponsSection";
+import { InviteLink } from "@/components/auth/InviteLink";
+import { NotificationsSection } from "@/components/auth/NotificationsSection";
 import { PasskeysSection } from "@/components/auth/PasskeysSection";
 import { logout } from "@/lib/actions/auth";
 import { verifyCustomerSession } from "@/lib/auth/dal";
 import { listUserCredentials } from "@/lib/auth/webauthn";
+import {
+  getOrCreateInviteCode,
+  listUserCoupons,
+  listUserNotifications,
+} from "@/lib/db/loyalty";
 import { queryOne } from "@/lib/db/client";
 import { listBookingsByEmail } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
@@ -33,6 +41,11 @@ export default async function AccountPage({ params }: Props) {
     session.user.id,
   );
   const bookings = await listBookingsByEmail(session.user.email);
+  const [inviteCode, coupons, notifications] = await Promise.all([
+    getOrCreateInviteCode(session.user.id),
+    listUserCoupons(session.user.id),
+    listUserNotifications(session.user.id, 20),
+  ]);
   const passkeys = await listUserCredentials(session.user.id);
 
   const es = locale === "es";
@@ -45,6 +58,53 @@ export default async function AccountPage({ params }: Props) {
       : "You have no bookings with this email yet.",
     explore: es ? "Explorar tours" : "Explore tours",
     signOut: es ? "Cerrar sesión" : "Sign out",
+    invite: es
+      ? {
+          title: "Invita y regala 10 %",
+          subtitle: "Quien se registre con tu enlace recibe un 10 % de un solo uso en su primera reserva.",
+          copy: "Copiar enlace",
+          copied: "¡Copiado!",
+        }
+      : {
+          title: "Invite and gift 10 % off",
+          subtitle: "Whoever signs up with your link gets single-use 10 % off their first booking.",
+          copy: "Copy link",
+          copied: "Copied!",
+        },
+    coupons: es
+      ? {
+          title: "Mis cupones",
+          subtitle: "Escríbelos en el campo promocional al reservar. Uno activo por cuenta.",
+          copy: "Copiar",
+          copied: "¡Copiado!",
+          empty: "Aún no tienes cupones. Viaja 2 veces o invita amigos para ganar un 10 %.",
+          expires: "Vence",
+          usedOn: "Usado",
+          statusUsed: "Usado",
+          statusExpired: "Vencido",
+        }
+      : {
+          title: "My coupons",
+          subtitle: "Enter them in the promo field when booking. One active per account.",
+          copy: "Copy",
+          copied: "Copied!",
+          empty: "No coupons yet. Travel twice or invite friends to earn 10 % off.",
+          expires: "Expires",
+          usedOn: "Used",
+          statusUsed: "Used",
+          statusExpired: "Expired",
+        },
+    notifications: es
+      ? {
+          title: "Avisos",
+          empty: "Sin avisos por ahora.",
+          markAll: "Marcar leídos",
+        }
+      : {
+          title: "Notifications",
+          empty: "No notifications yet.",
+          markAll: "Mark all read",
+        },
     passkeys: es
       ? {
           title: "Passkeys",
@@ -196,6 +256,18 @@ export default async function AccountPage({ params }: Props) {
             }))}
             labels={copy.passkeys}
           />
+        </div>
+
+        <div className="mt-5">
+          <NotificationsSection initial={notifications} labels={copy.notifications} />
+        </div>
+
+        <div className="mt-5">
+          <CouponsSection coupons={coupons} labels={copy.coupons} />
+        </div>
+
+        <div className="mt-5">
+          <InviteLink locale={locale} code={inviteCode} labels={copy.invite} />
         </div>
 
         <h2 className="mt-10 font-display text-xl font-extrabold text-ink-900">

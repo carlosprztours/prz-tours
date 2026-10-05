@@ -22,10 +22,12 @@ const inputClass =
 export function SignupForm({
   locale,
   next,
+  refCode,
   labels,
 }: {
   locale: Locale;
   next?: string;
+  refCode?: string;
   labels: {
     name: string;
     email: string;
@@ -72,6 +74,7 @@ export function SignupForm({
   return (
     <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
       {next && <input type="hidden" name="next" value={next} />}
+      {refCode && <input type="hidden" name="ref" value={refCode} />}
       <div>
         <label htmlFor="name" className="mb-1.5 block text-sm font-bold text-ink-900">
           {labels.name}

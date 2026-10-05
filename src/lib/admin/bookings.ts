@@ -77,6 +77,52 @@ export async function setBookingStatus(
     me,
     email,
   );
+
+  // Fidelidad y avisos: confirmar avisa; completar suma el viaje y,
+  // cada 2 viajes, emite el cupón automático (con su aviso).
+  if (to === "confirmed" || to === "completed") {
+    try {
+      const {
+        handleTripCompleted,
+        notifyUser,
+        resolveBookingUser,
+      } = await import("@/lib/db/loyalty");
+      const owner = await resolveBookingUser(booking);
+      if (owner) {
+        const bl = owner.locale;
+        const experience =
+          booking.tour_title || booking.transfer_label || "";
+        if (to === "confirmed") {
+          await notifyUser(
+            owner.id,
+            "booking-confirmed",
+            bl === "es"
+              ? `Reserva ${booking.reference} confirmada`
+              : `Booking ${booking.reference} confirmed`,
+            bl === "es"
+              ? `Tu experiencia "${experience}" está confirmada. ¡Te esperamos!`
+              : `Your experience "${experience}" is confirmed. See you soon!`,
+            `/${bl}/account`,
+          );
+        } else {
+          const coupon = await handleTripCompleted(owner.id);
+          if (!coupon) {
+            await notifyUser(
+              owner.id,
+              "trip-completed",
+              bl === "es" ? "¡Gracias por viajar con nosotros!" : "Thanks for travelling with us!",
+              bl === "es"
+                ? `Tu viaje ${booking.reference} quedó registrado. Cada 2 viajes recibes un 10 % de descuento.`
+                : `Your trip ${booking.reference} was recorded. Every 2 trips you earn 10 % off.`,
+              `/${bl}/account`,
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[bookings] loyalty/notify error:", err);
+    }
+  }
   return { ok: true };
 }
 
@@ -108,5 +154,32 @@ export async function setBookingPayment(
   revalidatePath(`/${loc}/admin`);
   const { logActivity } = await import("./activity");
   await logActivity(`booking.pay-${payment}`, booking.reference, me, email);
+
+  if (payment === "paid" || payment === "partial") {
+    try {
+      const { notifyUser, resolveBookingUser } = await import("@/lib/db/loyalty");
+      const owner = await resolveBookingUser(booking);
+      if (owner) {
+        const bl = owner.locale;
+        await notifyUser(
+          owner.id,
+          "payment",
+          bl === "es"
+            ? `Pago registrado · ${booking.reference}`
+            : `Payment recorded · ${booking.reference}`,
+          bl === "es"
+            ? payment === "paid"
+              ? "Tu reserva quedó totalmente pagada. ¡Gracias!"
+              : "Registramos un pago parcial en tu reserva. ¡Gracias!"
+            : payment === "paid"
+              ? "Your booking is fully paid. Thank you!"
+              : "We recorded a partial payment on your booking. Thank you!",
+          `/${bl}/account`,
+        );
+      }
+    } catch (err) {
+      console.error("[bookings] payment notify error:", err);
+    }
+  }
   return { ok: true };
 }

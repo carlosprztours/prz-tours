@@ -14,7 +14,7 @@ import { SignupForm } from "./SignupForm";
 
 type Props = {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; ref?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -30,7 +30,7 @@ export default async function SignupPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
-  const { next } = await searchParams;
+  const { next, ref } = await searchParams;
 
   const labels =
     locale === "es"
@@ -89,8 +89,8 @@ export default async function SignupPage({ params, searchParams }: Props) {
           </h1>
           <p className="mt-1 text-sm text-ink-500">{labels.subtitle}</p>
         </div>
-        <SignupForm locale={locale} next={next} labels={labels} />
-        <GoogleButton locale={locale} label={labels.google} divider={labels.or} />
+        <SignupForm locale={locale} next={next} refCode={ref} labels={labels} />
+        <GoogleButton locale={locale} inviteRef={ref} label={labels.google} divider={labels.or} />
         <p className="mt-5 text-center text-sm text-ink-500">
           {labels.hasAccount}{" "}
           <Link href={`/${locale}/login`} className="font-bold text-ocean-700 hover:underline">

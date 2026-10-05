@@ -83,5 +83,38 @@ export async function POST(request: NextRequest) {
     `Anticipo pagado: $${paidNow}`,
   );
 
+  // Aviso en la web: pago recibido (y confirmación si cambió el estado).
+  try {
+    const { notifyUser, resolveBookingUser } = await import("@/lib/db/loyalty");
+    const full = await queryOne<{
+      reference: string;
+      user_id: number | null;
+      customer_email: string;
+      locale: string;
+    }>(
+      `SELECT reference, user_id, customer_email, locale FROM bookings WHERE id = ?`,
+      bookingId,
+    );
+    if (full) {
+      const owner = await resolveBookingUser(full);
+      if (owner) {
+        const bl = owner.locale;
+        await notifyUser(
+          owner.id,
+          "payment",
+          bl === "es"
+            ? `Pago recibido · ${full.reference}`
+            : `Payment received · ${full.reference}`,
+          bl === "es"
+            ? `Registramos $${paidNow} en tu reserva. ¡Gracias!`
+            : `We registered $${paidNow} on your booking. Thank you!`,
+          `/${bl}/account`,
+        );
+      }
+    }
+  } catch (err) {
+    console.error("[stripe] notify error:", err);
+  }
+
   return NextResponse.json({ received: true });
 }

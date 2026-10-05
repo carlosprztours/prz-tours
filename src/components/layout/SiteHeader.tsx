@@ -13,6 +13,7 @@ import type { Locale } from "@/types";
 import { HeaderMiniLogo } from "./HeaderMiniLogo";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileMenu } from "./MobileMenu";
+import { NotificationsBell } from "./NotificationsBell";
 
 type Props = {
   locale: Locale;
@@ -68,6 +69,10 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
+          <NotificationsBell
+            labels={dict.notify}
+            accountHref={`${base}/account`}
+          />
           <LanguageSwitcher locale={locale} label={dict.nav.switchLanguage} />
           <a
             href={`https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(dict.whatsapp.defaultMessage)}`}

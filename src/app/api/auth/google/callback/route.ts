@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   const origin = publicOrigin(request);
   const locale: Locale = defaultLocale;
 
-  let saved: { state?: string; locale?: string; next?: string } = {};
+  let saved: { state?: string; locale?: string; next?: string; inviteRef?: string } = {};
   try {
     saved = JSON.parse(request.cookies.get("prz_oauth_state")?.value ?? "{}");
   } catch {
@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
   // 1) ¿Cuenta ya vinculada a este Google?
   // 2) ¿Cuenta con este email (contraseña) para vincular?
   // 3) Crear customer nuevo.
+  let isNew = false;
   let user = await queryOne<UserWithSecret>(
     `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
      FROM users WHERE google_id = ?`,
@@ -90,6 +91,7 @@ export async function GET(request: NextRequest) {
       );
       const id = Number(inserted.meta.last_row_id);
       if (!Number.isInteger(id) || id <= 0) return fail(url, origin, loc);
+      isNew = true;
       user = await queryOne<UserWithSecret>(
         `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
          FROM users WHERE id = ?`,
@@ -99,6 +101,25 @@ export async function GET(request: NextRequest) {
   }
 
   if (!user || user.is_active !== 1) return fail(url, origin, loc);
+
+  // Fidelidad: código propio + cupón si es cuenta nueva referida.
+  try {
+    const {
+      findUserByInviteCode,
+      getOrCreateInviteCode,
+      issueCoupon,
+    } = await import("@/lib/db/loyalty");
+    await getOrCreateInviteCode(user.id);
+    if (isNew && typeof saved.inviteRef === "string" && saved.inviteRef) {
+      const inviterId = await findUserByInviteCode(saved.inviteRef);
+      if (inviterId && inviterId !== user.id) {
+        await execute(`UPDATE users SET referred_by = ? WHERE id = ?`, inviterId, user.id);
+        await issueCoupon({ userId: user.id, reason: "invite", locale: loc });
+      }
+    }
+  } catch (err) {
+    console.error("[google] loyalty error:", err);
+  }
 
   await createSession(user.id, user.role);
   logActivity("login-google", user.email, user.id, user.email).catch(() => {});

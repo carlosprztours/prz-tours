@@ -33,16 +33,19 @@ function GoogleG() {
 export function GoogleButton({
   locale,
   next,
+  inviteRef,
   label,
   divider,
 }: {
   locale: Locale;
   next?: string;
+  inviteRef?: string;
   label: string;
   divider: string;
 }) {
   const params = new URLSearchParams({ locale });
   if (next) params.set("next", next);
+  if (inviteRef) params.set("ref", inviteRef);
   return (
     <div className="mt-5">
       <div className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-ink-500">
