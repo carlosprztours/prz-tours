@@ -69,6 +69,14 @@ export async function bookTour(
   }
   const data: BookingFormData = parsed.data;
 
+  // Reservar exige cuenta: el formulario avisa con el modal de login,
+  // pero esto lo garantiza aunque se intente saltar el cliente.
+  const { getCurrentUser } = await import("@/lib/auth/dal");
+  const session = await getCurrentUser().catch(() => null);
+  if (!session) {
+    return { ok: false, errors: { form: "validation.authRequired" } };
+  }
+
   if (data.kind === "tour" && !data.tourId) {
     return { ok: false, errors: { tourId: "validation.tourRequired" } };
   }

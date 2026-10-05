@@ -45,12 +45,17 @@ export type StringEnvKey =
   | "NOTIFY_EMAIL"
   | "STRIPE_SECRET_KEY"
   | "STRIPE_WEBHOOK_SECRET"
+  | "GOOGLE_CLIENT_ID"
+  | "GOOGLE_CLIENT_SECRET"
   | "NEXTJS_ENV";
 
 /** Lee una variable de entorno de Cloudflare (secretos incluidos). */
 export async function getEnvVar(key: StringEnvKey): Promise<string | undefined> {
   const { env } = await getCloudflareContext({ async: true });
-  return env[key];
+  // `CloudflareEnv` solo declara parte de las claves (se genera con
+  // `wrangler types`); el acceso dinámico va por Record.
+  const vars = env as unknown as Record<string, string | undefined>;
+  return vars[key];
 }
 
 // ───────────────────────────── Helpers de consulta ─────────────────────────────

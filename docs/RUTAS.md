@@ -120,8 +120,12 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 ## 8. Flujos clave (de punta a punta)
 
 - **Reservar tour/traslado**: `book/page.tsx` o `tours/[slug]/page.tsx` → `BookingForm.tsx` → Server Action `lib/actions/book-tour.ts` → valida `lib/validation/booking.ts` → `lib/db/bookings.ts` (`quoteBooking` + `createBooking`) → WhatsApp (`lib/notify/whatsapp.ts`) + emails (`lib/notify/email.ts`).
+- **Reserva exige cuenta**: sin sesión, el envío abre el modal (`components/auth/ModalLoginForm.tsx`: contraseña JSON `loginJson`, passkey, Google, registro) y guarda el borrador en `sessionStorage` (se restaura al volver, incluso tras Google/signup con `?next=`). El servidor lo garantiza en `bookTour` (`validation.authRequired`).
 - **Ver reserva**: `track/page.tsx` (ref+email) o `account/page.tsx` (sesión) → `lib/db/bookings.ts`.
 - **Gestionar reserva**: `admin/bookings/[id]/page.tsx` → `lib/admin/bookings.ts`.
+- **Entrar con Google**: botón `components/auth/GoogleButton.tsx` en login/signup → `GET /api/auth/google` → callback (`api/auth/google/callback`) que vincula o crea al usuario (`lib/auth/google.ts`, columna `users.google_id`, migración `0005`). Secretos `GOOGLE_CLIENT_ID/SECRET`. Sin configurar, el botón vuelve al login.
+- **Passkeys** (huella/Face ID/PIN): registro en cuenta (`components/auth/PasskeysSection.tsx` + `POST /api/webauthn/register/*`), entrada en login (`LoginForm.tsx` + `POST /api/webauthn/login/*`), tabla `webauthn_credentials` (migración `0006`), lógica en `lib/auth/webauthn.ts`.
+- **Recuerda el último usuario** del dispositivo: `localStorage prz-last-email` en `LoginForm.tsx`/`SignupForm.tsx` (pre-rellena el email).
 - **Textos visibles**: casi todo está en `lib/i18n/dictionaries/{es,en}.ts` (misma estructura en ambos; si falta una clave en `en.ts`, falla el tipo).
 - **Ajustes del negocio** (WhatsApp, email, dirección): tabla `settings` vía `admin/settings/page.tsx`, con fallback en `lib/site.ts`.
 
@@ -138,6 +142,13 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - Etiqueta "Apto para cruceros" eliminada del frontend y del panel (columna `cruise_friendly` en BD quedó sin uso).
 - Campo "Nombre de la terminal de cruceros" en reservas: `BookingForm.tsx` + `dictionaries/{es,en}.ts` (`cruisePortLabel/Hint`) + validación `validation/booking.ts` → columna `cruise_port`; visible en admin (`admin/bookings/[id]`), `/track`, CSV y emails.
 - Fecha en traslados dice "Fecha del traslado": `dictionaries/{es,en}.ts` (`dateLabelTransfer`), usado en `BookingForm.tsx`.
+- Confirmación de reserva animada: check que se dibuja + ondas + entrada
+  escalonada + scroll al mensaje (`BookingForm.tsx`, keyframes en
+  `globals.css`, respeta `prefers-reduced-motion`).
+- Invitados en tours: desplegable 2–11 (`BookingForm.tsx`; traslados siguen
+  con número 1–60). Grupos de 12+ coordinan por WhatsApp.
+- Login con Google + passkeys + recordar último usuario (ver sección 8).
+- Reserva con login obligatorio y borrador persistente (`ModalLoginForm.tsx`, `usePasskeyLogin.ts`, `loginJson`, signup con `?next=`).
 
 ## 10. Tests
 
@@ -148,3 +159,11 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   al subir, menú hamburguesa con tap real, y cero errores JS. Guarda PNG
   (`01-top`, `02-scrolled`, `03-menu`) + `report.json` en la carpeta dada
   (por defecto un temporal). Requiere el dev corriendo.
+- Test de reserva (`npm run test:booking -- [url] [carpeta]`): llena y envía
+  el formulario real con `scripts/test-booking.mjs`, verifica referencia,
+  check animado y botón de WhatsApp. **Crea una reserva real en la D1
+  local** (bórrala en el panel si quieres). Captura a mitad y final de la
+  animación.
+- Test de auth (`npm run test:auth -- [origen] [carpeta]`): recordar-email,
+  fallback de Google y ceremonia passkey completa con autenticador virtual
+  (`scripts/test-auth.mjs`). Crea UN usuario de prueba en local.

@@ -9,10 +9,12 @@ import { notFound } from "next/navigation";
 
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { SignupForm } from "./SignupForm";
 
 type Props = {
   params: Promise<{ lang: string }>;
+  searchParams: Promise<{ next?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -24,10 +26,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function SignupPage({ params }: Props) {
+export default async function SignupPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  const { next } = await searchParams;
 
   const labels =
     locale === "es"
@@ -45,6 +48,8 @@ export default async function SignupPage({ params }: Props) {
           weakPassword: "La contraseña debe tener al menos 8 caracteres.",
           emailTaken: "Ese correo ya tiene una cuenta. Inicia sesión.",
           server: "Error del servidor. Inténtalo de nuevo.",
+          google: "Continuar con Google",
+          or: "o",
           hasAccount: "¿Ya tienes cuenta?",
           signIn: "Inicia sesión",
         }
@@ -62,6 +67,8 @@ export default async function SignupPage({ params }: Props) {
           weakPassword: "Your password must be at least 8 characters.",
           emailTaken: "That email already has an account. Please sign in.",
           server: "Server error. Please try again.",
+          google: "Continue with Google",
+          or: "or",
           hasAccount: "Already have an account?",
           signIn: "Sign in",
         };
@@ -82,7 +89,8 @@ export default async function SignupPage({ params }: Props) {
           </h1>
           <p className="mt-1 text-sm text-ink-500">{labels.subtitle}</p>
         </div>
-        <SignupForm locale={locale} labels={labels} />
+        <SignupForm locale={locale} next={next} labels={labels} />
+        <GoogleButton locale={locale} label={labels.google} divider={labels.or} />
         <p className="mt-5 text-center text-sm text-ink-500">
           {labels.hasAccount}{" "}
           <Link href={`/${locale}/login`} className="font-bold text-ocean-700 hover:underline">

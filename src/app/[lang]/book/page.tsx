@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { BookingForm } from "@/components/booking/BookingForm";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { listPublishedTransferRoutes } from "@/lib/db/content";
 import { getBookingDefaults } from "@/lib/db/customer";
 import { listPublishedTours } from "@/lib/db/tours";
@@ -50,6 +51,13 @@ export default async function BookPage({ params, searchParams }: Props) {
     listPublishedTransferRoutes(),
     getBookingDefaults(),
   ]);
+  const session = await getCurrentUser().catch(() => null);
+  const returnPath =
+    kind === "transfer"
+      ? `/${locale}/book?type=transfer${Number.isInteger(routeId) ? `&route=${routeId}` : ""}`
+      : kind === "custom"
+        ? `/${locale}/book?type=custom`
+        : `/${locale}/book`;
 
   return (
     <div className="bg-sand-50/50 py-12 sm:py-16">
@@ -78,6 +86,8 @@ export default async function BookPage({ params, searchParams }: Props) {
             }))}
             preselectedRouteId={Number.isInteger(routeId) ? routeId : undefined}
             defaults={defaults}
+            isAuthenticated={session !== null}
+            returnPath={returnPath}
           />
         </div>
       </div>

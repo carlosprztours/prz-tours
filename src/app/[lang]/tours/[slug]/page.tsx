@@ -14,6 +14,7 @@ import { TourCard, formatDuration } from "@/components/tours/TourCard";
 import { TourGallery } from "@/components/tours/TourGallery";
 import { TourInfo } from "@/components/tours/TourInfo";
 import { TourReviews } from "@/components/tours/TourReviews";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { formatPrice, priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import { getBookingDefaults } from "@/lib/db/customer";
@@ -66,6 +67,7 @@ export default async function TourDetailPage({ params }: Props) {
     getBookingDefaults(),
     listPublishedTestimonials(6, slug),
   ]);
+  const session = await getCurrentUser().catch(() => null);
 
   const paragraphs = tour.translation.description
     .split("\n\n")
@@ -161,6 +163,8 @@ export default async function TourDetailPage({ params }: Props) {
                   routes={[]}
                   preselectedTourId={tour.id}
                   defaults={defaults}
+                  isAuthenticated={session !== null}
+                  returnPath={`/${locale}/tours/${slug}`}
                 />
               </div>
             </aside>

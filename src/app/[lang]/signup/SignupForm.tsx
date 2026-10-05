@@ -6,21 +6,26 @@
  */
 "use client";
 
-import { useActionState, useMemo } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import { signup, type AuthResult } from "@/lib/actions/auth";
 import type { Locale } from "@/types";
 
 const initialState: AuthResult = { ok: false, error: "" };
 
+/** Último email usado en este dispositivo (para recordarlo). */
+const LAST_EMAIL_KEY = "prz-last-email";
+
 const inputClass =
   "h-12 w-full rounded-xl border border-sand-200 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100";
 
 export function SignupForm({
   locale,
+  next,
   labels,
 }: {
   locale: Locale;
+  next?: string;
   labels: {
     name: string;
     email: string;
@@ -37,6 +42,19 @@ export function SignupForm({
 }) {
   const action = useMemo(() => signup.bind(null, locale), [locale]);
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [email, setEmail] = useState("");
+
+  // Guarda el email en este dispositivo para recordarlo en el login.
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    try {
+      const value = new FormData(e.currentTarget).get("email");
+      if (typeof value === "string" && value.includes("@")) {
+        localStorage.setItem(LAST_EMAIL_KEY, value.trim().toLowerCase());
+      }
+    } catch {
+      /* almacenamiento no disponible */
+    }
+  };
 
   const message =
     !state.ok && state.error
@@ -52,7 +70,8 @@ export function SignupForm({
       : null;
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <label htmlFor="name" className="mb-1.5 block text-sm font-bold text-ink-900">
           {labels.name}
@@ -63,7 +82,7 @@ export function SignupForm({
         <label htmlFor="email" className="mb-1.5 block text-sm font-bold text-ink-900">
           {labels.email}
         </label>
-        <input id="email" name="email" type="email" autoComplete="email" required className={inputClass} />
+        <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
       </div>
       <div>
         <label htmlFor="password" className="mb-1.5 block text-sm font-bold text-ink-900">

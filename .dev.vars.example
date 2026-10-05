@@ -11,3 +11,12 @@ AUTH_SECRET=dev-only-secret-change-me-in-production-000000000000000
 RESEND_API_TOKEN=
 RESEND_FROM=
 NOTIFY_EMAIL=
+
+# Google OAuth (login con Google). Crea las credenciales en
+# Google Cloud Console → APIs y servicios → Credenciales → ID de cliente
+# OAuth (tipo "Aplicación web") y añade estas URIs de redirección:
+#   http://localhost:3000/api/auth/google/callback
+#   https://TU-DOMINIO/api/auth/google/callback
+# En local puedes dejarlo vacío: el botón vuelve al login.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

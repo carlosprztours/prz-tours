@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { LoginForm } from "./LoginForm";
 
 type Props = {
@@ -43,6 +44,14 @@ export default async function LoginPage({ params, searchParams }: Props) {
           invalid: "Credenciales incorrectas.",
           required: "Completa todos los campos.",
           server: "Error del servidor. Inténtalo de nuevo.",
+          emailRequired: "Escribe tu correo para usar tu passkey.",
+          passkey: "Entrar con huella o Face ID",
+          passkeyWorking: "Usa tu huella o Face ID…",
+          passkeyFailed: "No se pudo entrar con passkey. Prueba con tu contraseña.",
+          passkeyNone: "Esta cuenta no tiene passkeys. Entra con tu contraseña para crear uno.",
+          passkeyUnsupported: "Tu navegador no soporta passkeys en este dispositivo.",
+          google: "Continuar con Google",
+          or: "o",
           noAccount: "¿No tienes cuenta?",
           signUp: "Crea una gratis",
         }
@@ -56,6 +65,14 @@ export default async function LoginPage({ params, searchParams }: Props) {
           invalid: "Incorrect credentials.",
           required: "Please complete all fields.",
           server: "Server error. Please try again.",
+          emailRequired: "Enter your email to use your passkey.",
+          passkey: "Sign in with fingerprint or Face ID",
+          passkeyWorking: "Use your fingerprint or Face ID…",
+          passkeyFailed: "Could not sign in with passkey. Try your password.",
+          passkeyNone: "This account has no passkeys. Sign in with your password to create one.",
+          passkeyUnsupported: "Your browser doesn't support passkeys on this device.",
+          google: "Continue with Google",
+          or: "or",
           noAccount: "No account yet?",
           signUp: "Create one free",
         };
@@ -77,6 +94,7 @@ export default async function LoginPage({ params, searchParams }: Props) {
           <p className="mt-1 text-sm text-ink-500">{labels.subtitle}</p>
         </div>
         <LoginForm locale={locale} next={next} labels={labels} />
+        <GoogleButton locale={locale} next={next} label={labels.google} divider={labels.or} />
         <p className="mt-5 text-center text-sm text-ink-500">
           {labels.noAccount}{" "}
           <Link href={`/${locale}/signup`} className="font-bold text-ocean-700 hover:underline">

@@ -48,6 +48,19 @@ export async function login(
   _prevState: AuthResult | undefined,
   formData: FormData,
 ): Promise<AuthResult> {
+  const result = await loginJson(formData);
+  if (!result.ok) return result;
+  const data = loginSchema.safeParse(formToObject(formData));
+  redirect(startUrl(result.role, locale, data.success ? data.data.next : undefined));
+}
+
+/**
+ * Variante JSON de `login` (sin redirigir): para el modal de reserva,
+ * donde hay que quedarse en la página con el borrador intacto.
+ */
+export async function loginJson(
+  formData: FormData,
+): Promise<{ ok: true; role: string } | { ok: false; error: string }> {
   const parsed = loginSchema.safeParse(formToObject(formData));
   if (!parsed.success) {
     return { ok: false, error: "invalid" };
@@ -82,7 +95,7 @@ export async function login(
   await createSession(user.id, user.role);
   const { logActivity } = await import("@/lib/admin/activity");
   await logActivity("login", user.email, user.id, user.email);
-  redirect(startUrl(user.role, locale, parsed.data.next));
+  return { ok: true, role: user.role };
 }
 
 export async function signup(
@@ -131,6 +144,11 @@ export async function signup(
     return { ok: false, error: "invalid-name" };
   }
   await createSession(userId, "customer");
+  // Vuelta a la reserva si venía del modal (ruta interna validada).
+  const next = parsed.data.next;
+  if (next && next.startsWith(`/${locale}/`) && !next.includes("..")) {
+    redirect(next);
+  }
   redirect(`/${locale}/account`);
 }
 

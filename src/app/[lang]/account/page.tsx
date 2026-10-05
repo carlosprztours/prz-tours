@@ -7,8 +7,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
+import { PasskeysSection } from "@/components/auth/PasskeysSection";
 import { logout } from "@/lib/actions/auth";
 import { verifyCustomerSession } from "@/lib/auth/dal";
+import { listUserCredentials } from "@/lib/auth/webauthn";
 import { queryOne } from "@/lib/db/client";
 import { listBookingsByEmail } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
@@ -31,6 +33,7 @@ export default async function AccountPage({ params }: Props) {
     session.user.id,
   );
   const bookings = await listBookingsByEmail(session.user.email);
+  const passkeys = await listUserCredentials(session.user.id);
 
   const es = locale === "es";
   const copy = {
@@ -42,6 +45,35 @@ export default async function AccountPage({ params }: Props) {
       : "You have no bookings with this email yet.",
     explore: es ? "Explorar tours" : "Explore tours",
     signOut: es ? "Cerrar sesión" : "Sign out",
+    passkeys: es
+      ? {
+          title: "Passkeys",
+          subtitle: "Entra con tu huella, Face ID o el PIN de tu dispositivo, sin contraseña.",
+          add: "Agregar passkey",
+          adding: "Sigue las instrucciones de tu dispositivo…",
+          devicePlaceholder: "Nombre (p. ej. Mi iPhone)",
+          remove: "Eliminar",
+          empty: "Aún no tienes passkeys en este dispositivo.",
+          errors: {
+            failed: "No se pudo completar. Inténtalo de nuevo.",
+            duplicate: "Este dispositivo ya está registrado.",
+            unsupported: "Tu navegador no soporta passkeys en este dispositivo.",
+          },
+        }
+      : {
+          title: "Passkeys",
+          subtitle: "Sign in with your fingerprint, Face ID or device PIN — no password needed.",
+          add: "Add passkey",
+          adding: "Follow your device prompts…",
+          devicePlaceholder: "Name (e.g. My iPhone)",
+          remove: "Remove",
+          empty: "No passkeys on this device yet.",
+          errors: {
+            failed: "Could not complete. Please try again.",
+            duplicate: "This device is already registered.",
+            unsupported: "Your browser doesn't support passkeys on this device.",
+          },
+        },
     guests: es ? "personas" : "guests",
     panel: es ? "Ir al panel" : "Go to panel",
     profile: es
@@ -152,6 +184,17 @@ export default async function AccountPage({ params }: Props) {
                     },
                   }
             }
+          />
+        </div>
+
+        <div className="mt-5">
+          <PasskeysSection
+            credentials={passkeys.map((p) => ({
+              id: p.id,
+              device_name: p.device_name,
+              created_at: p.created_at,
+            }))}
+            labels={copy.passkeys}
           />
         </div>
 
