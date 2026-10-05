@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { adminTexts } from "@/lib/admin/texts";
+import { requireSection } from "@/lib/admin/access";
 import { countBookings, listBookings } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { BookingStatus, Locale } from "@/types";
@@ -28,6 +29,7 @@ export default async function BookingsPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "bookings");
   const t = adminTexts(locale);
   const sp = await searchParams;
 

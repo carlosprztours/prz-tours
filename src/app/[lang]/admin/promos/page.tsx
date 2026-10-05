@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { deletePromo, listAdminPromos } from "@/lib/admin/promos";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -17,6 +18,7 @@ export default async function AdminPromosPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "promos");
   const es = locale === "es";
 
   const items = await listAdminPromos(locale);

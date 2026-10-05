@@ -12,7 +12,10 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { ConditionalFloat } from "@/components/layout/ConditionalFloat";
 import { ChromeSwitcher } from "@/components/layout/ChromeSwitcher";
+import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { getSetting } from "@/lib/db/content";
+import { getPromptFlags, hasSubscription } from "@/lib/db/push";
 import { listTourNavItems } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import { DEFAULT_EMAIL, DEFAULT_PHONE_DISPLAY, DEFAULT_WHATSAPP } from "@/lib/site";
@@ -40,6 +43,20 @@ export default async function LangLayout({ children, params }: Props) {
       getSetting("whatsapp", DEFAULT_WHATSAPP),
     ]);
 
+  // Aviso de instalar la PWA / activar notificaciones: solo para clientes con
+  // sesión y solo mientras no lo hayan aceptado o descartado.
+  const session = await getCurrentUser().catch(() => null);
+  let pwaPrompt: { alreadyInstalled: boolean; alreadySubscribed: boolean } | null = null;
+  if (session && session.user.role === "customer") {
+    const [flags, subscribed] = await Promise.all([
+      getPromptFlags(session.user.id),
+      hasSubscription(session.user.id),
+    ]);
+    if (!flags.installSeen || !flags.notifySeen) {
+      pwaPrompt = { alreadyInstalled: flags.installAccepted, alreadySubscribed: subscribed };
+    }
+  }
+
   return (
     <ChromeSwitcher
       header={
@@ -52,6 +69,13 @@ export default async function LangLayout({ children, params }: Props) {
           </a>
           <SiteHeader locale={lang} dict={dict} whatsapp={whatsapp} />
           <ConditionalFloat phone={whatsapp} texts={dict.whatsapp} />
+          {pwaPrompt && (
+            <PwaInstallPrompt
+              labels={dict.pwa}
+              alreadyInstalled={pwaPrompt.alreadyInstalled}
+              alreadySubscribed={pwaPrompt.alreadySubscribed}
+            />
+          )}
         </>
       }
       footer={

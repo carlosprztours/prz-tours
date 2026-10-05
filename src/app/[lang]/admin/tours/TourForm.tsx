@@ -61,6 +61,10 @@ type Props = {
   locale: Locale;
   initial: AdminTourFull | null;
   labels: Labels;
+  /** Categorías activas de `tour_categories` (creables desde el panel). */
+  categories: { slug: string; label: string; icon: string }[];
+  /** Texto del botón para gestionar categorías (enlaza al gestor). */
+  manageCategories: string;
 };
 
 const initialState: ToursResult = { ok: false, error: "" };
@@ -71,7 +75,7 @@ const areaClass =
   "w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-ocean-500";
 const labelClass = "grid gap-1 text-xs font-bold text-ink-500";
 
-export function TourForm({ locale, initial, labels }: Props) {
+export function TourForm({ locale, initial, labels, categories, manageCategories }: Props) {
   const [tab, setTab] = useState<"es" | "en">("es");
   const action = useMemo(
     () =>
@@ -113,13 +117,47 @@ export function TourForm({ locale, initial, labels }: Props) {
           </label>
           <label className={labelClass}>
             {labels.duration}
-            <input name="duration_minutes" type="number" min={30} step={30} required defaultValue={t?.duration_minutes ?? 240} className={inputClass} />
+            <span className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const cur = Number((document.getElementById("duration_minutes") as HTMLInputElement)?.value) || 240;
+                  (document.getElementById("duration_minutes") as HTMLInputElement).value = String(Math.max(30, cur - 30));
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-sand-200 bg-white text-lg font-bold text-ink-700 transition hover:border-ocean-300"
+                aria-label="-30 min"
+              >
+                −
+              </button>
+              <input name="duration_minutes" id="duration_minutes" type="number" min={30} step={30} required defaultValue={t?.duration_minutes ?? 240} className={`${inputClass} text-center`} />
+              <button
+                type="button"
+                onClick={() => {
+                  const cur = Number((document.getElementById("duration_minutes") as HTMLInputElement)?.value) || 240;
+                  (document.getElementById("duration_minutes") as HTMLInputElement).value = String(cur + 30);
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-sand-200 bg-white text-lg font-bold text-ink-700 transition hover:border-ocean-300"
+                aria-label="+30 min"
+              >
+                +
+              </button>
+            </span>
           </label>
           <label className={labelClass}>
-            {labels.category}
-            <select name="category" defaultValue={t?.category ?? "adventure"} className={inputClass}>
-              {["water", "adventure", "culture", "wildlife", "beach", "other"].map((c) => (
-                <option key={c} value={c}>{c}</option>
+            <span className="flex items-center justify-between gap-2">
+              {labels.category}
+              <a
+                href={`/${locale}/admin/tours/categories`}
+                className="font-bold text-ocean-600 underline hover:text-ocean-800"
+              >
+                {manageCategories}
+              </a>
+            </span>
+            <select name="category" defaultValue={t?.category ?? categories[0]?.slug ?? "other"} className={inputClass}>
+              {categories.map((c) => (
+                <option key={c.slug} value={c.slug}>
+                  {c.icon} {c.label}
+                </option>
               ))}
             </select>
           </label>

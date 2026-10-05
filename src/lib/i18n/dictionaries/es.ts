@@ -236,7 +236,7 @@ export const es = {
       emailRequired: "Escribe tu correo electrónico.",
       emailInvalid: "Ese correo no parece válido.",
       phoneRequired: "Escribe tu teléfono o WhatsApp.",
-      phoneInvalid: "Ese teléfono no parece válido.",
+      phoneInvalid: "Escribe tu WhatsApp con el código de tu país (+1…).",
       guestsRequired: "Indica cuántas personas viajan.",
       guestsRange: "Mínimo 2 personas en tours (1 en traslados). Máximo 60.",
       promoInvalid: "Ese código no es válido o ya expiró.",
@@ -343,6 +343,10 @@ export const es = {
     optConfirmMine: "Tus reservas",
     optConfirmLoading: "Buscando tus reservas…",
     optConfirmManual: "Otra referencia",
+    optCancel: "Cancelar reserva",
+    optCancelMessage: "¡Hola! Quiero cancelar mi reserva. Mi referencia es:",
+    optCancelGo: "Continuar",
+    optCancelTooLate: "Menos de 48 h: te ayudamos por aquí",
     optBook: "Reservar un tour",
     optBookMessage: "¡Hola! Quiero reservar un tour en Puerto Plata.",
     optDriver: "Contactar a mi chofer",
@@ -353,6 +357,21 @@ export const es = {
     title: "Avisos",
     empty: "Sin avisos por ahora.",
     viewAll: "Ver todos en Mi cuenta",
+  },
+
+  pwa: {
+    title: "Instala la app y activa los avisos",
+    body:
+      "Instala Perez Tours en tu pantalla de inicio para reservar más rápido y recibir avisos de tus tours.",
+    iosBody:
+      "En iPhone: toca Compartir → «Añadir a pantalla de inicio». Luego vuelve aquí para activar los avisos.",
+    install: "Instalar app",
+    notify: "Activar avisos",
+    later: "Ahora no",
+    installed: "✓ App instalada",
+    subscribed: "✓ Avisos activados",
+    error: "No pudimos activar los avisos en este navegador.",
+    denied: "Permiso denegado. Puedes activarlo desde los ajustes del navegador.",
   },
 
   errors: {

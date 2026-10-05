@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { deleteTour, listAdminTours } from "@/lib/admin/tours";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { DeleteButton } from "@/components/admin/DeleteButton";
@@ -17,6 +18,7 @@ export default async function AdminToursPage({ params }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "tours");
 
   const tours = await listAdminTours(locale);
   const es = locale === "es";

@@ -9,11 +9,10 @@
 
 import { revalidatePath } from "next/cache";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireStaffRoles } from "./access";
 import { execute } from "@/lib/db/client";
 import { getBookingById } from "@/lib/db/bookings";
-import { isLocale } from "@/lib/i18n";
-import type { BookingStatus, Locale, PaymentStatus } from "@/types";
+import type { BookingStatus, PaymentStatus } from "@/types";
 
 const NEXT_STATUS: Record<BookingStatus, BookingStatus[]> = {
   pending: ["confirmed", "cancelled"],
@@ -25,8 +24,7 @@ const NEXT_STATUS: Record<BookingStatus, BookingStatus[]> = {
 export type AdminActionResult = { ok: true } | { ok: false; error: string };
 
 async function staffLocale(raw: string) {
-  const locale: Locale = isLocale(raw) ? raw : "en";
-  const session = await verifySession(locale);
+  const { locale, session } = await requireStaffRoles(raw, "admin", "editor");
   return { loc: locale, me: session.user.id, email: session.user.email };
 }
 
@@ -103,6 +101,7 @@ export async function setBookingStatus(
               ? `Tu experiencia "${experience}" está confirmada. ¡Te esperamos!`
               : `Your experience "${experience}" is confirmed. See you soon!`,
             `/${bl}/account`,
+            bl,
           );
         } else {
           const coupon = await handleTripCompleted(owner.id);
@@ -115,12 +114,38 @@ export async function setBookingStatus(
                 ? `Tu viaje ${booking.reference} quedó registrado. Cada 2 viajes recibes un 10 % de descuento.`
                 : `Your trip ${booking.reference} was recorded. Every 2 trips you earn 10 % off.`,
               `/${bl}/account`,
+              bl,
             );
           }
         }
       }
     } catch (err) {
       console.error("[bookings] loyalty/notify error:", err);
+    }
+  }
+
+  // Cancelar: avisamos al cliente (web + push) para que no se entere tarde.
+  if (to === "cancelled") {
+    try {
+      const { notifyUser, resolveBookingUser } = await import("@/lib/db/loyalty");
+      const owner = await resolveBookingUser(booking);
+      if (owner) {
+        const bl = owner.locale;
+        await notifyUser(
+          owner.id,
+          "booking-cancelled",
+          bl === "es"
+            ? `Reserva ${booking.reference} cancelada`
+            : `Booking ${booking.reference} cancelled`,
+          bl === "es"
+            ? "Tu reserva fue cancelada. Si no fuiste tú, escríbenos."
+            : "Your booking was cancelled. If it wasn't you, get in touch.",
+          `/${bl}/account`,
+          bl,
+        );
+      }
+    } catch (err) {
+      console.error("[bookings] cancel notify error:", err);
     }
   }
   return { ok: true };
@@ -175,6 +200,7 @@ export async function setBookingPayment(
               ? "Your booking is fully paid. Thank you!"
               : "We recorded a partial payment on your booking. Thank you!",
           `/${bl}/account`,
+          bl,
         );
       }
     } catch (err) {

@@ -258,6 +258,7 @@ export async function notifyUser(
   title: string,
   body: string,
   link?: string,
+  lang?: "es" | "en",
 ): Promise<void> {
   await execute(
     `INSERT INTO notifications (user_id, type, title, body, link)
@@ -268,6 +269,21 @@ export async function notifyUser(
     body.slice(0, 500),
     link ?? null,
   ).catch((err) => console.error("[loyalty] notify error:", err));
+
+  // Además del aviso dentro de la web, push al móvil del cliente (si lo
+  // aceptó). Nunca debe romper el flujo: cualquier fallo se ignora.
+  try {
+    const { sendPushToUser } = await import("./push");
+    await sendPushToUser(userId, {
+      title,
+      body,
+      url: link ?? "/",
+      tag: type,
+      lang: lang ?? "es",
+    });
+  } catch (err) {
+    console.error("[loyalty] push error:", err);
+  }
 }
 
 /** Resuelve el usuario dueño de una reserva (por cuenta o por email). */

@@ -9,6 +9,7 @@
 import { verifyCustomerSession } from "@/lib/auth/dal";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { execute, queryOne } from "@/lib/db/client";
+import { isValidPhone, normalizePhone } from "@/lib/validation/phone";
 import type { Locale } from "@/types";
 
 export type ProfileResult = { ok: true } | { ok: false; error: string };
@@ -24,14 +25,14 @@ export async function updateProfile(
   const phone = String(formData.get("phone") ?? "").trim();
 
   if (name.length < 2) return { ok: false, error: "bad-name" };
-  if (phone && !/^[+()\-.\s\d]{6,40}$/.test(phone)) {
+  if (phone && !isValidPhone(phone)) {
     return { ok: false, error: "bad-phone" };
   }
 
   await execute(
     `UPDATE users SET name = ?, phone = ?, updated_at = datetime('now') WHERE id = ?`,
     name,
-    phone || null,
+    phone ? normalizePhone(phone) : null,
     session.user.id,
   );
 

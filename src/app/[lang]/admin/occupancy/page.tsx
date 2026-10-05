@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { requireSection } from "@/lib/admin/access";
 import { getDayBreakdown, getMonthOccupancy } from "@/lib/db/availability";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
@@ -35,6 +36,7 @@ export default async function OccupancyPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "occupancy");
   const es = locale === "es";
   const sp = await searchParams;
 

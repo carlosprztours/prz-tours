@@ -6,20 +6,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
-import { isLocale } from "@/lib/i18n";
 import type { GalleryImage, Locale, Testimonial } from "@/types";
 
 export type SimpleResult = { ok: true } | { ok: false; error: string };
 
 async function requireStaff(rawLocale: string): Promise<Locale> {
-  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  await verifySession(locale);
+  const { locale } = await requireEditor(rawLocale);
   return locale;
 }
 
-// ───────────────────────────── Testimonios ─────────────────────────────
+// ───────────────────────────── Testimonios (editor+) ─────────────────────────────
 
 export async function listAdminTestimonials(rawLocale: string): Promise<Testimonial[]> {
   await requireStaff(rawLocale);
@@ -117,10 +115,15 @@ export async function deleteTestimonial(
   return { ok: true };
 }
 
-// ───────────────────────────── Galería ─────────────────────────────
+// ───────────────────────────── Galería (fotógrafo incluido) ─────────────────────────────
+
+async function requireGallery(rawLocale: string): Promise<Locale> {
+  const { locale } = await requireStaffRoles(rawLocale, "admin", "editor", "photographer");
+  return locale;
+}
 
 export async function listAdminGallery(rawLocale: string): Promise<GalleryImage[]> {
-  await requireStaff(rawLocale);
+  await requireGallery(rawLocale);
   return query<GalleryImage>(`SELECT * FROM gallery_images ORDER BY sort_order ASC, id ASC`);
 }
 
@@ -129,7 +132,7 @@ export async function createGalleryImage(
   _prev: SimpleResult | undefined,
   formData: FormData,
 ): Promise<SimpleResult> {
-  const locale = await requireStaff(rawLocale);
+  const locale = await requireGallery(rawLocale);
   const url = String(formData.get("url") ?? "").trim();
   if (!url) return { ok: false, error: "required" };
 
@@ -151,7 +154,7 @@ export async function deleteGalleryImage(
   rawLocale: string,
   id: number,
 ): Promise<SimpleResult> {
-  const locale = await requireStaff(rawLocale);
+  const locale = await requireGallery(rawLocale);
   await execute(`DELETE FROM gallery_images WHERE id = ?`, id);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/admin/gallery`);

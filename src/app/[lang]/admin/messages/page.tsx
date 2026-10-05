@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { deleteMessage, listMessages, markMessageRead } from "@/lib/admin/misc";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -19,6 +20,7 @@ export default async function AdminMessagesPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "messages");
   const es = locale === "es";
   const sp = await searchParams;
 

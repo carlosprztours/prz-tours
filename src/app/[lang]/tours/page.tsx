@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { TourCard, categoryLabel } from "@/components/tours/TourCard";
-import { listPublishedTours } from "@/lib/db/tours";
+import { listActiveCategories, listPublishedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -30,25 +30,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const CATEGORIES = ["water", "adventure", "culture", "wildlife", "beach"] as const;
-
 export default async function ToursPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
   const { categoria, destacados } = await searchParams;
 
-  const [dict, all] = await Promise.all([
+  const [dict, all, categories] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
+    listActiveCategories(locale),
   ]);
+
+  // Las que tienen al menos un tour publicado se muestran como filtro.
+  const used = new Set(all.map((t) => t.category));
+  const filterCategories = categories.filter((c) => used.has(c.slug));
 
   let tours = all;
   if (destacados === "1") tours = tours.filter((t) => t.is_featured === 1);
-  if (categoria && (CATEGORIES as readonly string[]).includes(categoria)) {
+  if (categoria && used.has(categoria)) {
     tours = tours.filter((t) => t.category === categoria);
   }
 
+  const catMeta = new Map(categories.map((c) => [c.slug, c]));
   const base = `/${locale}/tours`;
   const filterLink = (cat?: string) =>
     cat ? `${base}?categoria=${cat}` : base;
@@ -70,12 +74,12 @@ export default async function ToursPage({ params, searchParams }: Props) {
           >
             {dict.tours.filterAll}
           </Link>
-          {CATEGORIES.map((cat) => {
-            const active = categoria === cat;
+          {filterCategories.map((cat) => {
+            const active = categoria === cat.slug;
             return (
               <Link
-                key={cat}
-                href={filterLink(cat)}
+                key={cat.slug}
+                href={filterLink(cat.slug)}
                 aria-current={active ? "page" : undefined}
                 className={`rounded-full px-4 py-2 text-sm font-bold transition ${
                   active
@@ -83,7 +87,7 @@ export default async function ToursPage({ params, searchParams }: Props) {
                     : "bg-white text-ink-700 ring-1 ring-sand-200 hover:ring-ocean-300"
                 }`}
               >
-                {categoryLabel(cat, dict.tours)}
+                {cat.icon} {cat.label || categoryLabel(cat.slug, dict.tours)}
               </Link>
             );
           })}
@@ -101,7 +105,7 @@ export default async function ToursPage({ params, searchParams }: Props) {
         ) : (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {tours.map((tour) => (
-              <TourCard key={tour.id} tour={tour} locale={locale} dict={dict} />
+              <TourCard key={tour.id} tour={tour} locale={locale} dict={dict} categories={catMeta} />
             ))}
           </div>
         )}

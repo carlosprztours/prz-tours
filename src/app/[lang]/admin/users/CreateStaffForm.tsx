@@ -24,6 +24,7 @@ export function CreateStaffForm({
     password: string;
     role: string;
     editor: string;
+    photographer: string;
     admin: string;
     submit: string;
     errors: Record<string, string>;
@@ -41,6 +42,7 @@ export function CreateStaffForm({
         <input name="password" type="password" required minLength={8} placeholder={labels.password} className={inputClass} aria-label={labels.password} />
         <select name="role" defaultValue="editor" className={inputClass} aria-label={labels.role}>
           <option value="editor">{labels.editor}</option>
+          <option value="photographer">{labels.photographer}</option>
           <option value="admin">{labels.admin}</option>
         </select>
       </div>

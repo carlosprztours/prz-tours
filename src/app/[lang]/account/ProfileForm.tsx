@@ -9,6 +9,7 @@
 import { useActionState, useMemo } from "react";
 
 import { updateProfile, type ProfileResult } from "@/lib/actions/profile";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import type { Locale } from "@/types";
 
 const initialState: ProfileResult = { ok: false, error: "" };
@@ -64,14 +65,12 @@ export function ProfileForm({
           <label htmlFor="profile-phone" className="mb-1.5 block text-sm font-bold text-ink-900">
             {labels.phone}
           </label>
-          <input
+          <PhoneInput
             id="profile-phone"
             name="phone"
-            type="tel"
+            locale={locale}
             defaultValue={initial.phone}
-            autoComplete="tel"
             placeholder="+1 809 000 0000"
-            className={inputClass}
           />
         </div>
       </div>

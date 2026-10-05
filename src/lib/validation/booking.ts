@@ -7,6 +7,8 @@
  */
 import * as z from "zod";
 
+import { isValidPhone } from "./phone";
+
 const nameSchema = z
   .string({ error: "validation.nameRequired" })
   .trim()
@@ -23,8 +25,8 @@ const phoneSchema = z
   .string({ error: "validation.phoneRequired" })
   .trim()
   .min(1, { error: "validation.phoneRequired" })
-  .max(40, { error: "validation.messageTooLong" })
-  .refine((v) => /^[+()\-.\s\d]{6,40}$/.test(v), {
+  .max(24, { error: "validation.messageTooLong" })
+  .refine((v) => isValidPhone(v), {
     error: "validation.phoneInvalid",
   });
 

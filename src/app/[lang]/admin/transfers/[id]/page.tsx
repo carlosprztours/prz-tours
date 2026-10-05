@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Editar ruta de traslado.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminRoute } from "@/lib/admin/transfers";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { TransferForm } from "../TransferForm";
@@ -17,6 +18,7 @@ export default async function EditRoutePage({
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "transfers");
   const es = locale === "es";
 
   const numericId = Number(id);

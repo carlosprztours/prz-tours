@@ -61,9 +61,9 @@ async function loadVerifiedSession(): Promise<VerifiedSession | null> {
   return { user, token };
 }
 
-/** ¿Es personal con acceso al panel? */
+/** ¿Es personal con acceso al panel? (admin/editor/fotógrafo). */
 function isStaff(role: string): boolean {
-  return role === "admin" || role === "editor";
+  return role === "admin" || role === "editor" || role === "photographer";
 }
 
 /**

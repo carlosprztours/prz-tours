@@ -9,27 +9,25 @@
 
 import { revalidatePath } from "next/cache";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireStaffRoles } from "./access";
+import { isSuperAdminEmail } from "./roles";
 import { hashPassword } from "@/lib/auth/password";
 import { revokeAllUserSessions } from "@/lib/auth/session";
 import { execute, query } from "@/lib/db/client";
-import { isLocale } from "@/lib/i18n";
-import type { Locale, User, UserRole } from "@/types";
+import type { User, UserRole } from "@/types";
 
 export type UsersResult = { ok: true } | { ok: false; error: string };
 
 async function requireAdmin(rawLocale: string) {
-  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  const session = await verifySession(locale);
-  if (session.user.role !== "admin") throw new Error("forbidden");
-  return { locale, me: session.user.id };
+  const { locale, session } = await requireStaffRoles(rawLocale, "admin");
+  return { locale, me: session.user.id, meEmail: session.user.email };
 }
 
 export async function listStaff(rawLocale: string): Promise<User[]> {
   await requireAdmin(rawLocale);
   return query<User>(
     `SELECT id, email, name, role, phone, locale, is_active, created_at, updated_at
-     FROM users WHERE role IN ('admin','editor')
+     FROM users WHERE role IN ('admin','editor','photographer')
      ORDER BY role ASC, name ASC`,
   );
 }
@@ -63,7 +61,10 @@ export async function createStaffUser(
   if (name.length < 2) return { ok: false, error: "bad-name" };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: "bad-email" };
   if (password.length < 8) return { ok: false, error: "weak-password" };
-  if (role !== "admin" && role !== "editor") return { ok: false, error: "bad-role" };
+  if (role !== "admin" && role !== "editor" && role !== "photographer") {
+    return { ok: false, error: "bad-role" };
+  }
+  if (isSuperAdminEmail(email)) return { ok: false, error: "protected" };
 
   try {
     await execute(
@@ -96,24 +97,40 @@ export async function setStaffRole(
   userId: number,
   role: UserRole,
 ): Promise<UsersResult> {
-  const { locale, me } = await requireAdmin(rawLocale);
+  const { locale, me, meEmail } = await requireAdmin(rawLocale);
   if (userId === me) return { ok: false, error: "self" };
-  if (role !== "admin" && role !== "editor") return { ok: false, error: "bad-role" };
+  if (role !== "admin" && role !== "editor" && role !== "photographer") {
+    return { ok: false, error: "bad-role" };
+  }
+  const target = await query<{ email: string }>(
+    `SELECT email FROM users WHERE id = ?`,
+    userId,
+  );
+  if (target[0] && isSuperAdminEmail(target[0].email)) {
+    return { ok: false, error: "protected" };
+  }
 
   await execute(`UPDATE users SET role = ?, updated_at = datetime('now') WHERE id = ?`, role, userId);
   revalidatePath(`/${locale}/admin/users`);
   const { logActivity } = await import("./activity");
-  await logActivity("user.role", `#${userId} → ${role}`, me, "admin");
+  await logActivity("user.role", `#${userId} → ${role}`, me, meEmail);
   return { ok: true };
 }
 
-/** Promoción manual: convierte un customer en staff (editor por defecto). */
+/** Promoción manual: convierte un customer en staff (editor/fotógrafo). */
 export async function promoteCustomer(
   rawLocale: string,
   userId: number,
-  role: Extract<UserRole, "admin" | "editor"> = "editor",
+  role: Extract<UserRole, "admin" | "editor" | "photographer"> = "editor",
 ): Promise<UsersResult> {
-  const { locale, me } = await requireAdmin(rawLocale);
+  const { locale, me, meEmail } = await requireAdmin(rawLocale);
+  const target = await query<{ email: string }>(
+    `SELECT email FROM users WHERE id = ?`,
+    userId,
+  );
+  if (target[0] && isSuperAdminEmail(target[0].email)) {
+    return { ok: false, error: "protected" };
+  }
   await execute(
     `UPDATE users SET role = ?, updated_at = datetime('now')
      WHERE id = ? AND role = 'customer'`,
@@ -122,7 +139,7 @@ export async function promoteCustomer(
   );
   revalidatePath(`/${locale}/admin/users`);
   const { logActivity } = await import("./activity");
-  await logActivity("user.promote", `#${userId} → ${role}`, me, "admin");
+  await logActivity("user.promote", `#${userId} → ${role}`, me, meEmail);
   return { ok: true };
 }
 
@@ -131,8 +148,15 @@ export async function setUserActive(
   userId: number,
   active: boolean,
 ): Promise<UsersResult> {
-  const { locale, me } = await requireAdmin(rawLocale);
+  const { locale, me, meEmail } = await requireAdmin(rawLocale);
   if (userId === me) return { ok: false, error: "self" };
+  const target = await query<{ email: string }>(
+    `SELECT email FROM users WHERE id = ?`,
+    userId,
+  );
+  if (target[0] && isSuperAdminEmail(target[0].email)) {
+    return { ok: false, error: "protected" };
+  }
 
   await execute(
     `UPDATE users SET is_active = ?, updated_at = datetime('now') WHERE id = ?`,
@@ -142,7 +166,7 @@ export async function setUserActive(
   if (!active) await revokeAllUserSessions(userId);
   revalidatePath(`/${locale}/admin/users`);
   const { logActivity } = await import("./activity");
-  await logActivity(active ? "user.activate" : "user.deactivate", `#${userId}`, me, "admin");
+  await logActivity(active ? "user.activate" : "user.deactivate", `#${userId}`, me, meEmail);
   return { ok: true };
 }
 
@@ -171,13 +195,20 @@ export async function deleteUser(
   rawLocale: string,
   userId: number,
 ): Promise<UsersResult> {
-  const { locale, me } = await requireAdmin(rawLocale);
+  const { locale, me, meEmail } = await requireAdmin(rawLocale);
   if (userId === me) return { ok: false, error: "self" };
+  const target = await query<{ email: string }>(
+    `SELECT email FROM users WHERE id = ?`,
+    userId,
+  );
+  if (target[0] && isSuperAdminEmail(target[0].email)) {
+    return { ok: false, error: "protected" };
+  }
 
   await revokeAllUserSessions(userId);
   await execute(`DELETE FROM users WHERE id = ?`, userId);
   revalidatePath(`/${locale}/admin/users`);
   const { logActivity } = await import("./activity");
-  await logActivity("user.delete", `#${userId}`, me, "admin");
+  await logActivity("user.delete", `#${userId}`, me, meEmail);
   return { ok: true };
 }

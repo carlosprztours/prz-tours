@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { deleteFaq, listAdminFaqs } from "@/lib/admin/faqs";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -17,6 +18,7 @@ export default async function AdminFaqPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "faq");
   const es = locale === "es";
 
   const items = await listAdminFaqs(locale);

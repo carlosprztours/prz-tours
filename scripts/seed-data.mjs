@@ -849,6 +849,15 @@ export const faqs = [
       "Private door-to-door transfers from any airport in the country. The price is per trip based on group size (1–5 or 6–11 people). We'll be waiting with a sign with your name.",
     sortOrder: 5,
   },
+  {
+    questionEs: "¿Cómo cancelo o pido el reembolso de mi viaje o tour?",
+    answerEs:
+      "Puedes cancelar hasta 48 horas antes del evento: abre el menú de WhatsApp, elige «Cancelar reserva», selecciona cuál (o escríbenos tu referencia) y la gestionamos. Pasadas esas 48 horas previas ya no se aceptan cancelaciones ni reembolsos, porque el transporte y los guías están asignados. Si pagaste anticipo, el reembolso vuelve por el mismo medio de pago.",
+    questionEn: "How do I cancel or get a refund for my trip or tour?",
+    answerEn:
+      "You can cancel up to 48 hours before the event: open the WhatsApp menu, choose “Cancel booking”, pick which one (or send us your reference) and we'll handle it. After that 48-hour window we can't accept cancellations or refunds, as transport and guides are already assigned. If you paid a deposit, the refund goes back through the same payment method.",
+    sortOrder: 6,
+  },
 ];
 
 export const articles = [

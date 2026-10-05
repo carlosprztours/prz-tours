@@ -11,6 +11,7 @@ import { CouponsSection } from "@/components/auth/CouponsSection";
 import { InviteLink } from "@/components/auth/InviteLink";
 import { NotificationsSection } from "@/components/auth/NotificationsSection";
 import { PasskeysSection } from "@/components/auth/PasskeysSection";
+import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
 import { logout } from "@/lib/actions/auth";
 import { verifyCustomerSession } from "@/lib/auth/dal";
 import { listUserCredentials } from "@/lib/auth/webauthn";
@@ -20,8 +21,9 @@ import {
   listUserNotifications,
 } from "@/lib/db/loyalty";
 import { queryOne } from "@/lib/db/client";
+import { hasSubscription } from "@/lib/db/push";
 import { listBookingsByEmail } from "@/lib/db/bookings";
-import { isLocale } from "@/lib/i18n";
+import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { ProfileForm } from "./ProfileForm";
 import { PasswordForm } from "./PasswordForm";
@@ -41,10 +43,12 @@ export default async function AccountPage({ params }: Props) {
     session.user.id,
   );
   const bookings = await listBookingsByEmail(session.user.email);
-  const [inviteCode, coupons, notifications] = await Promise.all([
+  const [inviteCode, coupons, notifications, dict, subscribed] = await Promise.all([
     getOrCreateInviteCode(session.user.id),
     listUserCoupons(session.user.id),
     listUserNotifications(session.user.id, 20),
+    getDictionary(locale),
+    hasSubscription(session.user.id),
   ]);
   const passkeys = await listUserCredentials(session.user.id);
 
@@ -261,6 +265,18 @@ export default async function AccountPage({ params }: Props) {
         <div className="mt-5">
           <NotificationsSection initial={notifications} labels={copy.notifications} />
         </div>
+
+        {session.user.role === "customer" && (
+          <div className="mt-5">
+            <PwaInstallPrompt
+              labels={dict.pwa}
+              alreadyInstalled={false}
+              alreadySubscribed={subscribed}
+              force
+              inline
+            />
+          </div>
+        )}
 
         <div className="mt-5">
           <CouponsSection coupons={coupons} labels={copy.coupons} />

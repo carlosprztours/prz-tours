@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Editar pregunta frecuente.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminFaq } from "@/lib/admin/faqs";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { FaqForm } from "../FaqForm";
@@ -17,6 +18,7 @@ export default async function EditFaqPage({
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "faq");
 
   const numericId = Number(id);
   if (!Number.isInteger(numericId) || numericId <= 0) notFound();

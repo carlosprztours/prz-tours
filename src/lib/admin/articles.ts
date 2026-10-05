@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server Actions de artículos (staff).
  */
 "use server";
@@ -6,16 +6,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireEditor } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
-import { isLocale } from "@/lib/i18n";
+
 import type { Article, ArticleTranslation, Locale } from "@/types";
 
 export type ArticlesResult = { ok: true } | { ok: false; error: string };
 
 async function requireStaff(rawLocale: string): Promise<Locale> {
-  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  await verifySession(locale);
+  const { locale } = await requireEditor(rawLocale);
   return locale;
 }
 

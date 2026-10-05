@@ -7,7 +7,7 @@
 import Link from "next/link";
 
 import { logout } from "@/lib/actions/auth";
-import { verifySession } from "@/lib/auth/dal";
+import { requireSection, SECTION_ROLES } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { notFound } from "next/navigation";
@@ -22,30 +22,28 @@ export default async function AdminLayout({ children, params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const session = await verifySession(locale);
+  const session = await requireSection(locale, "dashboard");
+  const role = session.user.role;
 
   const base = `/${locale}/admin`;
-  const nav = [
-    { href: base, label: locale === "es" ? "Panel" : "Dashboard", exact: true },
-    { href: `${base}/bookings`, label: locale === "es" ? "Reservas" : "Bookings" },
-    { href: `${base}/occupancy`, label: locale === "es" ? "Ocupación" : "Occupancy" },
-    { href: `${base}/tours`, label: locale === "es" ? "Tours" : "Tours" },
-    { href: `${base}/transfers`, label: locale === "es" ? "Traslados" : "Transfers" },
-    { href: `${base}/testimonials`, label: locale === "es" ? "Opiniones" : "Reviews" },
-    { href: `${base}/promos`, label: locale === "es" ? "Promos" : "Promos" },
-    { href: `${base}/coupons`, label: locale === "es" ? "Cupones" : "Coupons" },
-    { href: `${base}/blog`, label: "Blog" },
-    { href: `${base}/faq`, label: "FAQ" },
-    { href: `${base}/gallery`, label: locale === "es" ? "Galería" : "Gallery" },
-    { href: `${base}/messages`, label: locale === "es" ? "Mensajes" : "Messages" },
-    { href: `${base}/settings`, label: locale === "es" ? "Ajustes" : "Settings" },
-    ...(session.user.role === "admin"
-      ? [
-          { href: `${base}/users`, label: locale === "es" ? "Usuarios" : "Users" },
-          { href: `${base}/activity`, label: locale === "es" ? "Actividad" : "Activity" },
-        ]
-      : []),
+  const allNav = [
+    { href: base, label: locale === "es" ? "Panel" : "Dashboard", exact: true, section: "dashboard" },
+    { href: `${base}/bookings`, label: locale === "es" ? "Reservas" : "Bookings", section: "bookings" },
+    { href: `${base}/occupancy`, label: locale === "es" ? "Ocupación" : "Occupancy", section: "occupancy" },
+    { href: `${base}/tours`, label: locale === "es" ? "Tours" : "Tours", section: "tours" },
+    { href: `${base}/transfers`, label: locale === "es" ? "Traslados" : "Transfers", section: "transfers" },
+    { href: `${base}/testimonials`, label: locale === "es" ? "Opiniones" : "Reviews", section: "testimonials" },
+    { href: `${base}/promos`, label: locale === "es" ? "Promos" : "Promos", section: "promos" },
+    { href: `${base}/coupons`, label: locale === "es" ? "Cupones" : "Coupons", section: "coupons" },
+    { href: `${base}/blog`, label: "Blog", section: "blog" },
+    { href: `${base}/faq`, label: "FAQ", section: "faq" },
+    { href: `${base}/gallery`, label: locale === "es" ? "Galería" : "Gallery", section: "gallery" },
+    { href: `${base}/messages`, label: locale === "es" ? "Mensajes" : "Messages", section: "messages" },
+    { href: `${base}/users`, label: locale === "es" ? "Usuarios" : "Users", section: "users" },
+    { href: `${base}/settings`, label: locale === "es" ? "Ajustes" : "Settings", section: "settings" },
+    { href: `${base}/activity`, label: locale === "es" ? "Actividad" : "Activity", section: "activity" },
   ];
+  const nav = allNav.filter((item) => (SECTION_ROLES[item.section] ?? []).includes(role));
 
   return (
     <div className="min-h-screen bg-sand-50">

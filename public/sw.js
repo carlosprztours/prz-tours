@@ -40,6 +40,69 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// ─────────────────────────── Notificaciones push ───────────────────────────
+// El navegador guarda la suscripción; el Worker envía el push con la VAPID
+// pública que entrega /api/push/public-key.
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    if (event.data) payload = event.data.json() ?? {};
+  } catch {
+    payload = { title: "Perez Tours", body: event.data ? event.data.text() : "" };
+  }
+
+  const title = payload.title || "Perez Tours";
+  const options = {
+    body: payload.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: payload.tag || "prz",
+    data: { url: payload.url || "/" },
+    lang: payload.lang || "es",
+  };
+
+  event.waitUntil(
+    (async () => {
+      await self.registration.showNotification(title, options);
+      // Si el usuario tiene la app abierta, actualiza la campana en vivo.
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of clients) {
+        client.postMessage({ type: "prz-push", payload });
+      }
+    })(),
+  );
+});
+
+// Al pulsar la notificación: enfoca la pestaña o abre la URL.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || "/";
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of all) {
+        if (client.url.includes(target) && "focus" in client) {
+          await client.focus();
+          return;
+        }
+      }
+      if (self.clients.openWindow) await self.clients.openWindow(target);
+    })(),
+  );
+});
+
+self.addEventListener("message", (event) => {
+  // "skipWaiting" desde la UI (botón de actualizar).
+  if (event.data === "skip-waiting") self.skipWaiting();
+});
+
 function isStaticAsset(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||

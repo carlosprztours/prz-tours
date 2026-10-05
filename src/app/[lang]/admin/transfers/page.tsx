@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { deleteRoute, listAdminRoutes } from "@/lib/admin/transfers";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -17,6 +18,7 @@ export default async function AdminTransfersPage({ params }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "transfers");
   const es = locale === "es";
 
   const routes = await listAdminRoutes(locale);

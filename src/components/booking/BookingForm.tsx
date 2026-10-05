@@ -20,6 +20,7 @@ import { bookTour, type BookTourResult } from "@/lib/actions/book-tour";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import { TimePicker } from "@/components/ui/TimePicker";
 import { ModalLoginForm } from "@/components/auth/ModalLoginForm";
 import { AvailabilityNote } from "./AvailabilityNote";
@@ -482,15 +483,13 @@ export function BookingForm({
           <label htmlFor="customerPhone" className="mb-1.5 block text-sm font-bold text-ink-900">
             {t.phoneLabel}
           </label>
-          <input
+          <PhoneInput
             id="customerPhone"
             name="customerPhone"
-            type="tel"
-            autoComplete="tel"
+            locale={locale}
             required
             defaultValue={draft?.customerPhone ?? defaults?.phone ?? ""}
             placeholder={t.phonePlaceholder}
-            className={inputClass}
           />
           <FieldError message={errors.customerPhone && resolveError(t, errors.customerPhone)} />
         </div>

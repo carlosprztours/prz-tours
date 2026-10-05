@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server Actions de cupones personales (staff).
  *
  * Crear (con envío opcional por correo), reenviar por correo y cancelar.
@@ -8,21 +8,20 @@
 
 import { revalidatePath } from "next/cache";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireEditor } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 import {
   issueCoupon,
   sendCouponEmail,
   type Coupon,
 } from "@/lib/db/loyalty";
-import { isLocale } from "@/lib/i18n";
+
 import type { Locale } from "@/types";
 
 export type CouponsResult = { ok: true } | { ok: false; error: string };
 
 async function requireStaff(rawLocale: string): Promise<Locale> {
-  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  await verifySession(locale);
+  const { locale } = await requireEditor(rawLocale);
   return locale;
 }
 

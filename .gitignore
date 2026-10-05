@@ -32,6 +32,9 @@ cloudflare-env.d.ts
 !.dev.vars.example
 wrangler.local.jsonc
 
+# claves VAPID del push (la privada nunca sale de aquí)
+.vapid.local
+
 # local database files
 *.sqlite
 *.sqlite3

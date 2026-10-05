@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { deleteGalleryImage, listAdminGallery } from "@/lib/admin/content";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { AddImageForm } from "./AddImageForm";
@@ -18,6 +19,7 @@ export default async function AdminGalleryPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "gallery");
   const es = locale === "es";
 
   const images = await listAdminGallery(locale);

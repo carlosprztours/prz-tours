@@ -13,14 +13,32 @@ export type PriceUnit = "person" | "vehicle" | "group";
 /** Nivel de exigencia física del tour. */
 export type Difficulty = "easy" | "moderate" | "challenging";
 
-/** Categoría principal, usada para filtrar y para el icono. */
-export type TourCategory =
+/**
+ * Categorías sembradas en `tour_categories` (migración 0009).
+ * El panel permite crear más; el slug de `tours.category` es texto libre.
+ */
+export type BaseTourCategory =
   | "water"
   | "adventure"
   | "culture"
   | "wildlife"
   | "beach"
   | "other";
+
+/** Slug de categoría: una de las base o cualquier otra creada desde el panel. */
+export type TourCategory = BaseTourCategory | (string & {});
+
+/** Fila de la tabla `tour_categories`. */
+export type TourCategoryRow = {
+  id: number;
+  slug: string;
+  label_es: string;
+  label_en: string;
+  icon: string;
+  sort_order: number;
+  is_active: number;
+  created_at: string;
+};
 
 /** Secciones de listas dentro del detalle de un tour. */
 export type TourListSection = "included" | "excluded" | "bring";
@@ -181,7 +199,7 @@ export type BookingEvent = {
   created_at: string;
 };
 
-export type UserRole = "admin" | "editor" | "customer";
+export type UserRole = "admin" | "editor" | "photographer" | "customer";
 
 export type User = {
   id: number;

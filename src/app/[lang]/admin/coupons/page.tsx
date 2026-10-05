@@ -8,6 +8,7 @@ import {
   listAdminCoupons,
   resendCouponEmail,
 } from "@/lib/admin/coupons";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { CouponCreateForm } from "./CouponCreateForm";
@@ -54,6 +55,7 @@ export default async function AdminCouponsPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "coupons");
   const es = locale === "es";
 
   const items = await listAdminCoupons(locale);

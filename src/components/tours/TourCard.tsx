@@ -20,7 +20,16 @@ export const categoryIcons: Record<string, string> = {
   other: "✨",
 };
 
-export function categoryLabel(category: string, dict: Dictionary["tours"]): string {
+/**
+ * Etiqueta legible de una categoría.
+ * Las 6 históricas vienen del diccionario (traducidas); las creadas desde el
+ * panel usan el `label` de `tour_categories`, que se pasa como `custom`.
+ */
+export function categoryLabel(
+  category: string,
+  dict: Dictionary["tours"],
+  custom?: string,
+): string {
   switch (category) {
     case "water":
       return dict.categoryWater;
@@ -33,8 +42,13 @@ export function categoryLabel(category: string, dict: Dictionary["tours"]): stri
     case "beach":
       return dict.categoryBeach;
     default:
-      return dict.categoryOther;
+      return custom?.trim() || dict.categoryOther;
   }
+}
+
+/** Icono de la categoría (emoji). `custom` gana si viene de la BD. */
+export function categoryIcon(category: string, custom?: string): string {
+  return custom?.trim() || categoryIcons[category] || "✨";
 }
 
 /** "8 h" / "4 h 30 min" a partir de minutos. */
@@ -50,11 +64,16 @@ type Props = {
   tour: TourWithContent;
   locale: Locale;
   dict: Dictionary;
+  /** Categorías dinámicas (`tour_categories`) para etiqueta e icono propios. */
+  categories?: Map<string, { label: string; icon: string }>;
 };
 
-export function TourCard({ tour, locale, dict }: Props) {
+export function TourCard({ tour, locale, dict, categories }: Props) {
   const cover = tour.images[0];
   const href = `/${locale}/tours/${tour.slug}`;
+  const meta = categories?.get(tour.category);
+  const label = categoryLabel(tour.category, dict.tours, meta?.label);
+  const icon = categoryIcon(tour.category, meta?.icon);
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-sand-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
@@ -69,11 +88,11 @@ export function TourCard({ tour, locale, dict }: Props) {
           />
         ) : (
           <div className="flex h-full items-center justify-center text-5xl" aria-hidden="true">
-            {categoryIcons[tour.category] ?? "✨"}
+            {icon}
           </div>
         )}
         <span className="absolute left-3 top-3 rounded-full bg-ocean-950/80 px-3 py-1 text-xs font-bold text-white backdrop-blur">
-          {categoryIcons[tour.category] ?? ""} {categoryLabel(tour.category, dict.tours)}
+          {icon} {label}
         </span>
       </Link>
 

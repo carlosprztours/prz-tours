@@ -51,6 +51,7 @@ export default async function UsersPage({ params }: Props) {
       password: es ? "Contraseña (mín. 8)" : "Password (min. 8)",
       role: es ? "Rol" : "Role",
       editor: es ? "Editor" : "Editor",
+      photographer: es ? "Fotógrafo" : "Photographer",
       admin: es ? "Admin" : "Admin",
       submit: es ? "Crear" : "Create",
       errors: es
@@ -76,6 +77,7 @@ export default async function UsersPage({ params }: Props) {
       deactivate: es ? "Desactivar" : "Deactivate",
       promote: es ? "Hacer staff" : "Make staff",
       makeEditor: es ? "→ Editor" : "→ Editor",
+      makePhotographer: es ? "→ Fotógrafo" : "→ Photographer",
       makeAdmin: es ? "→ Admin" : "→ Admin",
       remove: es ? "Eliminar" : "Delete",
       confirmRemove: es

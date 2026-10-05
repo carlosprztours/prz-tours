@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Editar testimonio.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminTestimonial } from "@/lib/admin/content";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { TestimonialForm } from "../TestimonialForm";
@@ -17,6 +18,7 @@ export default async function EditTestimonialPage({
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "testimonials");
   const es = locale === "es";
 
   const numericId = Number(id);

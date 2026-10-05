@@ -115,8 +115,14 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 | Ruta | Qué es |
 |---|---|
 | `migrations/0001_init.sql` … `0004_growth.sql` | Esquema D1 (se aplican con `npm run db:migrate:*`) |
+| `migrations/0008_photographer_role.sql` | Rol `photographer` en el CHECK de `users.role` |
+| `migrations/0009_tour_categories.sql` | Tabla `tour_categories` (categorías de tour dinámicas) + reconstruye `tours`. **Ojo:** replica TODAS las columnas de 0001+0004 (`max_group`, `cruise_friendly`, `deposit_percent`); si algún día se añade una columna a `tours`, hay que añadirla también aquí |
+| `migrations/0010_push_subscriptions.sql` | `push_subscriptions` + `push_prompts` (PWA instalable y push) |
+| `scripts/reset.sql` + `db:reset:local` | Vacía la D1 local y reaplica 0001→0010 (incluye `d1_migrations`) |
 | `scripts/seed.mjs` + `seed-data.mjs` | Datos iniciales (tours, traslados, ajustes) |
 | `scripts/create-admin.mjs`, `setup-prod-admin.mjs` | Crear administradores |
+| `scripts/gen-vapid.mjs` | Genera el par de claves VAPID del push en `.vapid.local` |
+| `scripts/test-*.mjs`, `mobile-test.mjs` | Pruebas reutilizables (`npm run test:*`) |
 | `wrangler.jsonc` | Config Cloudflare (D1, R2, despliegue) |
 
 ## 8. Flujos clave (de punta a punta)
@@ -130,9 +136,17 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - **Entrar con Google**: botón `components/auth/GoogleButton.tsx` en login/signup → `GET /api/auth/google` → callback (`api/auth/google/callback`) que vincula o crea al usuario (`lib/auth/google.ts`, columna `users.google_id`, migración `0005`). Secretos `GOOGLE_CLIENT_ID/SECRET`. Sin configurar, el botón vuelve al login.
 - **Passkeys** (huella/Face ID/PIN): registro en cuenta (`components/auth/PasskeysSection.tsx` + `POST /api/webauthn/register/*`), entrada en login (`LoginForm.tsx` + `POST /api/webauthn/login/*`) con email o **descubrible sin email** (el dispositivo elige la cuenta vía `userHandle`), tabla `webauthn_credentials` (migración `0006`), lógica en `lib/auth/webauthn.ts`.
 - **Recuerda el último usuario** del dispositivo: `localStorage prz-last-email` en `LoginForm.tsx`/`SignupForm.tsx`/`ModalLoginForm.tsx` (contraseña, passkey y Google del modal pre-rellenan el login).
+- **Roles del panel** (`lib/admin/access.ts` + migración `0008`): `admin` (todo), `editor` (opera y edita contenido no sensible), `photographer` (solo galería), `customer` (sin panel). Super-admin `dev@suprime.xyz` intocable. Guards en dos capas: páginas (`requireSection`) y Server Actions (`requireStaffRoles`).
 - **WhatsApp confirma con tus reservas**: el menú flotante (`WhatsAppMenu.tsx` + `GET /api/bookings/mine`) lista tus pendientes para elegir y autorrellena la referencia; con una sola la pone directa.
 - **Textos visibles**: casi todo está en `lib/i18n/dictionaries/{es,en}.ts` (misma estructura en ambos; si falta una clave en `en.ts`, falla el tipo).
 - **Ajustes del negocio** (WhatsApp, email, dirección): tabla `settings` vía `admin/settings/page.tsx`, con fallback en `lib/site.ts`.
+- **Auto-traducción ES→EN**: `lib/admin/translate.ts` (`translateEsToEn` vía MyMemory, gratis y sin API key). `autoTranslateTour(formData)` rellena **solo los campos de inglés que estén vacíos** (si el admin ya escribió inglés, se respeta). Se llama en `createTour`/`updateTour` antes de `writeTour`, y al crear una categoría. Si la API falla, el guardado continúa con el inglés vacío.
+- **Categorías de tour dinámicas** (migración `0009`): `lib/admin/categories.ts` (crear/activar/eliminar) + pantalla `admin/tours/categories/`. El selector del formulario se llena con `listTourCategories`; el catálogo público usa `listActiveCategories` (`lib/db/tours.ts`) y solo muestra como filtro las que tienen tours publicados. Al borrar una categoría sus tours pasan a `other`; desactivarla no toca los tours. `parseBase` valida el slug contra la tabla (`normalizeCategory`), no contra una lista fija.
+- **PWA instalable + notificaciones push** (migración `0010`): `components/pwa/PwaInstallPrompt.tsx` captura `beforeinstallprompt`, pide permiso, se suscribe y guarda la suscripción en `POST /api/push/subscribe`. Clave VAPID en `GET /api/push/public-key` (503 si no está configurada); secretos `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (ver `scripts/gen-vapid.mjs`). Envío con `web-push` en `lib/db/push.ts`; se dispara desde `notifyUser` (`lib/db/loyalty.ts`), así que **toda** notificación de la web llega también al móvil. `sw.js` atiende `push`, `notificationclick` y `message`.
+  - Ojo: el aviso va **arriba a la izquierda** (`top-20`), nunca abajo, porque abajo a la derecha vive el menú flotante de WhatsApp y solaparse le bloqueaba los clics.
+  - `useSyncExternalStore` para `isStandalone()`/`isIos()`/`PushManager`: el servidor renderiza vacío y tras hidratar aparece, para no romper la hidratación.
+  - Sin claves VAPID el sitio funciona igual (solo se pierde el push al móvil).
+- **Entrar con Google**: la URI de redirección autorizada en Google Cloud debe ser exactamente `https://<host>/api/auth/google/callback`. Si no coincide, Google responde `redirect_uri_mismatch`.
 
 ## 9. Cambios recientes (referencia rápida)
 
@@ -190,6 +204,11 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - Test de fidelidad (`npm run test:loyalty -- [origen] [carpeta]`):
   invitado → cupón → descuento, anti-abuso por propiedad, recurrente cada
   2 viajes, consumo y cupón manual del admin (`scripts/test-loyalty.mjs`).
+- Test de categorías + push (`npm run test:categories -- [origen] [carpeta]`):
+  crea una categoría solo en español y verifica la auto-traducción, el slug,
+  que aparezca en el formulario, el aviso de duplicado, que desactivar no
+  borra los tours, la clave VAPID, el 401 sin sesión y que el cliente ve el
+  aviso de instalar la PWA (`scripts/test-categories.mjs`).
 
 ## 11. Pendientes (cuando compre el dominio)
 

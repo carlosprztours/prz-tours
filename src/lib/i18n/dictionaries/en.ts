@@ -241,7 +241,7 @@ export const en: typeof es = {
       emailRequired: "Please enter your email address.",
       emailInvalid: "That email address doesn't look valid.",
       phoneRequired: "Please enter your phone or WhatsApp number.",
-      phoneInvalid: "That phone number doesn't look valid.",
+      phoneInvalid: "Enter your WhatsApp with your country code (+1…).",
       guestsRequired: "How many guests are travelling?",
       guestsRange: "Minimum 2 guests on tours (1 on transfers). Maximum 60.",
       promoInvalid: "That code is not valid or has expired.",
@@ -351,6 +351,10 @@ export const en: typeof es = {
     optConfirmMine: "Your bookings",
     optConfirmLoading: "Finding your bookings…",
     optConfirmManual: "Another reference",
+    optCancel: "Cancel booking",
+    optCancelMessage: "Hi! I'd like to cancel my booking. My reference is:",
+    optCancelGo: "Continue",
+    optCancelTooLate: "Under 48h: we'll help you here",
     optBook: "Book a tour",
     optBookMessage: "Hi! I'd like to book a tour in Puerto Plata.",
     optDriver: "Contact my driver",
@@ -361,6 +365,21 @@ export const en: typeof es = {
     title: "Notifications",
     empty: "No notifications yet.",
     viewAll: "View all in My account",
+  },
+
+  pwa: {
+    title: "Install the app and turn on alerts",
+    body:
+      "Install Perez Tours on your home screen to book faster and get alerts about your tours.",
+    iosBody:
+      "On iPhone: tap Share → “Add to Home Screen”. Then come back here to turn on alerts.",
+    install: "Install app",
+    notify: "Turn on alerts",
+    later: "Not now",
+    installed: "✓ App installed",
+    subscribed: "✓ Alerts on",
+    error: "We couldn't turn on alerts in this browser.",
+    denied: "Permission denied. You can enable it in your browser settings.",
   },
 
   errors: {

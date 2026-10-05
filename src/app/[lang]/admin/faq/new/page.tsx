@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Nueva pregunta frecuente.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { isLocale } from "@/lib/i18n";
+import { requireSection } from "@/lib/admin/access";
 import type { Locale } from "@/types";
 import { FaqForm } from "../FaqForm";
 
@@ -16,6 +17,7 @@ export default async function NewFaqPage({
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "faq");
   const es = locale === "es";
 
   return (

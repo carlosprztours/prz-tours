@@ -68,6 +68,7 @@ export async function verifyToken(
       typeof payload.uid !== "number" ||
       (payload.role !== "admin" &&
         payload.role !== "editor" &&
+        payload.role !== "photographer" &&
         payload.role !== "customer") ||
       typeof payload.sid !== "string"
     ) {

@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Editar artículo.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminArticle } from "@/lib/admin/articles";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { ArticleForm } from "../ArticleForm";
@@ -17,6 +18,7 @@ export default async function EditArticlePage({
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "blog");
 
   const numericId = Number(id);
   if (!Number.isInteger(numericId) || numericId <= 0) notFound();

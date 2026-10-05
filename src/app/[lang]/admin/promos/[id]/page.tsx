@@ -1,10 +1,11 @@
-/**
+﻿/**
  * Editar código promocional.
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getAdminPromo } from "@/lib/admin/promos";
+import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { PromoForm } from "../PromoForm";
@@ -17,6 +18,7 @@ export default async function EditPromoPage({
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  await requireSection(locale, "promos");
 
   const numericId = Number(id);
   if (!Number.isInteger(numericId) || numericId <= 0) notFound();

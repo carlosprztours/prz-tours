@@ -47,6 +47,8 @@ export type StringEnvKey =
   | "STRIPE_WEBHOOK_SECRET"
   | "GOOGLE_CLIENT_ID"
   | "GOOGLE_CLIENT_SECRET"
+  | "VAPID_PUBLIC_KEY"
+  | "VAPID_PRIVATE_KEY"
   | "NEXTJS_ENV";
 
 /** Lee una variable de entorno de Cloudflare (secretos incluidos). */

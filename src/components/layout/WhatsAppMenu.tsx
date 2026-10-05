@@ -28,9 +28,16 @@ const panelBtn =
 export function WhatsAppMenu({ phone, texts }: Props) {
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const [reference, setReference] = useState("");
+  const [cancelReference, setCancelReference] = useState("");
   const [mine, setMine] = useState<
-    { reference: string; title: string; booked_for: string | null }[] | null
+    {
+      reference: string;
+      title: string;
+      booked_for: string | null;
+      cancellable?: boolean;
+    }[] | null
   >(null);
 
   // Al abrir "confirmar", trae las reservas del usuario: con una se
@@ -38,18 +45,41 @@ export function WhatsAppMenu({ phone, texts }: Props) {
   async function toggleConfirm() {
     const next = !confirmOpen;
     setConfirmOpen(next);
+    if (next) setCancelOpen(false);
     if (next && mine === null) {
-      try {
-        const res = await fetch("/api/bookings/mine", { cache: "no-store" });
-        const data = (await res.json()) as {
-          bookings: { reference: string; title: string; booked_for: string | null }[];
-        };
-        const list = data.bookings ?? [];
-        setMine(list);
-        if (list.length === 1) setReference(list[0].reference);
-      } catch {
-        setMine([]);
-      }
+      await loadMine();
+    }
+  }
+
+  // "Cancelar" usa la misma lista (con marca de 48 h) y el mismo patrón:
+  // una sola cancelable se autorrellena, con varias se elige.
+  async function toggleCancel() {
+    const next = !cancelOpen;
+    setCancelOpen(next);
+    if (next) setConfirmOpen(false);
+    if (next && mine === null) {
+      await loadMine();
+    }
+  }
+
+  async function loadMine() {
+    try {
+      const res = await fetch("/api/bookings/mine", { cache: "no-store" });
+      const data = (await res.json()) as {
+        bookings: {
+          reference: string;
+          title: string;
+          booked_for: string | null;
+          cancellable?: boolean;
+        }[];
+      };
+      const list = data.bookings ?? [];
+      setMine(list);
+      if (list.length === 1) setReference(list[0].reference);
+      const cancellable = list.filter((b) => b.cancellable !== false);
+      if (cancellable.length === 1) setCancelReference(cancellable[0].reference);
+    } catch {
+      setMine([]);
     }
   }
 
@@ -133,6 +163,80 @@ export function WhatsAppMenu({ phone, texts }: Props) {
                   className="inline-flex h-10 shrink-0 items-center rounded-xl bg-[#25d366] px-4 text-sm font-bold text-white"
                 >
                   {texts.optConfirmGo}
+                </a>
+              </span>
+            </span>
+          )}
+
+          <button
+            type="button"
+            role="menuitem"
+            aria-expanded={cancelOpen}
+            onClick={toggleCancel}
+            className={panelBtn}
+          >
+            <span aria-hidden="true">❌</span> {texts.optCancel}
+          </button>
+          {cancelOpen && (
+            <span className="grid gap-2 px-2 pb-2">
+              {mine === null ? (
+                <span className="px-2 py-1 text-xs text-ink-500">{texts.optConfirmLoading}</span>
+              ) : (
+                mine.length > 0 && (
+                  <span>
+                    <span className="block px-2 pb-1 text-[11px] font-extrabold uppercase tracking-wider text-ink-500">
+                      {texts.optConfirmMine}
+                    </span>
+                    {mine.map((b) =>
+                      b.cancellable === false ? (
+                        <span
+                          key={b.reference}
+                          className="mb-1 block rounded-xl bg-sand-50 px-3 py-2 text-xs text-ink-500"
+                        >
+                          <span className="font-mono font-bold">{b.reference}</span>
+                          <span className="block">{texts.optCancelTooLate}</span>
+                        </span>
+                      ) : (
+                        <button
+                          key={b.reference}
+                          type="button"
+                          onClick={() => setCancelReference(b.reference)}
+                          aria-pressed={cancelReference === b.reference}
+                          className={`mb-1 flex w-full flex-col rounded-xl px-3 py-2 text-left text-xs transition ${
+                            cancelReference === b.reference
+                              ? "bg-ocean-600 font-bold text-white"
+                              : "bg-sand-50 font-semibold text-ink-700 hover:bg-sand-100"
+                          }`}
+                        >
+                          <span className="font-mono">{b.reference}</span>
+                          <span className="truncate font-sans font-medium opacity-80">
+                            {b.title}
+                            {b.booked_for ? ` · ${b.booked_for}` : ""}
+                          </span>
+                        </button>
+                      ),
+                    )}
+                    <span className="block px-2 pb-1 pt-1 text-[11px] font-extrabold uppercase tracking-wider text-ink-500">
+                      {texts.optConfirmManual}
+                    </span>
+                  </span>
+                )
+              )}
+              <span className="flex gap-2">
+                <input
+                  value={cancelReference}
+                  onChange={(e) => setCancelReference(e.target.value.toUpperCase())}
+                  placeholder={texts.optConfirmPlaceholder}
+                  aria-label={texts.optCancel}
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-sand-200 px-3 font-mono text-sm uppercase outline-none focus:border-ocean-500"
+                />
+                <a
+                  href={link(phone, `${texts.optCancelMessage} ${cancelReference.trim() || texts.optConfirmPlaceholder}`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex h-10 shrink-0 items-center rounded-xl bg-[#25d366] px-4 text-sm font-bold text-white"
+                >
+                  {texts.optCancelGo}
                 </a>
               </span>
             </span>

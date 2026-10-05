@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server Actions de tours (staff).
  *
  * El formulario del panel envía todo plano (una textarea por lista, una por
@@ -10,9 +10,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireEditor } from "./access";
+import { autoTranslateTour } from "./translate";
 import { batch, execute, query, queryOne } from "@/lib/db/client";
-import { isLocale } from "@/lib/i18n";
+
 import type {
   Difficulty,
   Locale,
@@ -27,8 +28,7 @@ import type {
 export type ToursResult = { ok: true } | { ok: false; error: string };
 
 async function requireStaff(rawLocale: string): Promise<Locale> {
-  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  await verifySession(locale);
+  const { locale } = await requireEditor(rawLocale);
   return locale;
 }
 
@@ -124,7 +124,7 @@ function lines(value: string): string[] {
     .filter(Boolean);
 }
 
-function parseBase(form: FormData) {
+async function parseBase(form: FormData) {
   const slug = str(form, "slug")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -137,7 +137,7 @@ function parseBase(form: FormData) {
     price: Math.max(0, num(form, "price", 0)),
     price_unit: (["person", "vehicle", "group"].includes(priceUnit) ? priceUnit : "person") as PriceUnit,
     duration_minutes: Math.max(30, Math.round(num(form, "duration_minutes", 240))),
-    category: (["water", "adventure", "culture", "wildlife", "beach", "other"].includes(category) ? category : "other") as TourCategory,
+    category: (await normalizeCategory(category)) as TourCategory,
     difficulty: (["easy", "moderate", "challenging"].includes(difficulty) ? difficulty : "easy") as Difficulty,
     age_min: str(form, "age_min") === "" ? null : Math.max(0, Math.round(num(form, "age_min", 0))),
     max_group: Math.max(1, Math.round(num(form, "max_group", 20))),
@@ -150,9 +150,27 @@ function parseBase(form: FormData) {
   };
 }
 
-function validateBase(base: ReturnType<typeof parseBase>): string | null {
+function validateBase(base: Awaited<ReturnType<typeof parseBase>>): string | null {
   if (!base.slug) return "bad-slug";
   return null;
+}
+
+/**
+ * Comprueba que el slug de categoría existe en `tour_categories`.
+ * Categorías dinámicas: si no existe (o el campo llega vacío/manipulado)
+ * cae en `other` en vez de romper el guardado.
+ */
+async function normalizeCategory(raw: string): Promise<string> {
+  const slug = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!slug) return "other";
+  const row = await queryOne<{ slug: string }>(
+    `SELECT slug FROM tour_categories WHERE slug = ?`,
+    slug,
+  );
+  return row?.slug ?? "other";
 }
 
 export async function createTour(
@@ -161,7 +179,7 @@ export async function createTour(
   formData: FormData,
 ): Promise<ToursResult> {
   const locale = await requireStaff(rawLocale);
-  const base = parseBase(formData);
+  const base = await parseBase(formData);
   const error = validateBase(base);
   if (error) return { ok: false, error };
 
@@ -171,7 +189,8 @@ export async function createTour(
   );
   if (exists) return { ok: false, error: "slug-taken" };
 
-  await writeTour(null, base, formData);
+  const translated = await autoTranslateTour(formData);
+  await writeTour(null, base, translated);
   revalidatePath(`/${locale}/tours`);
   redirect(`/${locale}/admin/tours`);
 }
@@ -183,7 +202,7 @@ export async function updateTour(
   formData: FormData,
 ): Promise<ToursResult> {
   const locale = await requireStaff(rawLocale);
-  const base = parseBase(formData);
+  const base = await parseBase(formData);
   const error = validateBase(base);
   if (error) return { ok: false, error };
 
@@ -194,7 +213,8 @@ export async function updateTour(
   );
   if (clash) return { ok: false, error: "slug-taken" };
 
-  await writeTour(id, base, formData);
+  const translated = await autoTranslateTour(formData);
+  await writeTour(id, base, translated);
   revalidatePath(`/${locale}/tours`);
   revalidatePath(`/${locale}/admin/tours`);
   return { ok: true };
@@ -202,7 +222,7 @@ export async function updateTour(
 
 async function writeTour(
   id: number | null,
-  base: ReturnType<typeof parseBase>,
+  base: Awaited<ReturnType<typeof parseBase>>,
   formData: FormData,
 ): Promise<number> {
   if (id === null) {

@@ -182,6 +182,27 @@ export async function listPublishedTourSlugs(): Promise<string[]> {
 }
 
 /**
+ * Categorías activas para los filtros del catálogo y las etiquetas de las
+ * tarjetas. Vienen de `tour_categories` (migración 0009), así que el admin
+ * puede crear las que quiera sin tocar código.
+ */
+export async function listActiveCategories(
+  locale: Locale,
+): Promise<{ slug: string; label: string; icon: string }[]> {
+  const rows = await query<{ slug: string; label_es: string; label_en: string; icon: string }>(
+    `SELECT slug, label_es, label_en, icon
+     FROM tour_categories
+     WHERE is_active = 1
+     ORDER BY sort_order ASC, label_es ASC`,
+  );
+  return rows.map((r) => ({
+    slug: r.slug,
+    label: (locale === "es" ? r.label_es : r.label_en) || r.label_es,
+    icon: r.icon,
+  }));
+}
+
+/**
  * Items mínimos para la navegación (footer). Una sola query ligera en vez
  * del tour completo: el layout la ejecuta en TODAS las páginas.
  */

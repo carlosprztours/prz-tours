@@ -1,20 +1,23 @@
 /**
- * Server Actions de mensajes de contacto y ajustes (staff).
+ * Server Actions de mensajes de contacto (editor+) y ajustes (solo admin).
  */
 "use server";
 
 import { revalidatePath } from "next/cache";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
-import { isLocale } from "@/lib/i18n";
 import type { ContactMessage, Locale } from "@/types";
 
 export type SimpleResult = { ok: true } | { ok: false; error: string };
 
 async function requireStaff(rawLocale: string): Promise<Locale> {
-  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  await verifySession(locale);
+  const { locale } = await requireEditor(rawLocale);
+  return locale;
+}
+
+async function requireAdminArea(rawLocale: string): Promise<Locale> {
+  const { locale } = await requireStaffRoles(rawLocale, "admin");
   return locale;
 }
 
@@ -66,7 +69,7 @@ export async function deleteMessage(
 export async function listSettings(
   rawLocale: string,
 ): Promise<{ key: string; value: string }[]> {
-  await requireStaff(rawLocale);
+  await requireAdminArea(rawLocale);
   return query<{ key: string; value: string }>(
     `SELECT key, value FROM settings ORDER BY key ASC`,
   );
@@ -77,7 +80,7 @@ export async function saveSetting(
   _prev: SimpleResult | undefined,
   formData: FormData,
 ): Promise<SimpleResult> {
-  const locale = await requireStaff(rawLocale);
+  const locale = await requireAdminArea(rawLocale);
   const key = String(formData.get("key") ?? "").trim();
   const value = String(formData.get("value") ?? "");
   if (!key || !/^[a-z0-9_]+$/.test(key)) return { ok: false, error: "bad-key" };
@@ -96,7 +99,7 @@ export async function deleteSetting(
   rawLocale: string,
   key: string,
 ): Promise<SimpleResult> {
-  const locale = await requireStaff(rawLocale);
+  const locale = await requireAdminArea(rawLocale);
   await execute(`DELETE FROM settings WHERE key = ?`, key);
   revalidatePath(`/${locale}/admin/settings`);
   return { ok: true };
