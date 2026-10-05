@@ -68,12 +68,19 @@ export async function sendContactMessage(
       `<p style="margin:12px 0 4px;font-size:14px;color:#334155;"><strong>Mensaje:</strong></p><p style="font-size:14px;color:#334155;white-space:pre-line;">${data.message.replace(/</g, "&lt;")}</p>`,
     ].join("");
 
-    sendEmail({
-      to: recipients,
-      subject: `Contacto web: ${data.subject ?? data.name}`,
-      html: emailLayout(`Nuevo mensaje de ${data.name}`, rows),
-      replyTo: data.email,
-    }).catch((err) => console.error("[contact] fallo enviando aviso:", err));
+    // Hay que ESPERAR: si se deja en segundo plano, el Worker puede terminar
+    // antes de que salga el aviso (y se pierde el mensaje del cliente).
+    try {
+      await sendEmail({
+        to: recipients,
+        subject: `Contacto web: ${data.subject ?? data.name}`,
+        html: emailLayout(`Nuevo mensaje de ${data.name}`, rows),
+        replyTo: data.email,
+        copyToInternal: false,
+      });
+    } catch (err) {
+      console.error("[contact] fallo enviando aviso:", err);
+    }
   }
 
   return { ok: true };

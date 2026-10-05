@@ -27,28 +27,47 @@ export function Hero({ locale, dict, stats }: Props) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/40 to-transparent" aria-hidden="true" />
 
-      <div className="container-site relative flex min-h-[540px] flex-col items-center justify-center py-20 text-center sm:min-h-[600px]">
-        <div className="mx-auto w-fit rounded-3xl bg-white/95 px-8 py-6 shadow-2xl backdrop-blur will-change-transform md:px-10 md:py-8" id="hero-logo">
+      {/* En móvil el alto útil real es pequeño (barra de direcciones + barra
+          de navegación): ~660-730px. Con el hero completo el titular se
+          comía la pantalla, el botón «Explorar tours» quedaba fuera de vista y
+          el botón flotante de WhatsApp se montaba encima del texto. Por eso
+          aquí se compacta con `max-height` y no solo con `sm:`.
+
+          El botón de WhatsApp ocupa la esquina inferior derecha (~120px con los
+          dos botones apilados), así que en pantallas bajas además escondemos
+          las estadísticas (lo menos importante) para que el titular, los CTA y
+          el texto no queden debajo del flotante.
+
+          A 320px de ancho los dos CTA se apilan en dos filas y el segundo
+          ("Traslados") quedaba justo bajo el botón de WhatsApp; en pantallas
+          tan estrechas se oculta (Traslados sigue en el menú y en su propia
+          página). Ojo: `max-[380px]` en Tailwind es de ANCHO; para altura hay
+          que escribir la media query entera: `[@media(max-height:700px)]:`. */}
+      <div className="container-site relative flex min-h-[480px] flex-col items-center justify-center gap-y-5 py-10 text-center sm:min-h-[600px] sm:gap-y-6 sm:py-16 [@media(max-height:760px)]:min-h-0 [@media(max-height:760px)]:gap-y-3 [@media(max-height:760px)]:pt-4 [@media(max-height:760px)]:pb-32">
+        <div
+          className="mx-auto w-fit rounded-3xl bg-white/95 px-8 py-6 shadow-2xl backdrop-blur will-change-transform md:px-10 md:py-8"
+          id="hero-logo"
+        >
           <Image
             src="/img/logo.png"
             alt={dict.meta.siteName}
             width={440}
             height={480}
-            className="h-48 w-auto object-contain md:h-64"
+            className="h-20 w-auto object-contain sm:h-48 md:h-64 [@media(max-height:760px)]:h-20"
             priority
           />
         </div>
-        <p className="mt-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] backdrop-blur">
+        <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] backdrop-blur">
           {dict.hero.badge}
         </p>
-        <h1 className="mt-5 max-w-3xl font-display text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl">
+        <h1 className="max-w-3xl font-display text-4xl font-extrabold leading-tight sm:text-5xl lg:text-6xl [@media(max-height:760px)]:text-[1.75rem]">
           {dict.hero.title}
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 sm:text-lg">
+        <p className="max-w-2xl text-base leading-relaxed text-white/85 sm:text-lg [@media(max-height:760px)]:text-sm">
           {dict.hero.subtitle}
         </p>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-3 [@media(max-height:760px)]:mt-1">
           <Link
             href={`${base}/tours`}
             className="inline-flex h-12 items-center rounded-full bg-coral-700 px-7 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-800"
@@ -57,13 +76,13 @@ export function Hero({ locale, dict, stats }: Props) {
           </Link>
           <Link
             href={`${base}/transfers`}
-            className="inline-flex h-12 items-center rounded-full border border-white/40 bg-white/10 px-7 font-display text-base font-bold text-white backdrop-blur transition hover:bg-white/20"
+            className="inline-flex h-12 items-center rounded-full border border-white/40 bg-white/10 px-7 font-display text-base font-bold text-white backdrop-blur transition hover:bg-white/20 max-[380px]:hidden"
           >
             {dict.hero.ctaSecondary}
           </Link>
         </div>
 
-        <dl className="mt-12 grid w-full max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4">
+        <dl className="grid w-full max-w-2xl grid-cols-2 gap-6 sm:grid-cols-4 [@media(max-height:760px)]:hidden">
           {[
             { value: String(stats.tours), label: dict.hero.statTours },
             { value: "10+", label: dict.hero.statYears },

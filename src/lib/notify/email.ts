@@ -15,13 +15,25 @@ import { getSetting } from "@/lib/db/content";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 
 export type EmailPayload = {
+  /** Destinatarios principales (se ven entre sí). */
   to: string | string[];
+  /** Copias ocultas: los demás no ven a quién se copió. */
+  bcc?: string | string[];
   subject: string;
   /** Versión HTML del correo. */
   html: string;
   /** Versión en texto plano (fallback). */
   text?: string;
   replyTo?: string;
+  /**
+   * Añade una copia oculta al buzón del dominio y a los correos del personal
+   * (`notify_emails`). Por defecto `true`: así queda constancia de TODO lo que
+   * sale de la web (reservas, cancelaciones, pagos, cupones).
+   *
+   * Ponlo en `false` cuando los destinatarios YA son los internos (el aviso al
+   * negocio), para no mandarlo dos veces.
+   */
+  copyToInternal?: boolean;
 };
 
 export type SendResult = { sent: boolean; id?: string; skipped?: string };
@@ -41,7 +53,22 @@ export async function sendEmail(payload: EmailPayload): Promise<SendResult> {
     return { sent: false, skipped: "missing-config" };
   }
 
-  const to = Array.isArray(payload.to) ? payload.to : [payload.to];
+  const to = dedupe(Array.isArray(payload.to) ? payload.to : [payload.to]);
+  const bcc = dedupe(Array.isArray(payload.bcc) ? payload.bcc : payload.bcc ? [payload.bcc] : []);
+
+  // Copia de constancia al buzón del dominio y al personal.
+  if (payload.copyToInternal !== false) {
+    const internal = await getInternalRecipients();
+    const yaEnviado = new Set(to.map((a) => a.toLowerCase()));
+    for (const dest of internal) {
+      if (!yaEnviado.has(dest.toLowerCase())) {
+        bcc.push(dest);
+        yaEnviado.add(dest.toLowerCase());
+      }
+    }
+  }
+
+  if (to.length === 0) return { sent: false, skipped: "no-recipients" };
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -52,6 +79,7 @@ export async function sendEmail(payload: EmailPayload): Promise<SendResult> {
     body: JSON.stringify({
       from,
       to,
+      ...(bcc.length > 0 ? { bcc } : {}),
       subject: payload.subject,
       html: payload.html,
       text: payload.text,
@@ -67,6 +95,10 @@ export async function sendEmail(payload: EmailPayload): Promise<SendResult> {
 
   const data = (await res.json().catch(() => ({}))) as { id?: string };
   return { sent: true, id: data.id };
+}
+
+function dedupe(list: string[]): string[] {
+  return [...new Set(list.map((v) => v.trim()).filter(Boolean))];
 }
 
 /** Plantilla mínima compartida (encabezado + pie con la marca). */

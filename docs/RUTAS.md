@@ -17,6 +17,7 @@ El idioma lo inyecta el proxy (`src/proxy.ts`) vía cabecera `x-locale`.
 | Envío de correo | Resend | Dominio `perez-tours.com` **verificado**. Remitente único en `RESEND_FROM` = `Perez Tours & Transfers <reservas@perez-tours.com>` (secreto de Cloudflare **y** `.dev.vars`, mismo formato en los dos sitios; `scripts/sync-dev-vars.mjs` los mantiene iguales) |
 | Buzón del dominio | Spacemail (Spaceship) | `asistencia@perez-tours.com`. DNS en Cloudflare: `MX @ → mx1/mx2.spacemail.com` (prio 10) y `TXT @ → v=spf1 include:spacemail.com ~all`. IMAP `mail.spacemail.com:993`, SMTP `smtp.spacemail.com:465` |
 | Reparto interno | ajuste `notify_emails` | Lista separada por comas de a quién avisa la web (reservas nuevas, pagos, contacto). Se lee en `getInternalRecipients()` (`lib/notify/email.ts`) y se edita en `/admin/settings`, sin desplegar |
+| Copia de todo correo | `sendEmail()` en `lib/notify/email.ts` | Todo lo que sale de la web (reservas, cancelaciones, pagos, cupones) se copia **en BCC** a `notify_emails`. El aviso interno al negocio va con `copyToInternal: false` para no duplicarse |
 | Registros DNS de Resend | `send`, `rsend` y `resend._domainkey` | `MX send → feedback-smtp.us-east-1.amazonses.com`, `TXT send → v=spf1 include:amazonses.com ~all`, `CNAME rsend → send.forge.rmta.net`, `TXT resend._domainkey → p=MIGf…`. Ojo: el CNAME va en **`rsend`**, no en `send` (en `send` chocaría con el MX y el TXT) |
 | Pruebas de correo | `npm run test:email` | Envía un correo real al buzón del dominio y al Gmail del cliente, e informa del estado de cada envío |
 | R2 (fotos del panel) | `wrangler.jsonc` (bloque comentado) | **Sigue deshabilitado:** la cuenta está en plan `free` sin R2 activado. Hay que habilitarlo en el panel y añadir un método de pago |
@@ -197,6 +198,23 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   `grid-cols-1` (pista `minmax(0,1fr)`), `min-w-0` en items,
   `break-words/break-all` en textos largos y `overflow-x-auto` en tablas.
   Vigilado por `test:pages` (`sin overflow` en cada página del panel).
+- Móvil real, no el de laboratorio: el alto útil de un móvil de verdad es de
+  ~660-730px (barra de direcciones + barra de navegación), no los 844px que
+  usan los emuladores. Por eso el hero se compacta con
+  `[@media(max-height:760px)]` (logo y titular más pequeños, estadísticas
+  ocultas) y a 320px de ancho se oculta el segundo CTA.
+  Ojo: `max-[380px]` en Tailwind es de **ancho**; para **alto** hay que
+  escribir la media query entera: `[@media(max-height:760px)]:`.
+  Vigilado por `node scripts/probe-android-overlap.mjs` (comprueba que el
+  botón de WhatsApp no tape nada pulsable en Pixel 5, Galaxy S9 e iPhone 13).
+- **Comentarios en JSX**: van entre llaves y asteriscos. Con dos barras (`//`)
+  se **pintan en la web** (pasó aquí: un bloque de texto gris encima del hero).
+  Y dentro de un comentario `{...}` no se pueden volver a escribir llaves de
+  comentario anidadas.
+- **Envío de correos**: hay que **esperar** (`await`) a `sendEmail`. Si se
+  lanza en segundo plano, Cloudflare Workers cancela la promesa al terminar la
+  Server Action y el correo se pierde (pasó: 13/13 reservas de producción con
+  `email_sent=0`).
 - Referencias cliqueables: recuadro mono con anillo en dashboard recientes,
   lista y tabla de reservas.
 - Imágenes protegidas contra descarga casual (menú contextual y arrastre): CSS en `globals.css` + `components/ui/ImageGuard.tsx` montado en el layout raíz.

@@ -84,7 +84,9 @@ export function WhatsAppMenu({ phone, texts }: Props) {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3">
+    // `bottom-5` + safe-area: en Android el botón se metía debajo de la barra de
+    // navegación. El `pr-[env(safe-area-inset-bottom)]` lo sube lo justo.
+    <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-3 max-sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom))]">
       {open && (
         <div
           role="menu"

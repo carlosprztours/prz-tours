@@ -158,10 +158,21 @@ export async function bookTour(
     ),
   );
 
-  // Emails en segundo plano: no bloquean la respuesta si fallan.
-  sendBookingEmails(booking.id, locale, experience).catch((err) =>
-    console.error("[bookTour] fallo enviando correos:", err),
-  );
+  // Correos al cliente y al negocio.
+  //
+  // OJO: aquí hay que ESPERAR (await). Antes se lanzaba en segundo plano
+  // (`sendBookingEmails(...)` sin await) y en Cloudflare Workers la promesa
+  // se cancela en cuanto la Server Action devuelve la respuesta: el Worker
+  // termina y el envío se queda a medias. Por eso ninguna reserva llegó a
+  // enviar correo (`email_sent=0` en las 13 de producción).
+  //
+  // Un fallo de correo NO debe romper la reserva: la reserva ya está guardada
+  // y el cliente ya tiene su referencia.
+  try {
+    await sendBookingEmails(booking.id, locale, experience);
+  } catch (err) {
+    console.error("[bookTour] fallo enviando correos:", err);
+  }
 
   const { isStripeEnabled } = await import("@/lib/payments/stripe");
   const canPayDeposit =
@@ -227,8 +238,9 @@ async function sendBookingEmails(
   });
   if (customerResult.sent) await markBookingNotified(booking.id, "email");
 
-  // 2) Aviso interno al negocio: buzón del dominio + correos del personal
-  //    (ajuste `notify_emails`, con `email` como respaldo).
+  // Avisos al negocio: buzón del dominio + correos del personal (ajuste
+  // `notify_emails`, con `email` como respaldo). Va sin `copyToInternal`
+  // porque estos destinatarios SON los internos.
   const recipients = await getInternalRecipients();
   if (recipients.length > 0) {
     await sendEmail({
@@ -240,6 +252,7 @@ async function sendBookingEmails(
           rows,
       ),
       replyTo: booking.customer_email,
+      copyToInternal: false,
     });
   }
 }
