@@ -16,7 +16,9 @@
   ],
   // Dominio propio. `custom_domain` hace que Cloudflare cree el registro DNS
   // y el certificado SSL automáticamente; no hay que añadir CNAME a mano.
-  // `workers.dev` sigue activo como red de seguridad mientras tanto.
+  // `workers_dev` se deja activo como red de seguridad: si el dominio propio
+  // o el SSL fallan, el sitio sigue accesible por *.workers.dev.
+  "workers_dev": true,
   "routes": [
     {
       "pattern": "perez-tours.com",

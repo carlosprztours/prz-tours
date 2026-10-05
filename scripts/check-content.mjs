@@ -51,6 +51,22 @@ const HARD_CHECKS = [
   },
 ];
 
+/**
+ * Quita de la prosa lo que los patrones blandos no deben interpretar como
+ * "palabra pegada a un punto".
+ *
+ * Sin esto, una lista de correos o una URL dan falsos positivos: en
+ * `a@b.com,c@d.com` el patrón `palabra.compalabra` casa y parece texto
+ * corrupto cuando es una configuración válida.
+ */
+function stripNonProse(value) {
+  return value
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, " ") // correos
+    .replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s"')]+/gi, " ") // URLs
+    .replace(/\b[\w-]+\.(?:com|net|org|io|dev|xyz|do|app|co)\b/gi, " ") // dominios sueltos
+    .replace(/\b(?:\/[^\s"']+)+\.(?:png|jpe?g|webp|svg|gif|ico|sql|mjs|ts|tsx|js)\b/gi, " "); // rutas
+}
+
 /** Residios típicos dentro de la prosa. */
 const SOFT_CHECKS = [
   { name: "guiones bajos dobles", re: /_{2,}/g },
@@ -109,16 +125,17 @@ for (const root of ROOTS) {
       if (!isProse(value)) continue;
       stringsChecked++;
 
+      const clean = stripNonProse(value);
       for (const { name, re } of SOFT_CHECKS) {
-        const hit = value.match(re);
+        const hit = clean.match(re);
         if (!hit) continue;
-        const at = value.indexOf(hit[0]);
+        const at = clean.indexOf(hit[0]);
         problems.push({
           file,
           line,
           name,
           sample:
-            value.slice(Math.max(0, at - 30), at + hit[0].length + 30).replace(/\s+/g, " ") +
+            clean.slice(Math.max(0, at - 30), at + hit[0].length + 30).replace(/\s+/g, " ") +
             `   ⟵ "${hit[0]}"`,
         });
       }
