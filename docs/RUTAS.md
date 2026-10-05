@@ -164,19 +164,22 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   al subir, menú hamburguesa con tap real, y cero errores JS. Guarda PNG
   (`01-top`, `02-scrolled`, `03-menu`) + `report.json` en la carpeta dada
   (por defecto un temporal). Requiere el dev corriendo.
-- Test de reserva (`npm run test:booking -- [url] [carpeta]`): llena y envía
-  el formulario real con `scripts/test-booking.mjs`, verifica referencia,
-  check animado y botón de WhatsApp. **Crea una reserva real en la D1
-  local** (bórrala en el panel si quieres). Captura a mitad y final de la
-  animación.
+- Test de reserva (`npm run test:booking -- [url] [carpeta]`): modal de login
+  sin sesión, borrador tras registro, reserva directa, desplegable 2–11 y
+  animación (`scripts/test-booking.mjs`). Crea reservas reales (bórralas en
+  el panel si quieres).
 - Test de auth (`npm run test:auth -- [origen] [carpeta]`): recordar-email,
-  fallback de Google y ceremonia passkey completa con autenticador virtual
-  (`scripts/test-auth.mjs`). Crea UN usuario de prueba en local.
+  Google (fallback o cableado) y ceremonia passkey completa con
+  autenticador virtual (`scripts/test-auth.mjs`). Crea UN usuario de prueba.
+- Test en producción (`npm run test:prod -- [origen] [login] [cliente]`):
+  login real y reserva real (`scripts/test-prod-booking.mjs`). CUIDADO:
+  crea datos reales.
+- Test de páginas (`npm run test:pages -- [origen] [salida] [--mobile|--desktop]`):
+  barrido de TODAS las páginas públicas (es+en) y del panel como admin
+  (`scripts/test-pages.mjs`). El contacto crea UN mensaje real.
 - Test de fidelidad (`npm run test:loyalty -- [origen] [carpeta]`):
   invitado → cupón → descuento, anti-abuso por propiedad, recurrente cada
   2 viajes, consumo y cupón manual del admin (`scripts/test-loyalty.mjs`).
-- Test en producción (`npm run test:prod -- [origen] [login] [cliente]`):
-  login real y reserva real (`scripts/test-prod-booking.mjs`).
 
 ## 11. Pendientes
 

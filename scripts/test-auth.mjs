@@ -54,17 +54,22 @@ await page.reload({ waitUntil: "networkidle" });
 const remembered = await page.locator("#email").inputValue();
 check("recuerda último email", remembered === "recordado@example.com", remembered);
 
-// ── 2) Google sin configurar → vuelve al login ──────────────
-// (sin seguir la redirección: solo miramos el Location del 307)
+// ── 2) Google: sin secretos → vuelve al login; con secretos → va a
+// Google con la redirect_uri de este origen ──────────────
 const api = await apiRequest.newContext();
 const gres = await api.get(`${origin}/api/auth/google?locale=es`, {
   maxRedirects: 0,
 });
-const loc = gres.headers()["location"] ?? "";
+const gloc = gres.headers()["location"] ?? "";
+const googleFallback = gres.status() === 307 && gloc.endsWith("/es/login");
+const googleWired =
+  (gres.status() === 302 || gres.status() === 307) &&
+  gloc.includes("https://accounts.google.com/") &&
+  gloc.includes(encodeURIComponent(`${origin}/api/auth/google/callback`));
 check(
-  "google sin secretos vuelve al login",
-  gres.status() === 307 && loc.endsWith("/es/login"),
-  `${gres.status()} → ${loc}`,
+  "google configurado o fallback",
+  googleFallback || googleWired,
+  `${gres.status()} → ${gloc.slice(0, 120)}`,
 );
 await api.dispose();
 

@@ -35,6 +35,13 @@ if (!executablePath) {
 const origin = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
 const outDir = process.argv[3] ?? mkdtempSync(join(tmpdir(), "prz-loyalty-"));
 
+// En producción hay que leer la D1 remota (con el token correcto).
+const REMOTE = !/localhost|127\.0\.0\.1/.test(origin);
+const WR = REMOTE
+  ? "node scripts/with-secrets.mjs -- npx wrangler"
+  : "npx wrangler";
+const DBFLAG = REMOTE ? "--remote" : "--local";
+
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok, detail });
@@ -42,10 +49,13 @@ const check = (name, ok, detail = "") => {
 };
 
 function dq(sql) {
-  const out = execSync(
-    `npx wrangler d1 execute prz-tours --local --command "${sql.replace(/"/g, "'")}" --json`,
-    { encoding: "utf8", cwd: "C:\\Users\\VIP\\Documents\\prz\\prz-web" },
-  );
+  const cmd =
+    `${WR} d1 execute prz-tours ${DBFLAG} --command "${sql.replace(/"/g, "'")}" --json`;
+  const out = execSync(cmd, {
+    encoding: "utf8",
+    cwd: "C:\\Users\\VIP\\Documents\\prz\\prz-web",
+    shell: process.platform === "win32",
+  });
   const start = out.indexOf("[");
   const end = out.lastIndexOf("]");
   const arr = JSON.parse(out.slice(start, end + 1));
