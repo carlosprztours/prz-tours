@@ -307,6 +307,16 @@ export function BookingForm({
     <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
       <input type="hidden" name="kind" value={kind} />
 
+      {/* Honeypot anti-spam: oculto para humanos, visible para bots. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="hidden"
+      />
+
       {welcome && (
         <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700" role="status">
           {t.authWelcome}

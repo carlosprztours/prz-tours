@@ -64,6 +64,13 @@ export async function bookTour(
   _prevState: BookTourResult | undefined,
   formData: FormData,
 ): Promise<BookTourResult> {
+  // Honeypot anti-spam: si el campo invisible «website» trae algo, es un bot.
+  // Serechá se muestra un error genérico y no se crea reserva ni se envía correo.
+  const website = formData.get("website");
+  if (typeof website === "string" && website.trim() !== "") {
+    return { ok: false, errors: { form: "validation.serverError" } };
+  }
+
   const parsed = bookingSchema.safeParse(formDataToObject(formData));
   if (!parsed.success) {
     return { ok: false, errors: zodErrors(parsed.error) };

@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { CookieBanner } from "@/components/layout/CookieBanner";
 import { ConditionalFloat } from "@/components/layout/ConditionalFloat";
 import { ChromeSwitcher } from "@/components/layout/ChromeSwitcher";
 import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
@@ -76,6 +77,7 @@ export default async function LangLayout({ children, params }: Props) {
               alreadySubscribed={pwaPrompt.alreadySubscribed}
             />
           )}
+          <CookieBanner locale={lang} />
         </>
       }
       footer={

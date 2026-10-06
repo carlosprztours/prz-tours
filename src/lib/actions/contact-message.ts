@@ -30,6 +30,12 @@ export async function sendContactMessage(
     if (typeof value === "string" && value.trim() !== "") raw[key] = value;
   }
 
+  // Honeypot anti-spam: los bots rellenan el campo invisible «website»; los
+  // humanos no lo ven. Se muestra un error genérico y no se guarda ni envía nada.
+  if (typeof formData.get("website") === "string" && (formData.get("website") as string).trim()) {
+    return { ok: true };
+  }
+
   const parsed = contactSchema.safeParse(raw);
   if (!parsed.success) {
     const errors: Record<string, string> = {};

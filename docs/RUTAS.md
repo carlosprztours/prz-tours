@@ -41,6 +41,7 @@ El idioma lo inyecta el proxy (`src/proxy.ts`) vía cabecera `x-locale`.
 | `/es/book/success?ref=` | `src/app/[lang]/book/success/page.tsx` | Vuelta de Stripe tras pagar: muestra la reserva |
 | `/es/about` | `src/app/[lang]/about/page.tsx` | Nosotros: misión, experiencia local, calidad |
 | `/es/contact` | `src/app/[lang]/contact/page.tsx` | Contacto + `ContactForm` |
+| `/es/aviso-legal`, `/es/privacidad`, `/es/cookies` | `src/app/[lang]/{aviso-legal,privacidad,cookies}/page.tsx` | Páginas legales (texto localizado en `lib/legal.ts` + `LegalPage`) |
 | `/es/track?ref=&email=` | `src/app/[lang]/track/page.tsx` | Consulta tu reserva (referencia + email) |
 | `/es/gallery` | `src/app/[lang]/gallery/page.tsx` | **Galería pública:** todas las fotos publicadas, con contador y pie de foto. La home enseña solo 8 y enlaza aquí con «Ver más» (`components/home/Gallery.tsx`). Solo entra lo marcado como publicado, así que el admin puede dejar una foto preparada sin que salga en la web |
 | `/es/blog` | `src/app/[lang]/blog/page.tsx` | Índice del blog |

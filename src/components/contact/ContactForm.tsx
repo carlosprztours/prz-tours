@@ -54,6 +54,15 @@ export function ContactForm({ locale, contact: t }: { locale: Locale; contact: D
 
   return (
     <form action={formAction} className="grid gap-4">
+      {/* Honeypot anti-spam: oculto para humanos, los bots lo rellenan. */}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="hidden"
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="name" className="mb-1.5 block text-sm font-bold text-ink-900">

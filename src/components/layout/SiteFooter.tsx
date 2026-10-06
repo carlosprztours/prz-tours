@@ -9,6 +9,8 @@ import Link from "next/link";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
+import { CookiePrefsButton } from "./CookiePrefsButton";
+
 type Props = {
   locale: Locale;
   dict: Dictionary;
@@ -117,6 +119,18 @@ export function SiteFooter({ locale, dict, settings, popularTours }: Props) {
           <p>
             © {year} {dict.meta.siteName}. {dict.footer.rights}
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <Link href={`${base}/aviso-legal`} className="hover:text-white hover:underline">
+              {locale === "es" ? "Aviso legal" : "Legal notice"}
+            </Link>
+            <Link href={`${base}/privacidad`} className="hover:text-white hover:underline">
+              {locale === "es" ? "Privacidad" : "Privacy"}
+            </Link>
+            <Link href={`${base}/cookies`} className="hover:text-white hover:underline">
+              {locale === "es" ? "Cookies" : "Cookies"}
+            </Link>
+            <CookiePrefsButton locale={locale} />
+          </div>
           <p>{dict.footer.builtWith}</p>
         </div>
       </div>

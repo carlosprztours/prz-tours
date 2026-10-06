@@ -1,35 +1,28 @@
 /**
- * 404 dentro de un idioma.
+ * 404 con la marca visible y una vuelta al inicio.
  *
- * En Next 16 `not-found` no recibe `params`, así que el idioma se lee de la
- * cabecera `x-locale` que inyecta el proxy (con inglés como fallback).
+ * Antes, si alguien escribía una URL mala o el idioma no era válido, salía la
+ * página genérica de Next sin header ni estilo de Perez Tours.
  */
-import { headers } from "next/headers";
 import Link from "next/link";
 
-import { getDictionary, isLocale } from "@/lib/i18n";
-import { defaultLocale } from "@/lib/i18n/config";
-import type { Locale } from "@/types";
-
-export default async function LangNotFound() {
-  const headerList = await headers();
-  const raw = headerList.get("x-locale") ?? defaultLocale;
-  const locale: Locale = isLocale(raw) ? raw : defaultLocale;
-  const dict = await getDictionary(locale);
-
+export default function NotFound() {
   return (
-    <div className="flex min-h-[60vh] items-center justify-center px-4 py-16">
-      <div className="max-w-md text-center">
-        <p className="font-display text-6xl font-extrabold text-ocean-600">404</p>
-        <h1 className="mt-4 font-display text-2xl font-extrabold text-ink-900">
-          {dict.errors.notFoundTitle}
+    <div className="grid min-h-[60vh] place-items-center bg-sand-50/50 px-4 py-20 text-center">
+      <div>
+        <p className="font-display text-6xl font-extrabold text-ocean-700">404</p>
+        <h1 className="mt-3 font-display text-2xl font-extrabold text-ink-900">
+          No encontramos esa página
         </h1>
-        <p className="mt-2 text-sm text-ink-500">{dict.errors.notFoundBody}</p>
+        <p className="mt-2 text-ink-700">
+          Es posible que la dirección esté mal escrita o que la página se haya
+          movido.
+        </p>
         <Link
-          href={`/${locale}`}
-          className="mt-6 inline-flex h-11 items-center rounded-full bg-ocean-600 px-6 text-sm font-bold text-white transition hover:bg-ocean-700"
+          href="/es"
+          className="mt-6 inline-flex h-12 items-center rounded-full bg-coral-700 px-8 font-display text-base font-bold text-white shadow-xl shadow-coral-500/30 transition hover:bg-coral-800"
         >
-          {dict.errors.goHome}
+          Volver al inicio
         </Link>
       </div>
     </div>
