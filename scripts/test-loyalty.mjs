@@ -22,6 +22,8 @@ import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { crearLimpiador } from "./cleanup.mjs";
+
 const EDGE_PATHS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   `${process.env.LOCALAPPDATA}\\Microsoft\\Edge\\Application\\msedge.exe`,
@@ -84,6 +86,13 @@ function dq(sql) {
 const browser = await chromium.launch({ executablePath, args: ["--no-sandbox"] });
 const emailA = tagged("a");
 const emailB = tagged("b");
+
+// Esta prueba crea dos cuentas, tres reservas y varios cupones. Se apuntan
+// todos para borrarlos al terminar; si no, cada ejecución deja el panel lleno
+// de datos de prueba.
+const limpiar = crearLimpiador(origin);
+limpiar.usuario(emailA);
+limpiar.usuario(emailB);
 
 async function signup(page, name, email) {
   await page.goto(`${origin}/es/signup`, { waitUntil: "networkidle", timeout: 60000 });
@@ -220,5 +229,20 @@ check("cupón manual desde el panel", manualRows.length >= 1, JSON.stringify(man
 await browser.close();
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} checks OK · PNG en ${outDir}`);
+
+// Las reservas y los cupones se recuperan de la base de datos porque las
+// referencias no siempre salen en pantalla.
+for (const fila of dq(
+  `SELECT reference FROM bookings WHERE customer_email IN ('${emailA}','${emailB}')`,
+)) {
+  limpiar.reserva(fila.reference);
+}
+for (const fila of dq(
+  `SELECT code FROM coupons WHERE user_id IN (SELECT id FROM users WHERE email IN ('${emailA}','${emailB}'))`,
+)) {
+  limpiar.cupon(fila.code);
+}
+limpiar.ejecutar();
+
 writeFileSync(join(outDir, "report.json"), JSON.stringify({ origin, results }, null, 2));
 if (failed.length > 0) process.exitCode = 1;

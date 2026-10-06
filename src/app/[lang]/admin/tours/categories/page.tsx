@@ -53,11 +53,15 @@ export default async function TourCategoriesPage({ params }: Props) {
           "bad-label": "Escribe un nombre de al menos 2 caracteres.",
           "bad-slug": "El slug no es válido.",
           "slug-taken": "Ya existe una categoría con ese slug.",
+          "translation-failed":
+            "Guardada, pero NO se pudo traducir el nombre al inglés: el servicio de traducción tiene el cupo diario agotado. Escribe el nombre en inglés a mano y se verá en la versión inglesa de la web.",
         }
       : {
           "bad-label": "Enter a name of at least 2 characters.",
           "bad-slug": "That slug is not valid.",
           "slug-taken": "A category with that slug already exists.",
+          "translation-failed":
+            "Saved, but the English name could not be translated: the translation service has run out of its daily quota. Type the English name by hand and it will show in the English version of the site.",
         },
   };
 

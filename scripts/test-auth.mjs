@@ -20,6 +20,8 @@ import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { crearLimpiador } from "./cleanup.mjs";
+
 const EDGE_PATHS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   `${process.env.LOCALAPPDATA}\\Microsoft\\Edge\\Application\\msedge.exe`,
@@ -32,6 +34,7 @@ if (!executablePath) {
 
 const origin = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
 const outDir = process.argv[3] ?? mkdtempSync(join(tmpdir(), "prz-auth-"));
+const limpiar = crearLimpiador(origin);
 
 const results = [];
 const check = (name, ok, detail = "") => {
@@ -75,7 +78,13 @@ await api.dispose();
 
 // ── 3) Ceremonia passkey ────────────────────────────────────
 const stamp = Date.now();
+
+/**
+ * Cuenta que registra la prueba. Va declarada aquí arriba para que la limpieza
+ * del final la vea aunque algo reviente antes de crearla.
+ */
 const email = `test-pk-${stamp}@example.com`;
+
 await page.goto(`${origin}/es/signup`, { waitUntil: "networkidle", timeout: 60000 });
 await page.locator("#name").fill("Test Passkey");
 await page.locator("#email").fill(email);
@@ -239,5 +248,11 @@ await browser.close();
 
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} checks OK · PNG en ${outDir}`);
+
+// La prueba registra una cuenta (y una passkey) para comprobar el acceso sin
+// contraseña. Se borra al terminar para no dejar usuarios de prueba.
+limpiar.usuario(email);
+limpiar.ejecutar();
+
 writeFileSync(join(outDir, "report.json"), JSON.stringify({ origin, email, results }, null, 2));
 if (failed.length > 0) process.exitCode = 1;

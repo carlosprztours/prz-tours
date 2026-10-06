@@ -10,7 +10,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireEditor } from "./access";
-import { autoTranslateTour } from "./translate";
+import { TranslationQuotaExceeded, translateEsToEn } from "./translate";
 import { execute, query, queryOne } from "@/lib/db/client";
 import type { TourCategoryRow } from "@/types";
 
@@ -48,10 +48,35 @@ export async function createTourCategory(
   if (exists) return { ok: false, error: "slug-taken" };
 
   // Si no escriben el nombre en inglés, se traduce desde el español.
-  const fd = new FormData();
-  fd.set("label_es", labelEs);
-  const translatedLabel = String((await autoTranslateTour(fd)).get("label_en") ?? "").trim();
-  const labelEn = labelEnInput || translatedLabel || labelEs;
+  //
+  // Dos cosas queCostaron tiempo encontrar aquí:
+  //
+  // 1. `autoTranslateTour` recorre una lista de campos pensados para los tours
+  //    (`title`, `summary`…) y dentro usa `${campo}_es` / `${campo}_en`. El
+  //    campo de las categorías se llama `label_es` / `label_en`, así que no
+  //    estaba en esa lista y la traducción salía vacía: cada categoría nueva se
+  //    guardaba con el nombre en español también en inglés.
+  //
+  // 2. MyMemory tiene tope diario por IP y las IPs de los Workers de
+  //    Cloudflare están compartidas, así que desde el servidor el tope suele
+  //    estar agotado. Cuando pasa, se avisa al panel en vez de guardar el
+  //    nombre en español como si fuera la traducción.
+  let labelEn = labelEnInput;
+  let translationFailed = false;
+  if (!labelEn) {
+    try {
+      labelEn = await translateEsToEn(labelEs);
+      if (!labelEn) translationFailed = true;
+    } catch (err) {
+      if (err instanceof TranslationQuotaExceeded) {
+        console.warn("[categories] MyMemory sin cuota; se guarda solo en español.");
+        translationFailed = true;
+      } else {
+        throw err;
+      }
+    }
+  }
+  if (!labelEn) labelEn = labelEs;
 
   const last = await queryOne<{ n: number }>(
     `SELECT COALESCE(MAX(sort_order), 0) AS n FROM tour_categories`,
@@ -69,7 +94,12 @@ export async function createTourCategory(
   revalidatePath(`/${locale}/admin/tours`);
   revalidatePath(`/${locale}/admin/tours/new`);
   revalidatePath(`/${locale}/tours`);
-  return { ok: true };
+
+  // La categoría se guarda igualmente (el español siempre está), pero se avisa
+  // de que el inglés quedó sin traducir en vez de fingir que salió bien.
+  return translationFailed
+    ? { ok: false, error: "translation-failed" }
+    : { ok: true };
 }
 
 /** Activa/desactiva una categoría sin tocar los tours que la usan. */

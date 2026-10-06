@@ -18,6 +18,8 @@ import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { crearLimpiador } from "./cleanup.mjs";
+
 const EDGE_PATHS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   `${process.env.LOCALAPPDATA}\\Microsoft\\Edge\\Application\\msedge.exe`,
@@ -31,6 +33,7 @@ if (!executablePath) {
 const url = process.argv[2] ?? "http://localhost:3000/es/book";
 const outDir = process.argv[3] ?? mkdtempSync(join(tmpdir(), "prz-booking-"));
 const origin = new URL(url).origin;
+const limpiar = crearLimpiador(origin);
 
 /**
  * Correo de las reservas de prueba.
@@ -47,17 +50,51 @@ const origin = new URL(url).origin;
  * mismo buzón, así que todo llega al mismo sitio.
  */
 const emailReal = process.argv[4] ?? "";
-const testEmail = (fase) => {
-  if (!emailReal) return `test-book-${fase}-${Date.now()}@example.com`;
-  const [user, dominio] = emailReal.split("@");
-  return `${user}+${fase}@${dominio}`;
-};
+
+/** Marca de tiempo única de la ejecución, para que los correos no cambien. */
+const stamp = Date.now();
+
+/**
+ * Correo de cada fase, calculado UNA vez.
+ *
+ * Antes se generaba con `Date.now()` en cada llamada, así que la misma fase
+ * devolvía correos distintos Depending de cuándo se preguntara, y la limpieza
+ * acababa buscando un usuario que no existía. Se memoriza.
+ */
+const correos = new Map();
+function testEmail(fase) {
+  if (!correos.has(fase)) {
+    correos.set(
+      fase,
+      emailReal
+        ? `${emailReal.split("@")[0]}+${fase}@${emailReal.split("@")[1]}`
+        : `test-book-${fase}-${stamp}@example.com`,
+    );
+  }
+  return correos.get(fase);
+}
+
+// Las dos fases registran un usuario y crean una reserva. Se apuntan aquí para
+// borrarlas al terminar: si no, cada ejecución deja dos cuentas y dos reservas
+// en producción.
+limpiar.usuario(testEmail("1"));
+limpiar.usuario(testEmail("2"));
+// Las referencias se van apuntando sobre la marcha (ver `anotarReserva`).
 
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok, detail });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
 };
+
+/**
+ * Apunta una reserva para borrarla al terminar. `ok` trae la referencia del
+ * resumen que se ve en pantalla.
+ */
+function anotarReserva(ok) {
+  limpiar.reserva(ok?.reference);
+  return ok;
+}
 
 const browser = await chromium.launch({ executablePath, args: ["--no-sandbox"] });
 
@@ -124,7 +161,8 @@ async function submitAndWaitSuccess(page, shotPrefix) {
   check("borrador restaurado", restoredName === "Test Borrador" && restoredTour !== "", `${restoredName}/${restoredTour}`);
 
   const ok = await submitAndWaitSuccess(page, "A-success");
-  check("reserva tras login (ref)", ok.reference != null, ok.reference ?? "sin referencia");
+  anotarReserva(ok);
+check("reserva tras login (ref)", ok.reference != null, ok.reference ?? "sin referencia");
   check("sin pageerrors (fase A)", pageErrors.length === 0, pageErrors[0] ?? "");
   await page.close();
 }
@@ -153,7 +191,8 @@ async function submitAndWaitSuccess(page, shotPrefix) {
   await page.locator("#guests").selectOption("5");
 
   const ok = await submitAndWaitSuccess(page, "B-success");
-  check("reserva directa (ref)", ok.reference != null, ok.reference ?? "sin referencia");
+  anotarReserva(ok);
+check("reserva directa (ref)", ok.reference != null, ok.reference ?? "sin referencia");
   check("check animado presente", ok.animatedCheck === true);
   check("botón continuar por WhatsApp", ok.whatsappBtn === true);
 
@@ -201,5 +240,9 @@ async function submitAndWaitSuccess(page, shotPrefix) {
 await browser.close();
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} checks OK · PNG en ${outDir}`);
+
+// Borra las dos cuentas y las dos reservas de esta ejecución.
+limpiar.ejecutar();
+
 writeFileSync(join(outDir, "report.json"), JSON.stringify({ url, results }, null, 2));
 if (failed.length > 0) process.exitCode = 1;

@@ -41,6 +41,15 @@ function loadSecrets() {
     const value = trimmed.slice(eq + 1).trim();
     if (key && value) found[key] = value;
   }
+
+  // El token de Cloudflare se guarda con su caducidad en el nombre
+  // (`CLOUDFLARE_API_TOKEN_7D`) pero wrangler solo mira
+  // `CLOUDFLARE_API_TOKEN`. Se expone el alias aquí para que no haya que
+  // exportarlo a mano antes de cada `npx wrangler`.
+  if (!found.CLOUDFLARE_API_TOKEN && found.CLOUDFLARE_API_TOKEN_7D) {
+    found.CLOUDFLARE_API_TOKEN = found.CLOUDFLARE_API_TOKEN_7D;
+  }
+
   return found;
 }
 

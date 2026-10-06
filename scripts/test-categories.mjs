@@ -17,12 +17,13 @@
  *
  * Requiere el dev corriendo y el admin local (dev@suprime.xyz).
  */
-import { execSync } from "node:child_process";
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { chromium } from "playwright-core";
+
+import { crearLimpiador, d1 as d1Raw } from "./cleanup.mjs";
 
 const EDGE_PATHS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -37,28 +38,40 @@ if (!executablePath) {
 const origin = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
 const outDir = process.argv[3] ?? mkdtempSync(join(tmpdir(), "prz-categories-"));
 
-const CWD = "C:\\Users\\VIP\\Documents\\prz\\prz-web";
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok, detail });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
 };
 
-function dq(sql) {
-  const out = execSync(
-    `npx wrangler d1 execute prz-tours --local --command "${sql.replace(/"/g, "'")}" --json`,
-    { encoding: "utf8", cwd: CWD, shell: process.platform === "win32" },
-  );
-  const start = out.indexOf("[");
-  const end = out.lastIndexOf("]");
-  const rows = JSON.parse(out.slice(start, end + 1));
-  return rows[0]?.results ?? [];
+/**
+ * Consulta a la D1 del origen que se está probando.
+ *
+ * Antes iba siempre contra `--local`, así que al pasarle un dominio real
+ * las consultas miraban una base de datos vacía y la prueba fallaba sin
+ * motivo. `d1()` del helper elige sola según el origen.
+ */
+function dq(consulta) {
+  const salida = d1Raw(consulta, { remote: !/localhost|127\.0\.0\.1/.test(origin) });
+  // `d1` devuelve el bloque ya envuelto en un array: `[ { results: [...] } ]`.
+  const bloque = Array.isArray(salida) ? salida[0] : salida;
+  return bloque?.results ?? [];
 }
 
 /** Nombre único por corrida para no chocar con pruebas anteriores. */
 const stamp = Date.now().toString(36).slice(-5);
-const CAT_ES = `Gastronomía de prueba ${stamp}`;
+const CAT_ES = `Gastronomia de prueba ${stamp}`;
 const CAT_SLUG = `gastronomia-de-prueba-${stamp}`;
+
+/**
+ * Correo del cliente que se registra más abajo para ver el aviso de la PWA.
+ *
+ * Va aquí arriba y no junto a su uso porque la limpieza lo necesita aunque la
+ * prueba reviente antes de llegar a esa parte: si el registro del cliente
+ * llegara a completarse y fallara justo después, el `finally` ya tendría que
+ * saber qué cuenta borrar.
+ */
+const emailCliente = `cat${stamp}@example.com`;
 
 const browser = await chromium.launch({ executablePath, args: ["--no-sandbox"] });
 const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -83,8 +96,15 @@ try {
 
   await page.getByLabel("Nombre", { exact: true }).fill(CAT_ES);
   await page.getByLabel(/Icono/i).fill("🍽️");
+  // El nombre en inglés se deja vacío a propósito: es justo lo que debe
+  // traducir el servidor. Si se rellenara, la comprobación de abajo no
+  // probaría nada.
+  const nombreEn = page.getByLabel(/Nombre en ingl/i);
+  check("el formulario deja el inglés vacío", (await nombreEn.inputValue()) === "");
   await page.getByRole("button", { name: /Crear categoría/i }).click();
-  await page.waitForTimeout(2500);
+  // La traducción es una llamada a MyMemory: puede tardar, y hay que dar
+  // margen antes de mirar en la base de datos.
+  await page.waitForTimeout(6000);
 
   const row = dq(
     `SELECT slug || '|' || label_es || '|' || label_en AS v FROM tour_categories WHERE label_es = '${CAT_ES.replace(/'/g, "''")}'`,
@@ -93,12 +113,33 @@ try {
 
   if (row) {
     const [, , labelEn] = row.v.split("|");
-    const translated = labelEn.trim().length > 0 && labelEn.trim() !== CAT_ES;
+    const traducida = labelEn.trim().length > 0 && labelEn.trim() !== CAT_ES;
+
+    // MyMemory da un tope diario por IP y las IPs de los Workers de
+    // Cloudflare están compartidas, así que desde producción puede fallar por
+    // cupo. En ese caso el panel tiene que avisar, no guardar el español en
+    // silencio. Se aceptan las dos cosas: traducida, o avisada sin traducir.
+    const aviso = await page
+      .locator('[role="alert"]')
+      .allInnerTexts()
+      .then((t) => t.join(" "))
+      .catch(() => "");
+    const avisoTraduccion = /cupo diario|daily quota/i.test(aviso);
+
     check(
-      "se autotraduce al inglés",
-      translated,
-      translated ? labelEn : `label_en vacío o igual (${labelEn})`,
+      "se autotraduce al inglés o avisa de que no pudo",
+      traducida || avisoTraduccion,
+      traducida
+        ? labelEn
+        : avisoTraduccion
+          ? "avisa del cupo agotado (aceptado)"
+          : `label_en sin traducir y sin aviso (${labelEn || "vacío"})`,
     );
+    if (!traducida && !avisoTraduccion) {
+      console.log(
+        "   (MyMemory no devolvió traducción; revisa si se agotó el cupo diario de la IP)",
+      );
+    }
     check(
       "el slug se genera del nombre",
       row.v.split("|")[0] === CAT_SLUG,
@@ -171,10 +212,9 @@ try {
   // ── 8. Aviso de PWA en la web de cliente ────────────────────────────────
   const customerCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const cust = await customerCtx.newPage();
-  const email = `cat${stamp}@test.local`;
   await cust.goto(`${origin}/es/signup`, { waitUntil: "networkidle", timeout: 60000 });
   await cust.getByLabel(/nombre/i).first().fill("Cliente Cat");
-  await cust.getByLabel(/correo/i).fill(email);
+  await cust.getByLabel(/correo/i).fill(emailCliente);
   await cust.getByLabel(/contraseña/i).first().fill("Prueba12345");
   await cust.getByRole("button", { name: /Crear cuenta/i }).click();
   await cust.waitForTimeout(3500);
@@ -191,15 +231,13 @@ try {
   await page.screenshot({ path: join(outDir, "categories.png"), fullPage: true }).catch(() => {});
   await browser.close();
 
-  // Limpieza: la categoría de prueba fuera.
-  try {
-    execSync(
-      `npx wrangler d1 execute prz-tours --local --command "DELETE FROM tour_categories WHERE label_es LIKE '%${stamp}%'" --json`,
-      { cwd: CWD, shell: process.platform === "win32" },
-    );
-  } catch {
-    /* la limpieza no debe romper el resultado */
-  }
+  // Limpieza: la categoría de prueba y el cliente que se registró para ver el
+  // selector. Antes iba siempre contra `--local`, así que contra producción
+  // se quedaba todo; ahora el helper elige según el origen.
+  const limpiar = crearLimpiador(origin);
+  limpiar.categoria(CAT_ES);
+  limpiar.usuario(emailCliente);
+  limpiar.ejecutar();
 }
 
 const failed = results.filter((r) => !r.ok);

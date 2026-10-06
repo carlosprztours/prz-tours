@@ -15,6 +15,8 @@ import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { crearLimpiador } from "./cleanup.mjs";
+
 const EDGE_PATHS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   `${process.env.LOCALAPPDATA}\\Microsoft\\Edge\\Application\\msedge.exe`,
@@ -32,6 +34,7 @@ const only = process.argv.includes("--desktop")
     ? "mobile"
     : "both";
 const origin = (rawArgs[0] ?? "http://localhost:3000").replace(/\/$/, "");
+const limpiar = crearLimpiador(origin);
 const outDir = rawArgs[1] ?? mkdtempSync(join(tmpdir(), "prz-pages-"));
 
 const results = [];
@@ -180,6 +183,12 @@ for (const mode of only === "both" ? ["mobile", "desktop"] : [only]) {
 await browser.close();
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} checks OK · ${outDir}`);
+
+// El barrido manda un mensaje de contacto de verdad; se apunta para borrarlo
+// al terminar, que si no el panel se llena de «Test Páginas».
+limpiar.mensaje("test-pages@example.com");
+limpiar.ejecutar();
+
 writeFileSync(join(outDir, "report.json"), JSON.stringify({ origin, results }, null, 2));
 if (failed.length > 0) {
   console.log("\nFALLOS:");

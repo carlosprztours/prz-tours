@@ -162,7 +162,9 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - **Textos visibles**: casi todo está en `lib/i18n/dictionaries/{es,en}.ts` (misma estructura en ambos; si falta una clave en `en.ts`, falla el tipo).
 - **Ajustes del negocio** (WhatsApp, email, dirección): tabla `settings` vía `admin/settings/page.tsx`, con fallback en `lib/site.ts`.
 - **Auto-traducción ES→EN**: `lib/admin/translate.ts` (`translateEsToEn` vía MyMemory, gratis y sin API key). `autoTranslateTour(formData)` rellena **solo los campos de inglés que estén vacíos** (si el admin ya escribió inglés, se respeta). Se llama en `createTour`/`updateTour` antes de `writeTour`, y al crear una categoría. Si la API falla, el guardado continúa con el inglés vacío.
-- **Categorías de tour dinámicas** (migración `0009`): `lib/admin/categories.ts` (crear/activar/eliminar) + pantalla `admin/tours/categories/`. El selector del formulario se llena con `listTourCategories`; el catálogo público usa `listActiveCategories` (`lib/db/tours.ts`) y solo muestra como filtro las que tienen tours publicados. Al borrar una categoría sus tours pasan a `other`; desactivarla no toca los tours. `parseBase` valida el slug contra la tabla (`normalizeCategory`), no contra una lista fija.
+- **Categorías: se traducen aparte**, con `translateEsToEn(labelEs)` dentro de `createTourCategory`. Antes usaban `autoTranslateTour`, que nunca traducía `label_es`/`label_en` porque no están en `BILINGUAL_FIELDS` (esa lista es para tours): toda categoría nueva se guardaba con el español también en inglés. Si la traducción falla, la categoría se guarda igual y el panel avisa con `translation-failed`.
+  - **MyMemory tiene tope diario por IP**, y las IPs de salida de los Workers de Cloudflare están compartidas, así que desde producción el tope suele estar agotado. `translateEsToEn` distingue el tope agotado (`quotaFinished`, lanza `TranslationQuotaExceeded`) de «no hay traducción para este texto» (devuelve `""`). Para traducción fiable hace falta un servicio con API propia (DeepL, Google Translate).
+  - **Categorías de tour dinámicas** (migración `0009`): `lib/admin/categories.ts` (crear/activar/eliminar) + pantalla `admin/tours/categories/`. El selector del formulario se llena con `listTourCategories`; el catálogo público usa `listActiveCategories` (`lib/db/tours.ts`) y solo muestra como filtro las que tienen tours publicados. Al borrar una categoría sus tours pasan a `other`; desactivarla no toca los tours. `parseBase` valida el slug contra la tabla (`normalizeCategory`), no contra una lista fija.
 - **PWA instalable + notificaciones push** (migración `0010`): `components/pwa/PwaInstallPrompt.tsx` captura `beforeinstallprompt`, pide permiso, se suscribe y guarda la suscripción en `POST /api/push/subscribe`. Clave VAPID en `GET /api/push/public-key` (503 si no está configurada); secretos `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (ver `scripts/gen-vapid.mjs`). Envío con `web-push` en `lib/db/push.ts`; se dispara desde `notifyUser` (`lib/db/loyalty.ts`), así que **toda** notificación de la web llega también al móvil. `sw.js` atiende `push`, `notificationclick` y `message`.
   - Ojo: el aviso va **arriba a la izquierda** (`top-20`), nunca abajo, porque abajo a la derecha vive el menú flotante de WhatsApp y solaparse le bloqueaba los clics.
   - `useSyncExternalStore` para `isStandalone()`/`isIos()`/`PushManager`: el servidor renderiza vacío y tras hidratar aparece, para no romper la hidratación.
@@ -234,8 +236,9 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   (por defecto un temporal). Requiere el dev corriendo.
 - Test de reserva (`npm run test:booking -- [url] [carpeta] [correo-real]`): modal
   de login sin sesión, borrador tras registro, reserva directa, desplegable 2–11
-  y animación (`scripts/test-booking.mjs`). Crea reservas reales (bórralas en
-  el panel si quieres). El 4º argumento es **opcional**: sin él usa
+  y animación (`scripts/test-booking.mjs`). Crea reservas reales, pero **se
+  borran solas al terminar** (ver «limpieza automática» más abajo). El 4º
+  argumento es **opcional**: sin él usa
   `example.com`, que Resend rechaza a propósito, así que la batería no genera
   correo. Con una dirección real cada fase usa una etiqueta distinta
   (`+1`, `+2`) y llega todo al mismo buzón.
@@ -255,10 +258,40 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   «Reserva confirmada». El 3er argumento es opcional y funciona como en
   `test:booking` (etiquetas `+a` y `+b`).
 - Test de categorías + push (`npm run test:categories -- [origen] [carpeta]`):
-  crea una categoría solo en español y verifica la auto-traducción, el slug,
-  que aparezca en el formulario, el aviso de duplicado, que desactivar no
-  borra los tours, la clave VAPID, el 401 sin sesión y que el cliente ve el
-  aviso de instalar la PWA (`scripts/test-categories.mjs`).
+  crea una categoría solo en español y verifica la traducción automática (o el
+  aviso de que el cupo se agotó), el slug, que aparezca en el formulario, el
+  aviso de duplicado, que desactivar no borra los tours, la clave VAPID, el
+  401 sin sesión y que el cliente ve el aviso de instalar la PWA
+  (`scripts/test-categories.mjs`).
+
+### Limpieza automática de las pruebas
+
+Las pruebas de extremo a punta usan la web de verdad (reservan, se registran,
+mandan mensajes), porque si no no se comprueba nada. Para que no dejen basura
+en producción, todas apuntan lo que crean y lo borran al terminar con
+`scripts/cleanup.mjs` (`crearLimpiador(origen)`):
+
+- `test:pages` → el mensaje de contacto.
+- `test:booking` → dos cuentas y sus reservas.
+- `test:auth` → la cuenta y su passkey.
+- `test:loyalty` → dos cuentas, sus reservas y sus cupones.
+- `test:categories` → la categoría de prueba y el cliente registrado.
+- `test:upload` → la foto de la galería y el fichero en ImageKit.
+
+Reglas del helper (no relajar):
+
+- **Nunca** `DROP TABLE` ni «borra todo de la tabla»: se borra solo lo que la
+  prueba ha apuntado, con su identificador.
+- Los hijos antes que los padres (`booking_events` → `bookings`,
+  notificaciones → `users`), para no dejar huérfanos.
+- Elige sola entre la base local y la remota según el origen.
+- Si la limpieza falla, **la prueba sigue contando como correcta** (la
+  verificación va antes que la limpieza) y avisa con la sentencia exacta para
+  borrarlo a mano.
+
+Comprobado contra producción: tras `test:booking`, `test:loyalty` y
+`test:categories` quedan 0 reservas, 0 eventos, 0 mensajes y 0 usuarios de
+prueba.
 
 ## 11. Pendientes
 

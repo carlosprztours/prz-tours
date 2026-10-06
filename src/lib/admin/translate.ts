@@ -16,21 +16,73 @@ const ENDPOINT = "https://api.mymemory.translated.net/get";
 export async function translateEsToEn(text: string): Promise<string> {
   const trimmed = text.trim();
   if (!trimmed) return "";
+
   try {
     const url = `${ENDPOINT}?q=${encodeURIComponent(trimmed)}&langpair=es|en`;
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    if (!res.ok) return "";
+    if (!res.ok) {
+      // Se avisa porque si no el fallo es invisible: el campo en inglés se
+      // queda vacío y parece que la auto-traducción funciona.
+      console.warn(`[translate] MyMemory respondió ${res.status}; sin traducción.`);
+      return "";
+    }
     const data = (await res.json()) as {
       responseData?: { translatedText?: string };
       responseStatus?: number;
+      responseDetails?: string;
+      /** MyMemory lo pone a `true` cuando la IP se agotó el cupo diario. */
+      quotaFinished?: boolean | number;
     };
     const translated = data.responseData?.translatedText?.trim();
-    if (!translated || data.responseStatus !== 200) return "";
-    // MyMemory a veces devuelve el texto original si no encuentra traducción
-    if (translated.toLowerCase() === trimmed.toLowerCase()) return "";
+
+    // MyMemory avisa con `quotaFinished` cuando la IP agotó el cupo diario, y
+    // con `responseStatus` distinto de 200 cuando no pudo atender la petición.
+    // Lo primero y lo segundo son fallos distintos y quien llama puede
+    // reaccionar distinto: uno se arregla esperando al día siguiente, el otro
+    // suele ser un texto que MyMemory simplemente no sabe traducir.
+    const sinCuota =
+      data.quotaFinished !== undefined &&
+      data.quotaFinished !== false &&
+      String(data.quotaFinished).toLowerCase() !== "false" &&
+      Number(data.quotaFinished) !== 0;
+
+    if (sinCuota) {
+      throw new TranslationQuotaExceeded();
+    }
+
+    if (!translated || data.responseStatus !== 200) {
+      console.warn(
+        `[translate] MyMemory sin traducción (status=${data.responseStatus}, ` +
+          `cuota=${String(data.quotaFinished ?? "?")}): ${data.responseDetails ?? "sin detalle"}`,
+      );
+      return "";
+    }
+
+    // MyMemory devuelve el texto tal cual cuando no encuentra traducción. No es
+    // un fallo: simplemente no hay traducción para ese texto.
+    if (translated.toLowerCase() === trimmed.toLowerCase()) {
+      return "";
+    }
     return translated;
-  } catch {
+  } catch (err) {
+    if (err instanceof TranslationQuotaExceeded) throw err;
+    console.warn("[translate] fallo al llamar a MyMemory:", String(err).slice(0, 160));
     return "";
+  }
+}
+
+/**
+ * MyMemory es un servicio gratuito con tope diario por IP. Las IPs de salida de
+ * los Workers de Cloudflare están compartidas, así que desde el servidor el
+ * tope se agota enseguida.
+ *
+ * Se lanza este error (en vez de devolver "") para que quien llame pueda
+ * distinguir «no hay traducción para este texto» de «no se pudo traducir nada».
+ */
+export class TranslationQuotaExceeded extends Error {
+  constructor() {
+    super("MyMemory: cuota diaria agotada para esta IP");
+    this.name = "TranslationQuotaExceeded";
   }
 }
 
