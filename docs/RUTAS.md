@@ -21,7 +21,9 @@ El idioma lo inyecta el proxy (`src/proxy.ts`) vía cabecera `x-locale`.
 | Correo de cambios de estado | `sendBookingUpdateEmail()` en `lib/notify/booking-email.ts` | Al confirmar, cancelar o registrar un pago se manda correo al cliente con el resumen de la reserva. La copia interna la añade `sendEmail` sola. Nunca lanza: si Resend falla, el cambio de estado ya está guardado |
 | Registros DNS de Resend | `send`, `rsend` y `resend._domainkey` | `MX send → feedback-smtp.us-east-1.amazonses.com`, `TXT send → v=spf1 include:amazonses.com ~all`, `CNAME rsend → send.forge.rmta.net`, `TXT resend._domainkey → p=MIGf…`. Ojo: el CNAME va en **`rsend`**, no en `send` (en `send` chocaría con el MX y el TXT) |
 | Pruebas de correo | `npm run test:email` | Envía un correo real al buzón del dominio y al Gmail del cliente, e informa del estado de cada envío |
-| R2 (fotos del panel) | `wrangler.jsonc` (bloque comentado) | **Sigue deshabilitado:** la cuenta está en plan `free` sin R2 activado. Hay que habilitarlo en el panel y añadir un método de pago |
+| Pruebas de ImageKit | `npm run test:imagekit` | Sube un PNG de verdad, comprueba que la URL pública responde una imagen y **borra el fichero** al terminar. No imprime la clave privada |
+| Imágenes del panel | `lib/media/imagekit.ts` + `api/admin/upload` | **ImageKit** hace de almacén y CDN: `POST /api/admin/upload` sube la foto desde el servidor (la clave privada nunca llega al navegador) y devuelve la URL `https://ik.imagekit.io/…`, que `next/image` optimiza. El botón del panel dice el motivo del fallo si falta configurar |
+| R2 (fotos del panel) | `wrangler.jsonc` (bloque comentado) | **Desactivado y sin usar:** la cuenta está en plan `free` sin R2. Se sustituyó por ImageKit. El endpoint `/api/media/[...key]` sigue en el código por si quedan URLs antiguas |
 
 **Spacemail no sustituye a Resend.** La API pública de Spaceship solo cubre dominios, DNS y SellerHub; no tiene buzón ni envío programático. Spacemail = buzón humano (IMAP/SMTP). Resend = correos automáticos a clientes. Conviven porque los registros DNS no se pisan: `MX`/`TXT` de la raíz para Spacemail, subdominio `send` para Resend.
 
@@ -274,5 +276,3 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
 - **Google OAuth**: añadir la URI y los orígenes del dominio propio (ver
   `## 8`), o el botón «Continuar con Google» seguirá fallando con
   `redirect_uri_mismatch`.
-- **ImageKit**: falta la Private Key y el URL Endpoint para subir fotos desde
-  el móvil y el PC.

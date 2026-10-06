@@ -252,8 +252,26 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
               folder="tours"
               labels={
                 locale === "es"
-                  ? { upload: "Subir foto", uploading: "Subiendo…", failed: "No se pudo subir." }
-                  : { upload: "Upload photo", uploading: "Uploading…", failed: "Upload failed." }
+                  ? {
+                      upload: "Subir foto",
+                      uploading: "Subiendo…",
+                      failed: "No se pudo subir.",
+                      reasons: {
+                        notConfigured: "Falta configurar ImageKit.",
+                        badType: "Formato no válido (JPG, PNG, WebP, AVIF o GIF).",
+                        badSize: "La foto supera los 10 MB.",
+                      },
+                    }
+                  : {
+                      upload: "Upload photo",
+                      uploading: "Uploading…",
+                      failed: "Upload failed.",
+                      reasons: {
+                        notConfigured: "ImageKit is not configured.",
+                        badType: "Unsupported format (JPG, PNG, WebP, AVIF or GIF).",
+                        badSize: "The photo is larger than 10 MB.",
+                      },
+                    }
               }
             />
           </div>

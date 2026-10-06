@@ -49,6 +49,8 @@ export type StringEnvKey =
   | "GOOGLE_CLIENT_SECRET"
   | "VAPID_PUBLIC_KEY"
   | "VAPID_PRIVATE_KEY"
+  | "IMAGEKIT_PRIVATE_KEY"
+  | "IMAGEKIT_URL_ENDPOINT"
   | "NEXTJS_ENV";
 
 /** Lee una variable de entorno de Cloudflare (secretos incluidos). */

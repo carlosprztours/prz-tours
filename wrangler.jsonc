@@ -37,12 +37,15 @@
       "migrations_dir": "migrations"
     }
   ],
-  // R2 desactivado por ahora: el bucket `prz-media` aún no existe porque R2
-  // no está habilitado en la cuenta (Dashboard → R2 → Enable).
-  // Pasos para reactivar:
+  // Las imágenes del panel ya NO van a R2: se suben a ImageKit, que hace de
+  // almacén y CDN (`POST /api/admin/upload` → `lib/media/imagekit.ts`). R2
+  // sigue sin estar habilitado en la cuenta (plan `free`), así que el binding
+  // se queda comentado. Si algún día se quiere volver a R2:
   //   1. Habilitar R2 en el dashboard.
   //   2. `wrangler r2 bucket create prz-media`
   //   3. Descomentar el bloque de abajo y desplegar.
+  // Nota: el endpoint `/api/media/[...key]` que sirve el bucket sigue en el
+  // código, por si quedan URLs antiguas apuntando a él.
   // "r2_buckets": [
   //   {
   //     "binding": "MEDIA",
