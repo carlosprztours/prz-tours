@@ -1,0 +1,3 @@
+module.exports=[22476,a=>{"use strict";var b=a.i(87924),c=a.i(35112);a.s(["SubmitButton",0,function({label:a,pendingLabel:d}){let{pending:e}=(0,c.useFormStatus)();return(0,b.jsx)("button",{type:"submit",disabled:e,className:"h-12 rounded-full bg-ocean-700 font-display text-base font-bold text-white transition hover:bg-ocean-800 disabled:cursor-wait disabled:opacity-70",children:e?d:a})}])}];
+
+//# sourceMappingURL=src_components_ui_SubmitButton_tsx_19zjqz8._.js.map

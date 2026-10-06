@@ -3,23 +3,23 @@
  *
  * Las pruebas de extremo a extremo reservan, se registran y mandan mensajes de
  * contacto de verdad, porque para comprobar que la web funciona hay que usar la
- * web. Sin mÃ¡s, cada ejecuciÃ³n deja basura en producciÃ³n.
+ * web. Sin mÃƒÂ¡s, cada ejecuciÃƒÂ³n deja basura en producciÃƒÂ³n.
  *
- * Este mÃ³dulo apunta a lo que una prueba acaba de crear (por referencia de
- * reserva, correo de usuario, etiqueta de categorÃ­aâ€¦) y lo borra al terminar.
+ * Este mÃƒÂ³dulo apunta a lo que una prueba acaba de crear (por referencia de
+ * reserva, correo de usuario, etiqueta de categorÃƒÂ­aÃ¢â‚¬Â¦) y lo borra al terminar.
  *
  * Reglas (no relajar):
- * - **Nunca** `DROP TABLE`, y nunca borrar Â«todo lo de la tablaÂ». Se borra
+ * - **Nunca** `DROP TABLE`, y nunca borrar Ã‚Â«todo lo de la tablaÃ‚Â». Se borra
  *   solo lo que el propio script ha apuntado, con su identificador.
- * - Los hijos antes que los padres, para no dejar filas huÃ©rfanas.
+ * - Los hijos antes que los padres, para no dejar filas huÃƒÂ©rfanas.
  * - Si no hay nada apuntado, no se ejecuta ninguna sentencia.
  * - Si la limpieza falla, la prueba sigue contando como correcta: la
- *   verificaciÃ³n va antes que la limpieza. Avisa por pantalla para poder
+ *   verificaciÃƒÂ³n va antes que la limpieza. Avisa por pantalla para poder
  *   borrarlo a mano.
  */
 import { execFileSync } from "node:child_process";
 
-/** RaÃ­z del repositorio, para lanzar wrangler desde el sitio correcto. */
+/** RaÃƒÂ­z del repositorio, para lanzar wrangler desde el sitio correcto. */
 const REPO = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 
 /**
@@ -70,16 +70,19 @@ export function d1(sqlText, { remote }) {
 const sql = (v) => `'${String(v).replace(/'/g, "''")}'`;
 
 /**
- * NÂº de filas afectadas por una sentencia.
+ * NÃ‚Âº de filas afectadas por una sentencia.
  *
- * Un DELETE no devuelve filas, asÃ­ que el nÃºmero va en `meta.changes`. Antes de
+ * Un DELETE no devuelve filas, asÃƒÂ­ que el nÃƒÂºmero va en `meta.changes`. Antes de
  * contar se mira el resultado de la consulta; si no hay `changes` se devuelve
  * `null` en vez de un `0` inventado (un borrado que no se pudo ejecutar y uno
- * que no borrÃ³ nada deben verse distinto).
+ * que no borrÃƒÂ³ nada deben verse distinto).
  */
 function cambios(resultado) {
   const bloque = Array.isArray(resultado) ? resultado[0] : resultado;
   if (!bloque) return null;
+  // `wrangler d1 --local` no devuelve `meta`, solo la duraciÃ³n, asÃ­ que contra
+  // local no hay forma de saber cuÃ¡ntas filas se han borrado. Se dice que la
+  // sentencia se ejecutÃ³, sin inventar un nÃºmero.
   if (typeof bloque.meta?.changes === "number") return bloque.meta.changes;
   if (typeof bloque.changes === "number") return bloque.changes;
   return null;
@@ -120,17 +123,17 @@ export function crearLimpiador(origin) {
       if (correo) mensajes.add(correo);
     },
 
-    /** Etiqueta de una categorÃ­a de tour creada por la prueba. */
+    /** Etiqueta de una categorÃƒÂ­a de tour creada por la prueba. */
     categoria(etiqueta) {
       if (etiqueta) categorias.add(etiqueta);
     },
 
-    /** CÃ³digo de un cupÃ³n creado por la prueba. */
+    /** CÃƒÂ³digo de un cupÃƒÂ³n creado por la prueba. */
     cupon(codigo) {
       if (codigo) cupones.add(codigo);
     },
 
-    /** Lo que se va a borrar, para poder enseÃ±arlo antes. */
+    /** Lo que se va a borrar, para poder enseÃƒÂ±arlo antes. */
     resumen() {
       return {
         reservas: [...reservas],
@@ -149,7 +152,7 @@ export function crearLimpiador(origin) {
       const hecho = [];
       const fallado = [];
 
-      // â”€â”€ Reservas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Reservas Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
       if (reservas.size > 0) {
         const lista = [...reservas].map(sql).join(",");
         // Los hijos primero: eventos y cupones cuelgan de la reserva.
@@ -161,25 +164,25 @@ export function crearLimpiador(origin) {
             `DELETE FROM ${tabla} WHERE booking_id IN (SELECT id FROM bookings WHERE reference IN (${lista}));`,
             { remote },
           );
-          if (r) hecho.push(`${etiqueta}: ${cambios(r) ?? "?"}`);
+          if (r) hecho.push(`${etiqueta}: ${cambios(r) ?? "hecho"}`);
           else fallado.push(etiqueta);
         }
         const r = d1(`DELETE FROM bookings WHERE reference IN (${lista});`, { remote });
-        if (r) hecho.push(`reservas: ${cambios(r) ?? "?"}`);
+        if (r) hecho.push(`reservas: ${cambios(r) ?? "hecho"}`);
         else fallado.push("reservas");
       }
 
-      // â”€â”€ Cupones sueltos (sin reserva) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Cupones sueltos (sin reserva) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
       if (cupones.size > 0) {
         const r = d1(
           `DELETE FROM coupons WHERE code IN (${[...cupones].map(sql).join(",")});`,
           { remote },
         );
-        if (r) hecho.push(`cupones: ${cambios(r) ?? "?"}`);
+        if (r) hecho.push(`cupones: ${cambios(r) ?? "hecho"}`);
         else fallado.push("cupones");
       }
 
-      // â”€â”€ Usuarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Usuarios Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
       if (usuarios.size > 0) {
         const lista = [...usuarios].map(sql).join(",");
         // Notificaciones, passkeys y suscripciones push cuelgan del usuario.
@@ -193,39 +196,39 @@ export function crearLimpiador(origin) {
           });
         }
         const r = d1(`DELETE FROM users WHERE email IN (${lista});`, { remote });
-        if (r) hecho.push(`usuarios: ${cambios(r) ?? "?"}`);
+        if (r) hecho.push(`usuarios: ${cambios(r) ?? "hecho"}`);
         else fallado.push("usuarios");
       }
 
-      // â”€â”€ Mensajes de contacto â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Mensajes de contacto Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
       if (mensajes.size > 0) {
         const lista = [...mensajes].map(sql).join(",");
         const r = d1(`DELETE FROM messages WHERE email IN (${lista});`, { remote });
-        if (r) hecho.push(`mensajes: ${cambios(r) ?? "?"}`);
+        if (r) hecho.push(`mensajes: ${cambios(r) ?? "hecho"}`);
         else fallado.push("mensajes");
       }
 
-      // â”€â”€ CategorÃ­as de tour â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // Ã¢â€â‚¬Ã¢â€â‚¬ CategorÃƒÂ­as de tour Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
       if (categorias.size > 0) {
         // La columna se llama `label_es`, no `label`: se usaba `label` y SQLite
-        // fallaba con «no such column», así que la categoría no se borraba nunca.
+        // fallaba con Â«no such columnÂ», asÃ­ que la categorÃ­a no se borraba nunca.
         const lista = [...categorias].map(sql).join(",");
         const r = d1(`DELETE FROM tour_categories WHERE label_es IN (${lista});`, {
           remote,
         });
-        if (r) hecho.push(`categorÃ­as: ${cambios(r) ?? "?"}`);
-        else fallado.push("categorÃ­as");
+        if (r) hecho.push(`categorÃƒÂ­as: ${cambios(r) ?? "hecho"}`);
+        else fallado.push("categorÃƒÂ­as");
       }
 
-      const destino = remote ? "producciÃ³n" : "local";
+      const destino = remote ? "producciÃƒÂ³n" : "local";
       if (hecho.length > 0) {
-        console.log(`\nÂ· Limpiado en ${destino}: ${hecho.join(", ")}`);
+        console.log(`\nÃ‚Â· Limpiado en ${destino}: ${hecho.join(", ")}`);
       }
       if (fallado.length > 0) {
         console.log(
-          `\nâš  No se pudo limpiar de ${destino}: ${fallado.join(", ")}.\n` +
+          `\nÃ¢Å¡Â  No se pudo limpiar de ${destino}: ${fallado.join(", ")}.\n` +
             `  Se puede borrar a mano con:\n` +
-            `  node scripts/with-secrets.mjs -- npx wrangler d1 execute prz-tours ${remote ? "--remote" : "--local"} --command "â€¦"\n` +
+            `  node scripts/with-secrets.mjs -- npx wrangler d1 execute prz-tours ${remote ? "--remote" : "--local"} --command "Ã¢â‚¬Â¦"\n` +
             `  Lo pendiente es: ${JSON.stringify(this.resumen())}`,
         );
       }

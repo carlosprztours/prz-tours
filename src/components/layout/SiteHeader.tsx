@@ -31,6 +31,7 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
   const links = [
     { href: `${base}/tours`, label: dict.nav.tours },
     { href: `${base}/transfers`, label: dict.nav.transfers },
+    { href: `${base}/gallery`, label: dict.nav.gallery },
     { href: `${base}/about`, label: dict.nav.about },
     { href: `${base}/contact`, label: dict.nav.contact },
   ];

@@ -1,17 +1,22 @@
 /**
  * Galería de fotos (rejilla con SafeImage, que deja pasar las de ImageKit).
  */
+import Link from "next/link";
+
 import { SafeImage } from "@/components/SafeImage";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import type { Dictionary } from "@/lib/i18n";
-import type { GalleryImage } from "@/types";
+import type { GalleryImage, Locale } from "@/types";
 
 type Props = {
   dict: Dictionary;
+  locale: Locale;
   images: GalleryImage[];
+  /** Fotos publicadas en total, para poner el número en el botón. */
+  total: number;
 };
 
-export function Gallery({ dict, images }: Props) {
+export function Gallery({ dict, locale, images, total }: Props) {
   if (images.length === 0) return null;
   return (
     <section className="py-16 sm:py-20">
@@ -38,6 +43,23 @@ export function Gallery({ dict, images }: Props) {
               )}
             </figure>
           ))}
+        </div>
+        {/* El botón se muestra siempre, no solo cuando hay más fotos que las de la
+            home: la página `/gallery` tiene todas las fotos, su número y el
+            pie de foto completo, y sirve aunque ahora mismo coincidan los
+            números (p. ej. con 8 fotos y la home enseñando 8). */}
+        <div className="mt-10 flex justify-center">
+          <Link
+            href={`/${locale}/gallery`}
+            className="inline-flex h-12 items-center rounded-full bg-ocean-700 px-7 font-display text-base font-bold text-white shadow-lg shadow-ocean-900/15 transition hover:bg-ocean-800"
+          >
+            {dict.home.gallerySeeAll}
+            {total > 0 && (
+              <span className="ml-2 text-sm font-semibold opacity-80">
+                ({dict.gallery.count(total)})
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </section>

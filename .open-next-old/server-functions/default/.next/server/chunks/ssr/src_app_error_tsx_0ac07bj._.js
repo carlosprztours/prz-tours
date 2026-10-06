@@ -1,0 +1,3 @@
+module.exports=[23953,a=>{"use strict";var b=a.i(87924),c=a.i(72131);a.s(["default",0,function({error:a,reset:d}){return(0,c.useEffect)(()=>{console.error("[global-error]",a)},[a]),(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{className:"flex min-h-screen items-center justify-center bg-white px-4",children:(0,b.jsxs)("div",{className:"max-w-md text-center",children:[(0,b.jsx)("p",{style:{fontSize:48,fontWeight:800},children:"500"}),(0,b.jsx)("h1",{children:"Algo salió mal · Something went wrong"}),(0,b.jsx)("button",{type:"button",onClick:d,style:{marginTop:24,height:44,padding:"0 24px",borderRadius:999,background:"#0e7490",color:"#fff",fontWeight:700},children:"Reintentar · Try again"})]})})})}])}];
+
+//# sourceMappingURL=src_app_error_tsx_0ac07bj._.js.map

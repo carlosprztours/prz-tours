@@ -42,6 +42,7 @@ El idioma lo inyecta el proxy (`src/proxy.ts`) vía cabecera `x-locale`.
 | `/es/about` | `src/app/[lang]/about/page.tsx` | Nosotros: misión, experiencia local, calidad |
 | `/es/contact` | `src/app/[lang]/contact/page.tsx` | Contacto + `ContactForm` |
 | `/es/track?ref=&email=` | `src/app/[lang]/track/page.tsx` | Consulta tu reserva (referencia + email) |
+| `/es/gallery` | `src/app/[lang]/gallery/page.tsx` | **Galería pública:** todas las fotos publicadas, con contador y pie de foto. La home enseña solo 8 y enlaza aquí con «Ver más» (`components/home/Gallery.tsx`). Solo entra lo marcado como publicado, así que el admin puede dejar una foto preparada sin que salga en la web |
 | `/es/blog` | `src/app/[lang]/blog/page.tsx` | Índice del blog |
 | `/es/blog/[slug]` | `src/app/[lang]/blog/[slug]/page.tsx` | Artículo del blog |
 | `/es/login` | `src/app/[lang]/login/page.tsx` + `LoginForm.tsx` | Entrada staff/clientes |
@@ -257,6 +258,11 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   Es el que confirma reservas, así que es el que dispara el correo de
   «Reserva confirmada». El 3er argumento es opcional y funciona como en
   `test:booking` (etiquetas `+a` y `+b`).
+- Test de galería (`npm run test:gallery -- [origen] [carpeta]`): que la home
+  tenga el botón «Ver más», que apunte a `/<idioma>/gallery`, que la página
+  exista en los dos idiomas con las mismas fotos, ninguna rota, el contador
+  visible y sin desbordamiento en móvil (`scripts/test-gallery.mjs`). No crea
+  ni borra nada.
 - Test de categorías + push (`npm run test:categories -- [origen] [carpeta]`):
   crea una categoría solo en español y verifica la traducción automática (o el
   aviso de que el cupo se agotó), el slug, que aparezca en el formulario, el

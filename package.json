@@ -27,6 +27,7 @@
     "test:prod": "node scripts/test-prod-booking.mjs",
     "test:email": "node scripts/test-email.mjs",
     "test:imagekit": "node scripts/test-imagekit.mjs",
+    "test:gallery": "node scripts/test-gallery.mjs",
     "test:upload": "node scripts/test-upload.mjs",
     "test:pages": "node scripts/test-pages.mjs",
     "create-admin": "node scripts/create-admin.mjs",

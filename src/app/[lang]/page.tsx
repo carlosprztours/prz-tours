@@ -11,7 +11,11 @@ import { Hero } from "@/components/home/Hero";
 import { Testimonials } from "@/components/home/Testimonials";
 import { WhyUs } from "@/components/home/WhyUs";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { listPublishedGalleryImages, listPublishedTestimonials } from "@/lib/db/content";
+import {
+  countPublishedGalleryImages,
+  listPublishedGalleryImages,
+  listPublishedTestimonials,
+} from "@/lib/db/content";
 import { getSetting } from "@/lib/db/content";
 import { listPublishedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
@@ -48,12 +52,13 @@ export default async function HomePage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const [dict, all, testimonials, gallery, phoneDisplay] = await Promise.all([
+  const [dict, all, testimonials, gallery, phoneDisplay, galleryTotal] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
     listPublishedTestimonials(6),
     listPublishedGalleryImages(8),
     getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
+    countPublishedGalleryImages(),
   ]);
 
   const orgJsonLd = {
@@ -79,7 +84,7 @@ export default async function HomePage({ params }: Props) {
       <WhyUs dict={dict} />
       <HomeTours locale={locale} dict={dict} tours={all} />
       <Testimonials locale={locale} dict={dict} testimonials={testimonials} />
-      <Gallery dict={dict} images={gallery} />
+      <Gallery dict={dict} locale={locale} images={gallery} total={galleryTotal} />
       <CtaBanner locale={locale} dict={dict} />
     </>
   );

@@ -71,6 +71,34 @@ export async function listPublishedGalleryImages(
   );
 }
 
+/**
+ * Todas las fotos publicadas, sin recorte.
+ *
+ * La home enseña solo unas pocas; la página `/gallery` usa esta para mostrarlas
+ * todas. `limit` alto pero acotado, para que un panel con miles de fotos no
+ * reviente la respuesta del Worker.
+ */
+export async function listAllPublishedGalleryImages(
+  limit = 200,
+): Promise<GalleryImage[]> {
+  return query<GalleryImage>(
+    `SELECT id, url, alt, caption, is_published, sort_order, created_at
+     FROM gallery_images
+     WHERE is_published = 1
+     ORDER BY sort_order ASC, id ASC
+     LIMIT ?`,
+    limit,
+  );
+}
+
+/** Cuántas fotos publicadas hay en total, para saber si la home está recortando. */
+export async function countPublishedGalleryImages(): Promise<number> {
+  const row = await queryOne<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM gallery_images WHERE is_published = 1`,
+  );
+  return row?.n ?? 0;
+}
+
 // ───────────────────────────── Ajustes ─────────────────────────────
 
 /** Todos los ajustes como objeto clave/valor. */

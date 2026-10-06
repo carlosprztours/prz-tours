@@ -18,6 +18,7 @@ export const es = {
     home: "Inicio",
     tours: "Tours",
     transfers: "Traslados",
+    gallery: "Galería",
     about: "Nosotros",
     contact: "Contacto",
     bookNow: "Reservar ahora",
@@ -105,6 +106,7 @@ export const es = {
     testimonialsSubtitle: "Opiniones reales de visitantes de todo el mundo",
     galleryTitle: "Galería",
     gallerySubtitle: "Un vistazo a la experiencia Perez Tours",
+    gallerySeeAll: "Ver más",
     ctaTitle: "¿Listo para explorar Puerto Plata?",
     ctaSubtitle:
       "Reserva tu aventura o escríbenos por WhatsApp para armar un paquete a tu medida.",
@@ -138,6 +140,15 @@ export const es = {
     ageMin: (n: number) => `A partir de ${n} años`,
     notFound: "No encontramos ese tour",
     notFoundHint: "Puede que el enlace esté equivocado o que ya no esté disponible.",
+  },
+
+  gallery: {
+    title: "Galería",
+    subtitle: "Todas las fotos de nuestras aventuras en Puerto Plata.",
+    emptyState: "Todavía no hay fotos publicadas.",
+    emptyStateHint: "Vuelve pronto, estamos preparando más imágenes.",
+    count: (n: number) => (n === 1 ? "1 foto" : `${n} fotos`),
+    backHome: "Volver al inicio",
   },
 
   booking: {

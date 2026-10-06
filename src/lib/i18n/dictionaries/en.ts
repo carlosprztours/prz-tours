@@ -23,6 +23,7 @@ export const en: typeof es = {
     home: "Home",
     tours: "Tours",
     transfers: "Transfers",
+    gallery: "Gallery",
     about: "About",
     contact: "Contact",
     bookNow: "Book now",
@@ -110,6 +111,7 @@ export const en: typeof es = {
     testimonialsSubtitle: "Real reviews from visitors around the world",
     galleryTitle: "Gallery",
     gallerySubtitle: "A glimpse of the Perez Tours experience",
+    gallerySeeAll: "See more",
     ctaTitle: "Ready to explore Puerto Plata?",
     ctaSubtitle:
       "Book your adventure or message us on WhatsApp and we'll build a custom package for you.",
@@ -143,6 +145,15 @@ export const en: typeof es = {
     ageMin: (n: number) => `Ages ${n}+`,
     notFound: "We couldn't find that tour",
     notFoundHint: "The link may be wrong, or the tour may no longer be available.",
+  },
+
+  gallery: {
+    title: "Gallery",
+    subtitle: "Every photo from our adventures in Puerto Plata.",
+    emptyState: "No photos published yet.",
+    emptyStateHint: "Come back soon, we're preparing more images.",
+    count: (n: number) => (n === 1 ? "1 photo" : `${n} photos`),
+    backHome: "Back to home",
   },
 
   booking: {
