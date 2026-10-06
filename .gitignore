@@ -22,6 +22,9 @@
 
 # OpenNext / Cloudflare
 /.open-next/
+# Renombramos la carpeta a mano al recompilar para que el build escriba
+# limpio; nunca debe entrar en git.
+/.open-next-*/
 /.wrangler/
 /.mf/
 cloudflare-env.d.ts
