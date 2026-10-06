@@ -121,7 +121,7 @@ export function UploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/gif,video/mp4,video/webm,video/quicktime"
         multiple={multiple}
         className="hidden"
         aria-label={labels.upload}

@@ -128,6 +128,8 @@ export default async function AdminSettingsPage({
         </p>
       </div>
 
+      <PayPalSection locale={locale} es={es} settings={settings} />
+
       {settings.map((s) => (
         <SettingRow key={s.key} locale={locale} settingKey={s.key} value={s.value} es={es} />
       ))}
@@ -137,5 +139,108 @@ export default async function AdminSettingsPage({
       </h2>
       <NewSettingForm locale={locale} es={es} />
     </div>
+  );
+}
+
+/** Campos concretos de PayPal junto a la lista de ajustes. */
+function PayPalSection({
+  locale,
+  es,
+  settings,
+}: {
+  locale: string;
+  es: boolean;
+  settings: { key: string; value: string }[];
+}) {
+  const get = (k: string) => settings.find((s) => s.key === k)?.value ?? "";
+  const clientId = get("paypal_client_id");
+  const secret = get("paypal_secret");
+  const mode = get("paypal_mode") || "sandbox";
+
+  return (
+    <div className="mt-4 grid gap-4 rounded-2xl border-2 border-ocean-100 bg-ocean-50/50 p-5">
+      <h2 className="font-display text-lg font-extrabold text-ink-900">
+        {es ? "Pagos con PayPal" : "PayPal payments"}
+      </h2>
+      <p className="text-xs text-ink-600">
+        {es
+          ? "Guarda aquí tus credenciales. En cuanto estén las tres, el botón de PayPal se activará en la reserva (usa modo sandbox para probar)."
+          : "Save your credentials here. As soon as all three are set, the PayPal button turns on in the booking (use sandbox mode to test)."}
+      </p>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <PayPalField locale={locale} k="paypal_client_id" label="Client ID" value={get("paypal_client_id")} es={es} />
+        <PayPalField locale={locale} k="paypal_secret" label={es ? "Secreto" : "Secret"} value="" placeholder={es ? "pega tu secreto (no se muestra)" : "paste your secret (not shown)"} type="password" es={es} />
+        <form action={async (formData: FormData) => {
+          "use server";
+          await saveSetting(locale, undefined, formData);
+        }} className="grid gap-1">
+          <input type="hidden" name="key" value="paypal_mode" />
+          <label className="text-xs font-bold text-ink-500">{es ? "Modo" : "Mode"}</label>
+          <select
+            name="value"
+            defaultValue={mode}
+            className="h-10 rounded-xl border border-sand-200 px-3 text-sm text-ink-900 outline-none focus:border-ocean-500"
+          >
+            <option value="sandbox">Sandbox (prueba)</option>
+            <option value="live">Live (real)</option>
+          </select>
+          <button
+            type="submit"
+            className="mt-1 h-9 w-fit rounded-full bg-ocean-700 px-5 text-xs font-bold text-white transition hover:bg-ocean-800"
+          >
+            {es ? "Guardar" : "Save"}
+          </button>
+        </form>
+      </div>
+      <p className="text-[11px] text-ink-400">
+        {es
+          ? `Actual: client id ${clientId ? "✓" : "—"} · secreto ${secret ? "✓" : "—"} · modo ${mode}`
+          : `Current: client id ${clientId ? "✓" : "—"} · secret ${secret ? "✓" : "—"} · mode ${mode}`}
+      </p>
+    </div>
+  );
+}
+
+function PayPalField({
+  locale,
+  k,
+  label,
+  value,
+  type = "text",
+  placeholder,
+  es,
+}: {
+  locale: string;
+  k: string;
+  label: string;
+  value: string;
+  type?: string;
+  placeholder?: string;
+  es: boolean;
+}) {
+  return (
+    <form
+      action={async (formData: FormData) => {
+        "use server";
+        await saveSetting(locale, undefined, formData);
+      }}
+      className="grid gap-1"
+    >
+      <input type="hidden" name="key" value={k} />
+      <label className="text-xs font-bold text-ink-500">{label}</label>
+      <input
+        name="value"
+        defaultValue={value}
+        placeholder={placeholder ?? ""}
+        type={type}
+        className="h-10 rounded-xl border border-sand-200 px-3 font-mono text-sm text-ink-900 outline-none focus:border-ocean-500"
+      />
+      <button
+        type="submit"
+        className="mt-1 h-9 w-fit rounded-full bg-ocean-700 px-5 text-xs font-bold text-white transition hover:bg-ocean-800"
+      >
+        {es ? "Guardar" : "Save"}
+      </button>
+    </form>
   );
 }

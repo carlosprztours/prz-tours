@@ -144,7 +144,13 @@ export async function createGalleryImage(
     .filter(Boolean);
   const sueltas = [String(formData.get("url") ?? "").trim()].filter(Boolean);
   const urls = [...pegadas, ...sueltas];
-  if (urls.length === 0) return { ok: false, error: "required" };
+  // A mismo formulario puede llegar también vídeo (`video_urls`): va a la
+  // tabla de vídeos como galería pública sin título.
+  const videos = formData
+    .getAll("video_urls")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  if (urls.length === 0 && videos.length === 0) return { ok: false, error: "required" };
 
   const alt = String(formData.get("alt") ?? "").trim();
   const caption = String(formData.get("caption") ?? "").trim();
@@ -177,10 +183,23 @@ export async function createGalleryImage(
     );
   }
 
+  const ultimoVideo = await queryOne<{ n: number }>(
+    `SELECT COALESCE(MAX(sort_order), 0) AS n FROM gallery_videos`,
+  );
+  for (const [indice, video] of videos.entries()) {
+    await execute(
+      `INSERT INTO gallery_videos (url, title, placement, is_published, sort_order)
+       VALUES (?, '', 'gallery', ?, ?)`,
+      video,
+      publicado,
+      (ultimoVideo?.n ?? 0) + indice + 1,
+    );
+  }
+
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
-  return { ok: true, count: urls.length };
+  return { ok: true, count: urls.length + videos.length };
 }
 
 export async function updateGalleryImage(

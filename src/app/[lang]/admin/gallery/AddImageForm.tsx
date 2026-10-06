@@ -28,6 +28,16 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
 
   /** URLs ya subidas, a la espera de que se pulse «Agregar». */
   const [subidas, setSubidas] = useState<string[]>([]);
+  /** Vídeos subidos junto con las fotos; van a su apartado. */
+  const [subidasVideo, setSubidasVideo] = useState<string[]>([]);
+
+  const esVideo = (u: string) => /\.(mp4|webm|mov)(\?|$)/i.test(u);
+  const subirTodo = (urls: string[]) => {
+    const imagenes = urls.filter((u) => !esVideo(u));
+    const videos = urls.filter((u) => esVideo(u));
+    setSubidas(imagenes);
+    setSubidasVideo(videos);
+  };
 
   const input =
     "h-10 w-full rounded-xl border border-sand-200 bg-white px-3 text-sm text-ink-900 outline-none focus:border-ocean-500";
@@ -43,7 +53,7 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
           targetId="gallery-url"
           folder="gallery"
           multiple
-          onUploaded={(urls) => setSubidas(urls)}
+          onUploaded={(urls) => subirTodo(urls)}
           labels={
             es
               ? {
@@ -75,17 +85,13 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
         </span>
       </div>
 
-      {subidas.length > 0 && (
+      {subidas.length > 0 || subidasVideo.length > 0 ? (
         <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-          {subidas.length === 1
-            ? es
-              ? "1 foto lista. Pulsa «Agregar» para guardarla."
-              : "1 photo ready. Press “Add” to save it."
-            : es
-              ? `${subidas.length} fotos listas. Pulsa «Agregar» para guardarlas todas.`
-              : `${subidas.length} photos ready. Press “Add” to save them all.`}
+          {es
+            ? `${subidas.length} foto(s) y ${subidasVideo.length} vídeo(s) listos. Pulsa «Agregar» para guardarlos.`
+            : `${subidas.length} photo(s) and ${subidasVideo.length} video(s) ready. Press “Add” to save them.`}
         </p>
-      )}
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-xs font-bold text-ink-500 sm:col-span-2">
@@ -104,13 +110,16 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
             name="url"
             placeholder="/img/mi-foto.jpg"
             className={input}
-            readOnly={subidas.length > 0}
+            readOnly={subidas.length > 0 || subidasVideo.length > 0}
           />
         </label>
 
-        {/* Las fotos subidas llegan en `urls`; la URL pegada a mano, en `url`. */}
+        {/* Las fotos subidas llegan en `urls`; los vídeos, en `video_urls`. */}
         {subidas.map((u) => (
           <input key={u} type="hidden" name="urls" value={u} />
+        ))}
+        {subidasVideo.map((u) => (
+          <input key={u} type="hidden" name="video_urls" value={u} />
         ))}
 
         <label className="grid gap-1 text-xs font-bold text-ink-500">

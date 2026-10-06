@@ -34,14 +34,24 @@ export function WhyUs({ dict }: { dict: Dictionary }) {
       <div className="container-site">
         <SectionHeading title={dict.home.whyUsTitle} subtitle={dict.home.whyUsSubtitle} />
         <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.title} className="rounded-2xl border border-sand-200 bg-white p-7 shadow-sm">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-ocean-600 text-white">
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          {items.map((item, i) => (
+            <div
+              key={item.title}
+              className="group relative overflow-hidden rounded-3xl border border-sand-200 bg-white p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-ocean-600 to-coral-500"
+              />
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-ocean-50 text-ocean-700 ring-1 ring-ocean-100 transition group-hover:scale-110 group-hover:bg-ocean-600 group-hover:text-white">
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   {item.icon}
                 </svg>
               </span>
-              <h3 className="mt-4 font-display text-xl font-bold text-ink-900">{item.title}</h3>
+              <p className="mt-5 text-xs font-bold uppercase tracking-widest text-coral-700">
+                {String(i + 1).padStart(2, "0")}
+              </p>
+              <h3 className="mt-1 font-display text-xl font-extrabold text-ink-900">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-ink-500">{item.text}</p>
             </div>
           ))}
