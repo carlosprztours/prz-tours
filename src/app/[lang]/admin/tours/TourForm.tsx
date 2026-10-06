@@ -10,6 +10,7 @@
 import { useActionState, useMemo, useState } from "react";
 
 import { UploadButton } from "@/components/admin/UploadButton";
+import { MediaPicker } from "@/components/media/MediaPicker";
 import {
   createTour,
   updateTour,
@@ -276,6 +277,19 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
                       },
                     }
               }
+            />
+            <MediaPicker
+              kind="image"
+              folder="tours"
+              label={locale === "es" ? "Elegir de ImageKit" : "Pick from ImageKit"}
+              onPick={(urls) => {
+                const target = document.getElementById("tour-images") as HTMLTextAreaElement | null;
+                if (!target) return;
+                const lineas = urls.map((u) => `${u} | ${u.split("/").pop() ?? u}`);
+                const actual = target.value.trim();
+                target.value = actual ? `${actual}\n${lineas.join("\n")}` : lineas.join("\n");
+                target.dispatchEvent(new Event("change", { bubbles: true }));
+              }}
             />
           </div>
           <p className="mt-1 text-xs text-ink-500">{labels.imagesHint}</p>

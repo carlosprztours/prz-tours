@@ -10,6 +10,7 @@
 import { useActionState, useMemo, useRef, useState } from "react";
 
 import { createGalleryVideo, type SimpleResult } from "@/lib/admin/content";
+import { MediaPicker } from "@/components/media/MediaPicker";
 
 const initialState: SimpleResult = { ok: false, error: "" };
 
@@ -91,6 +92,20 @@ export function AddVideoForm({
         {errorSubida && (
           <span className="text-xs font-semibold text-red-600" role="alert">{errorSubida}</span>
         )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <MediaPicker
+          kind="video"
+          folder="videos"
+          label={es ? "Elegir vídeo de ImageKit" : "Pick video from ImageKit"}
+          onPick={(urls) => {
+            if (urls[0]) setUrl(urls[0]);
+          }}
+        />
+        <span className="text-[11px] text-ink-500">
+          {es ? "o pega la URL directamente (el campo de arriba)" : "or paste the URL above directly"}
+        </span>
       </div>
 
       <input type="hidden" name="url" value={url} />
