@@ -101,7 +101,7 @@ function dedupe(list: string[]): string[] {
   return [...new Set(list.map((v) => v.trim()).filter(Boolean))];
 }
 
-/** Plantilla mínima compartida (encabezado + pie con la marca). */
+/** Plantilla compartida de correo: cabecera con la marca, cuerpo y pie. */
 export function emailLayout(
   title: string,
   bodyHtml: string,
@@ -109,17 +109,26 @@ export function emailLayout(
 ): string {
   return `<!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head>
-<body style="font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;margin:0;padding:24px;">
-  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;">
-    <div style="background:#0e7490;color:#ffffff;padding:20px 24px;">
-      <h1 style="margin:0;font-size:20px;">${escapeHtml(title)}</h1>
-      <p style="margin:4px 0 0;font-size:14px;opacity:.9;">${escapeHtml(siteName)}</p>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title></head>
+<body style="font-family:'Segoe UI',Arial,Helvetica,sans-serif;background:#eef2f7;margin:0;padding:32px 16px;">
+  <div style="max-width:600px;margin:0 auto;">
+    <!-- Marca -->
+    <div style="text-align:center;padding:8px 0 20px;">
+      <span style="font-size:22px;font-weight:800;color:#0e7490;letter-spacing:.5px;">Perez Tours <span style="color:#f59e0b;">&amp;</span> Transfers</span>
     </div>
-    <div style="padding:24px;">${bodyHtml}</div>
-    <div style="padding:16px 24px;background:#f4f6f8;font-size:12px;color:#64748b;">
-      Puerto Plata, República Dominicana · ${escapeHtml(DEFAULT_PHONE_DISPLAY)}
+    <!-- Tarjeta -->
+    <div style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(15,23,42,.08);">
+      <div style="background:linear-gradient(135deg,#0e7490,#0891b2);color:#ffffff;padding:28px 28px 24px;">
+        <h1 style="margin:0;font-size:22px;line-height:1.3;">${escapeHtml(title)}</h1>
+        <p style="margin:6px 0 0;font-size:13px;opacity:.85;">${escapeHtml(siteName)}</p>
+      </div>
+      <div style="padding:28px;color:#334155;font-size:15px;line-height:1.6;">${bodyHtml}</div>
     </div>
+    <!-- Pie -->
+    <p style="text-align:center;margin:20px 8px 0;font-size:12px;color:#94a3b8;line-height:1.6;">
+      Puerto Plata, República Dominicana &nbsp;·&nbsp; ${escapeHtml(DEFAULT_PHONE_DISPLAY)}<br>
+      Si no esperabas este correo, escríbenos y lo revisamos.
+    </p>
   </div>
 </body>
 </html>`;

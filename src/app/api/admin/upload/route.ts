@@ -18,6 +18,7 @@ import { verifySession } from "@/lib/auth/dal";
 import {
   MAX_FILES_PER_UPLOAD,
   MAX_IMAGE_BYTES,
+  MAX_VIDEO_BYTES,
   UploadFailed,
   uploadImagesToImageKit,
 } from "@/lib/media/imagekit";
@@ -94,5 +95,9 @@ export async function POST(request: NextRequest) {
 
 /** GET devuelve los límites para que el panel pueda avisar antes de subir. */
 export async function GET() {
-  return NextResponse.json({ maxBytes: MAX_IMAGE_BYTES, maxFiles: MAX_FILES_PER_UPLOAD });
+  return NextResponse.json({
+    maxBytes: MAX_IMAGE_BYTES,
+    maxVideoBytes: MAX_VIDEO_BYTES,
+    maxFiles: MAX_FILES_PER_UPLOAD,
+  });
 }

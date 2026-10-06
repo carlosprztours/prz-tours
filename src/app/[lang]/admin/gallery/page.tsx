@@ -8,11 +8,19 @@ import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { requireSection } from "@/lib/admin/access";
-import { deleteGalleryImage, listAdminGallery } from "@/lib/admin/content";
+import {
+  deleteGalleryImage,
+  deleteGalleryVideo,
+  listAdminGallery,
+  listAdminGalleryVideos,
+  listTourSlugsForPicker,
+} from "@/lib/admin/content";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { AddImageForm } from "./AddImageForm";
+import { AddVideoForm } from "./AddVideoForm";
 import { GalleryImageCard } from "./GalleryImageCard";
+import { VideoCard } from "./VideoCard";
 
 export default async function AdminGalleryPage({
   params,
@@ -26,6 +34,8 @@ export default async function AdminGalleryPage({
   const es = locale === "es";
 
   const images = await listAdminGallery(locale);
+  const videos = await listAdminGalleryVideos(locale);
+  const tours = await listTourSlugsForPicker(locale);
   const sinAlt = images.filter((i) => !i.alt?.trim()).length;
 
   return (
@@ -55,6 +65,28 @@ export default async function AdminGalleryPage({
                 id={img.id}
                 action={deleteGalleryImage}
                 confirmMessage={es ? "¿Eliminar esta foto?" : "Delete this photo?"}
+                label="✕"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Vídeos ── */}
+      <h2 className="mt-4 font-display text-xl font-extrabold text-ink-900">
+        {es ? "Vídeos" : "Videos"} · {videos.length}
+      </h2>
+      <AddVideoForm locale={locale} es={es} tours={tours} />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {videos.map((v) => (
+          <div key={v.id} className="relative">
+            <VideoCard video={v} locale={locale} es={es} tours={tours} />
+            <div className="absolute right-2 top-2">
+              <DeleteButton
+                locale={locale}
+                id={v.id}
+                action={deleteGalleryVideo}
+                confirmMessage={es ? "¿Eliminar este vídeo?" : "Delete this video?"}
                 label="✕"
               />
             </div>

@@ -11,6 +11,7 @@ import "server-only";
 import { query, queryOne } from "./client";
 import type {
   GalleryImage,
+  GalleryVideo,
   Testimonial,
   TransferRoute,
 } from "@/types";
@@ -97,6 +98,33 @@ export async function countPublishedGalleryImages(): Promise<number> {
     `SELECT COUNT(*) AS n FROM gallery_images WHERE is_published = 1`,
   );
   return row?.n ?? 0;
+}
+
+// ───────────────────────────── Vídeos ─────────────────────────────
+
+/** Vídeos publicados de la galería (placement = 'gallery'). */
+export async function listPublishedGalleryVideos(
+  limit = 60,
+): Promise<GalleryVideo[]> {
+  return query<GalleryVideo>(
+    `SELECT * FROM gallery_videos
+     WHERE is_published = 1 AND placement = 'gallery'
+     ORDER BY sort_order ASC, id ASC
+     LIMIT ?`,
+    limit,
+  );
+}
+
+/** Vídeos publicados asignados a una ruta concreta (placement = 'tour'). */
+export async function listPublishedTourVideos(
+  tourSlug: string,
+): Promise<GalleryVideo[]> {
+  return query<GalleryVideo>(
+    `SELECT * FROM gallery_videos
+     WHERE is_published = 1 AND placement = 'tour' AND tour_slug = ?
+     ORDER BY sort_order ASC, id ASC`,
+    tourSlug,
+  );
 }
 
 // ───────────────────────────── Ajustes ─────────────────────────────

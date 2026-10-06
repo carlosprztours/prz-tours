@@ -138,6 +138,20 @@ export type GalleryImage = {
   created_at: string;
 };
 
+export type GalleryVideo = {
+  id: number;
+  url: string;
+  poster: string | null;
+  title: string;
+  caption: string | null;
+  /** "gallery" → página de galería; "tour" → página de la ruta indicada. */
+  placement: "gallery" | "tour";
+  tour_slug: string | null;
+  is_published: number;
+  sort_order: number;
+  created_at: string;
+};
+
 /** Estados posibles de una reserva. */
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 

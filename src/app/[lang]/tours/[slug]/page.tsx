@@ -18,7 +18,7 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { formatPrice, priceUnitLabel } from "@/lib/i18n/config";
 import { DEFAULT_PHONE_DISPLAY } from "@/lib/site";
 import { getBookingDefaults } from "@/lib/db/customer";
-import { listPublishedTestimonials } from "@/lib/db/content";
+import { listPublishedTestimonials, listPublishedTourVideos } from "@/lib/db/content";
 import { getTourBySlug, listRelatedTours } from "@/lib/db/tours";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
@@ -61,11 +61,12 @@ export default async function TourDetailPage({ params }: Props) {
   const tour = await getTourBySlug(slug, locale);
   if (!tour) notFound();
 
-  const [dict, related, defaults, tourReviews] = await Promise.all([
+  const [dict, related, defaults, tourReviews, videos] = await Promise.all([
     getDictionary(locale),
     listRelatedTours(tour.id, tour.category, locale),
     getBookingDefaults(),
     listPublishedTestimonials(6, slug),
+    listPublishedTourVideos(slug),
   ]);
   const session = await getCurrentUser().catch(() => null);
 
@@ -126,6 +127,22 @@ export default async function TourDetailPage({ params }: Props) {
               <div className="mt-6">
                 <TourGallery images={tour.images} title={tour.translation.title} />
               </div>
+
+              {videos.length > 0 && (
+                <div className="mt-6">
+                  <h2 className="font-display text-xl font-extrabold text-ink-900">Vídeos de la ruta</h2>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {videos.map((v) => (
+                      <figure key={v.id} className="overflow-hidden rounded-2xl border border-sand-200 bg-white">
+                        <div className="aspect-video bg-black">
+                          <video src={v.url} poster={v.poster ?? undefined} controls preload="metadata" playsInline className="h-full w-full" />
+                        </div>
+                        {v.title && <figcaption className="p-3 text-sm font-bold text-ink-900">{v.title}</figcaption>}
+                      </figure>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="prose-tours mt-8 space-y-4">
                 {paragraphs.map((p, i) => (

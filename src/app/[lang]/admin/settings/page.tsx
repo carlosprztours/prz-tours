@@ -121,6 +121,11 @@ export default async function AdminSettingsPage({
             ? "Teléfono, WhatsApp, correo, dirección y textos globales del sitio."
             : "Phone, WhatsApp, email, address and global site texts."}
         </p>
+        <p className="mt-2 rounded-xl bg-ocean-50 p-3 text-xs text-ink-600">
+          {es
+            ? "Pagos con PayPal: cuando ya guardes estas claves en «Nuevo ajuste», el botón de PayPal se activará en la reserva sin tocar nada más: paypal_client_id, paypal_secret y paypal_mode (sandbox o live). Mientras no existan, solo se ofrece pagar en efectivo en el tour. Stripe sigue montada pero deshabilitada hasta que la quieras activar."
+            : "PayPal payments: once you save these keys under “New setting”, the PayPal button turns on in the booking without touching anything else: paypal_client_id, paypal_secret, and paypal_mode (sandbox or live). Until then only cash-on-tour is offered. Stripe is still wired up but disabled until you want it."}
+        </p>
       </div>
 
       {settings.map((s) => (

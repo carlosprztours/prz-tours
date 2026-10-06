@@ -24,7 +24,7 @@ import { PhoneInput } from "@/components/ui/PhoneInput";
 import { TimePicker } from "@/components/ui/TimePicker";
 import { ModalLoginForm } from "@/components/auth/ModalLoginForm";
 import { AvailabilityNote } from "./AvailabilityNote";
-import { DepositButton } from "./DepositButton";
+import { PaymentChoice } from "./PaymentChoice";
 
 export type BookingOption = {
   id: number;
@@ -246,22 +246,19 @@ export function BookingForm({
         <p className="anim-fade-up mt-1 font-display text-3xl font-extrabold tracking-wide text-ocean-700" style={{ animationDelay: "0.45s" }}>
           {state.reference}
         </p>
-        {state.canPayDeposit && state.depositDue > 0 && (
-          <div className="anim-fade-up mx-auto mt-5 max-w-sm rounded-2xl border border-ocean-100 bg-ocean-50 p-4" style={{ animationDelay: "0.55s" }}>
-            <p className="mb-3 text-xs text-ink-600">{t.depositInfo}</p>
-            <DepositButton
-              reference={state.reference}
-              email={state.email}
-              amount={state.depositDue}
-              currency={state.currency}
-              labels={{
-                pay: t.depositPay,
-                paying: t.depositPaying,
-                failed: t.depositFailed,
-              }}
-            />
-          </div>
-        )}
+        <PaymentChoice
+          reference={state.reference}
+          currency={state.currency}
+          labels={{
+            chooseTitle: t.paymentChoiceTitle,
+            paypal: t.paymentChoicePaypal,
+            paypalReady: t.paymentChoicePaypalReady,
+            paypalFail: t.paymentChoicePaypalFail,
+            cash: t.paymentChoiceCash,
+            cashNote: t.paymentChoiceCashNote,
+            paid: t.paymentChoicePaid,
+          }}
+        />
         <a
           href={state.whatsappUrl}
           target="_blank"

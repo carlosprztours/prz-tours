@@ -294,6 +294,33 @@ export async function markBookingNotified(
   );
 }
 
+/**
+ * Marca una reserva como pagada por completo (vía PayPal capturado). No usa la
+ * sesión de staff: es la confirmación server-to-server del proveedor de pago.
+ */
+export async function markBookingPaidByReference(reference: string): Promise<void> {
+  const booking = await getBookingByReference(reference);
+  if (!booking) return;
+  await execute(
+    `UPDATE bookings
+        SET payment_status = 'paid',
+            deposit_paid = total_price,
+            status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END,
+            updated_at = datetime('now')
+      WHERE id = ?`,
+    booking.id,
+  );
+  await execute(
+    `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
+     VALUES (?, ?, ?, ?, ?)`,
+    booking.id,
+    booking.status,
+    booking.status === "pending" ? "confirmed" : booking.status,
+    "Pago completado con PayPal",
+    "system",
+  );
+}
+
 // ───────────────────────────── Lectura (panel) ─────────────────────────────
 
 export type BookingFilters = {

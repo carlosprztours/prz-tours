@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 
 import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
-import type { GalleryImage, Locale, Testimonial } from "@/types";
+import type { GalleryImage, GalleryVideo, Locale, Testimonial } from "@/types";
 
 /** `count` lo usan las acciones que crean varias filas de una vez (galería). */
 export type SimpleResult = { ok: true; count?: number } | { ok: false; error: string };
@@ -219,6 +219,119 @@ export async function deleteGalleryImage(
 ): Promise<SimpleResult> {
   const locale = await requireGallery(rawLocale);
   await execute(`DELETE FROM gallery_images WHERE id = ?`, id);
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/gallery`);
+  revalidatePath(`/${locale}/admin/gallery`);
+  return { ok: true };
+}
+
+// ───────────────────────────── Vídeos ─────────────────────────────
+
+export async function listAdminGalleryVideos(
+  rawLocale: string,
+): Promise<GalleryVideo[]> {
+  await requireGallery(rawLocale);
+  return query<GalleryVideo>(
+    `SELECT * FROM gallery_videos ORDER BY sort_order ASC, id ASC`,
+  );
+}
+
+/** Tours publicados, para elegir a qué ruta asignar un vídeo. */
+export async function listTourSlugsForPicker(
+  locale: Locale,
+): Promise<{ slug: string; title: string }[]> {
+  return query<{ slug: string; title: string }>(
+    `SELECT t.slug AS slug,
+            COALESCE(MAX(CASE WHEN tr.locale = ? THEN tr.title END), MAX(tr.title)) AS title
+     FROM tours t
+     LEFT JOIN tour_translations tr ON tr.tour_id = t.id
+     WHERE t.is_published = 1
+     GROUP BY t.id
+     ORDER BY t.sort_order ASC, t.id ASC`,
+    locale,
+  );
+}
+
+export async function createGalleryVideo(
+  rawLocale: string,
+  _prev: SimpleResult | undefined,
+  formData: FormData,
+): Promise<SimpleResult> {
+  const locale = await requireGallery(rawLocale);
+  const url = String(formData.get("url") ?? "").trim();
+  if (!url) return { ok: false, error: "required" };
+
+  const placementRaw = String(formData.get("placement") ?? "gallery");
+  const placement = placementRaw === "tour" ? "tour" : "gallery";
+  const tourSlug =
+    placement === "tour"
+      ? String(formData.get("tour_slug") ?? "").trim() || null
+      : null;
+
+  const ultimo = await queryOne<{ n: number }>(
+    `SELECT COALESCE(MAX(sort_order), 0) AS n FROM gallery_videos`,
+  );
+  await execute(
+    `INSERT INTO gallery_videos (url, poster, title, caption, placement, tour_slug, is_published, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    url,
+    String(formData.get("poster") ?? "").trim() || null,
+    String(formData.get("title") ?? "").trim(),
+    String(formData.get("caption") ?? "").trim() || null,
+    placement,
+    tourSlug,
+    formData.get("is_published") === "on" ? 1 : 0,
+    Number.isFinite(Number(formData.get("sort_order")))
+      ? Math.round(Number(formData.get("sort_order")))
+      : (ultimo?.n ?? 0) + 1,
+  );
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/gallery`);
+  revalidatePath(`/${locale}/admin/gallery`);
+  return { ok: true };
+}
+
+export async function updateGalleryVideo(
+  rawLocale: string,
+  _prev: SimpleResult | undefined,
+  formData: FormData,
+): Promise<SimpleResult> {
+  const locale = await requireGallery(rawLocale);
+  const id = Math.round(Number(formData.get("id")) || 0);
+  if (!id) return { ok: false, error: "required" };
+
+  const placementRaw = String(formData.get("placement") ?? "gallery");
+  const placement = placementRaw === "tour" ? "tour" : "gallery";
+  const tourSlug =
+    placement === "tour"
+      ? String(formData.get("tour_slug") ?? "").trim() || null
+      : null;
+
+  await execute(
+    `UPDATE gallery_videos
+        SET poster = ?, title = ?, caption = ?, placement = ?, tour_slug = ?, is_published = ?, sort_order = ?
+      WHERE id = ?`,
+    String(formData.get("poster") ?? "").trim() || null,
+    String(formData.get("title") ?? "").trim(),
+    String(formData.get("caption") ?? "").trim() || null,
+    placement,
+    tourSlug,
+    formData.get("is_published") === "on" ? 1 : 0,
+    Math.round(Number(formData.get("sort_order")) || 0),
+    id,
+  );
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/gallery`);
+  revalidatePath(`/${locale}/admin/gallery`);
+  return { ok: true };
+}
+
+export async function deleteGalleryVideo(
+  rawLocale: string,
+  id: number,
+): Promise<SimpleResult> {
+  const locale = await requireGallery(rawLocale);
+  await execute(`DELETE FROM gallery_videos WHERE id = ?`, id);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);

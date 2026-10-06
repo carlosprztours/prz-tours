@@ -26,10 +26,19 @@ const ALLOWED_TYPES = new Set([
   "image/webp",
   "image/avif",
   "image/gif",
+  // Vídeos: se aceptan para la galería; pesan más, por eso el límite sube.
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
 ]);
 
-/** 10 MB. Por encima, ImageKit lo rechaza y no aporta nada en una web. */
+/** Imágenes: 10 MB. Vídeos: 60 MB porque pesan más y ImageKit los transcodifica. */
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const MAX_VIDEO_BYTES = 60 * 1024 * 1024;
+
+export function isVideoType(type: string): boolean {
+  return type.startsWith("video/");
+}
 
 /** Lo que devuelve `POST /api/admin/upload`. */
 export type UploadResult = {
@@ -151,7 +160,8 @@ export async function uploadImageToImageKit(
   if (!ALLOWED_TYPES.has(file.type)) {
     throw new UploadFailed("bad-type");
   }
-  if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
+  const maximo = isVideoType(file.type) ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+  if (file.size === 0 || file.size > maximo) {
     throw new UploadFailed("bad-size");
   }
 
@@ -240,6 +250,9 @@ const EXTENSION_BY_TYPE: Record<string, string> = {
   "image/webp": "webp",
   "image/avif": "avif",
   "image/gif": "gif",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
 };
 
 /**

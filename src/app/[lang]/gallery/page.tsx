@@ -9,9 +9,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { SafeImage } from "@/components/SafeImage";
+import { GalleryGrid } from "@/components/gallery/GalleryGrid";
+import { GalleryVideos } from "@/components/gallery/GalleryVideos";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { listAllPublishedGalleryImages } from "@/lib/db/content";
+import {
+  listAllPublishedGalleryImages,
+  listPublishedGalleryVideos,
+} from "@/lib/db/content";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -38,9 +42,10 @@ export default async function GalleryPage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const [dict, images] = await Promise.all([
+  const [dict, images, videos] = await Promise.all([
     getDictionary(locale),
     listAllPublishedGalleryImages(),
+    listPublishedGalleryVideos(),
   ]);
 
   return (
@@ -58,32 +63,11 @@ export default async function GalleryPage({ params }: Props) {
         ) : (
           <>
             <p className="mt-4 text-sm font-semibold text-ink-500">{dict.gallery.count(images.length)}</p>
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {images.map((img) => (
-                <figure
-                  key={img.id}
-                  className="group relative aspect-square overflow-hidden rounded-2xl bg-sand-100"
-                >
-                  <SafeImage
-                    src={img.url}
-                    alt={img.alt || img.caption || dict.meta.siteName}
-                    fill
-                    // En la página completa las fotos ocupan una columna de la
-                    // rejilla, no media pantalla como en la home.
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                    className="object-cover transition duration-500 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  {img.caption && (
-                    <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ocean-950/80 to-transparent p-3 pt-8 text-xs font-semibold text-white opacity-0 transition group-hover:opacity-100">
-                      {img.caption}
-                    </figcaption>
-                  )}
-                </figure>
-              ))}
-            </div>
+            <GalleryGrid images={images} siteName={dict.meta.siteName} />
           </>
         )}
+
+        <GalleryVideos videos={videos} />
 
         <div className="mt-12 flex justify-center">
           <Link
