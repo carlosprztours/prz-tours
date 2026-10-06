@@ -94,11 +94,11 @@ async function readTokenPayload(
 }
 
 /** Host que usamos como canónico. Los alias redirigen aquí. */
-const CANONICAL_HOST = "perez-tours.com";
+const CANONICAL_HOST = "www.perez-tours.com";
 
 /** Alias que deben redirigir al host canónico (301). */
 const HOST_REDIRECTS: Record<string, string> = {
-  "www.perez-tours.com": CANONICAL_HOST,
+  "perez-tours.com": CANONICAL_HOST,
 };
 
 export async function proxy(request: NextRequest) {

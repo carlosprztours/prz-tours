@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "prz-tours",
+  "name": "prz-tours-v2",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -32,8 +32,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "prz-tours",
-      "database_id": "997ba1c0-2612-49da-8dbc-615b5af56401",
+      "database_name": "prz-tours-new",
+      "database_id": "6c3b5f55-8c63-4127-8e6b-6e1f4beee747",
       "migrations_dir": "migrations"
     }
   ],
