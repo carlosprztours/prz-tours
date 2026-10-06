@@ -104,6 +104,15 @@ img {
   -webkit-user-select: none;
 }
 
+/* En Android, cualquier input de menos de 16 px hace zoom al tocarlo y
+ * «rompe» el layout. Forzamos 16 px en todos los campos de formulario. */
+input,
+select,
+textarea {
+  /* `!important` para que le gane a las utilidades de Tailwind (.text-sm/.text-xs). */
+  font-size: 16px !important;
+}
+
 /* ── Animaciones de confirmación de reserva ── */
 @keyframes prz-pop {
   0% { opacity: 0; transform: scale(0.85) translateY(14px); }
