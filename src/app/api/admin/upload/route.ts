@@ -14,7 +14,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireStaffRoles } from "@/lib/admin/access";
 import {
   MAX_FILES_PER_UPLOAD,
   MAX_IMAGE_BYTES,
@@ -35,9 +35,10 @@ const STATUS: Record<string, number> = {
 
 export async function POST(request: NextRequest) {
   try {
-    await verifySession("en");
+    await requireStaffRoles("en", "admin", "editor", "photographer");
   } catch {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    // verifySession falla → no hay sesión; requireStaffRoles lanza → forbidden.
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   const form = await request.formData().catch(() => null);

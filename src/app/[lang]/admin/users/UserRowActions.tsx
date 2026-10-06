@@ -1,6 +1,6 @@
 /**
- * Acciones por fila de usuario: activar/desactivar, promover, eliminar
- * (componente de cliente).
+ * Acciones por fila de usuario: cambiar rol con un desplegable claro,
+ * activar/desactivar y eliminar (componente de cliente).
  */
 "use client";
 
@@ -9,12 +9,11 @@ import { useRouter } from "next/navigation";
 
 import {
   deleteUser,
-  promoteCustomer,
   setStaffRole,
   setUserActive,
 } from "@/lib/admin/users";
 import { isSuperAdminEmail } from "@/lib/admin/roles";
-import type { User } from "@/types";
+import type { User, UserRole } from "@/types";
 
 type Props = {
   locale: string;
@@ -50,59 +49,45 @@ export function UserRowActions({ locale, user, isMe, labels }: Props) {
   const btn =
     "rounded-full px-3 py-1.5 text-xs font-bold transition disabled:opacity-50";
 
+  const cambiable = !isMe && !protectedUser && !pending;
+
   return (
-    <span className="flex flex-wrap gap-1.5">
-      {user.role === "customer" ? (
-        <button
-          disabled={pending || isMe || protectedUser}
-          onClick={() => run(() => promoteCustomer(locale, user.id, "editor"))}
-          className={`${btn} bg-coral-700 text-white hover:bg-coral-800`}
+    <span className="flex flex-wrap items-center gap-1.5">
+      {/* Siempre un desplegable para elegir el rol, nada de botones que ciclen. */}
+      <label className="flex items-center gap-1 rounded-full border border-sand-200 bg-white px-2 py-1">
+        <span className="text-[11px] font-bold text-ink-500">Rol</span>
+        <select
+          value={user.role}
+          disabled={!cambiable}
+          onChange={(e) =>
+            run(() => setStaffRole(locale, user.id, e.target.value as UserRole))
+          }
+          className="bg-transparent text-xs font-bold text-ocean-800 outline-none disabled:opacity-50"
+          aria-label={`Rol de ${user.name}`}
         >
-          {labels.promote}
-        </button>
-      ) : (
-        <>
-          <button
-            disabled={pending || isMe || protectedUser}
-            onClick={() =>
-              run(() =>
-                setStaffRole(
-                  locale,
-                  user.id,
-                  user.role === "admin"
-                    ? "editor"
-                    : user.role === "editor"
-                      ? "photographer"
-                      : "admin",
-                ),
-              )
-            }
-            className={`${btn} bg-ocean-100 text-ocean-800 hover:bg-ocean-200`}
-          >
-            {user.role === "admin"
-              ? labels.makeEditor
-              : user.role === "editor"
-                ? labels.makePhotographer
-                : labels.makeAdmin}
-          </button>
-          <button
-            disabled={pending || isMe || protectedUser}
-            onClick={() => run(() => setUserActive(locale, user.id, user.is_active !== 1))}
-            className={`${btn} bg-slate-100 text-slate-700 hover:bg-slate-200`}
-          >
-            {user.is_active === 1 ? labels.deactivate : labels.activate}
-          </button>
-          <button
-            disabled={pending || isMe || protectedUser}
-            onClick={() => {
-              if (confirm(labels.confirmRemove)) run(() => deleteUser(locale, user.id));
-            }}
-            className={`${btn} bg-red-100 text-red-700 hover:bg-red-200`}
-          >
-            {labels.remove}
-          </button>
-        </>
-      )}
+          <option value="admin">Admin</option>
+          <option value="editor">Editor</option>
+          <option value="photographer">Fotógrafo</option>
+          <option value="customer">Cliente</option>
+        </select>
+      </label>
+
+      <button
+        disabled={pending || isMe || protectedUser}
+        onClick={() => run(() => setUserActive(locale, user.id, user.is_active !== 1))}
+        className={`${btn} bg-slate-100 text-slate-700 hover:bg-slate-200`}
+      >
+        {user.is_active === 1 ? labels.deactivate : labels.activate}
+      </button>
+      <button
+        disabled={pending || isMe || protectedUser}
+        onClick={() => {
+          if (confirm(labels.confirmRemove)) run(() => deleteUser(locale, user.id));
+        }}
+        className={`${btn} bg-red-100 text-red-700 hover:bg-red-200`}
+      >
+        {labels.remove}
+      </button>
     </span>
   );
 }

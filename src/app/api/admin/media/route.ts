@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { verifySession } from "@/lib/auth/dal";
+import { requireStaffRoles } from "@/lib/admin/access";
 import { getEnvVar } from "@/lib/db/client";
 
 /**
@@ -9,9 +9,9 @@ import { getEnvVar } from "@/lib/db/client";
  */
 export async function GET(request: NextRequest) {
   try {
-    await verifySession("en");
+    await requireStaffRoles("en", "admin", "editor", "photographer");
   } catch {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   const privado = await getEnvVar("IMAGEKIT_PRIVATE_KEY");

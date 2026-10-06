@@ -99,7 +99,7 @@ export async function setStaffRole(
 ): Promise<UsersResult> {
   const { locale, me, meEmail } = await requireAdmin(rawLocale);
   if (userId === me) return { ok: false, error: "self" };
-  if (role !== "admin" && role !== "editor" && role !== "photographer") {
+  if (!["admin", "editor", "photographer", "customer"].includes(role)) {
     return { ok: false, error: "bad-role" };
   }
   const target = await query<{ email: string }>(

@@ -4,7 +4,7 @@
  * Acepta los mismos filtros que la lista (?estado=&q=&desde=&hasta=).
  * Excel lo abre directo; separado por comas con cabecera.
  */
-import { verifySession } from "@/lib/auth/dal";
+import { requireStaffRoles } from "@/lib/admin/access";
 import { listBookings } from "@/lib/db/bookings";
 import { isLocale } from "@/lib/i18n";
 import type { BookingStatus } from "@/types";
@@ -21,9 +21,9 @@ export async function GET(request: Request) {
   const locale = isLocale(lang) ? lang : "en";
 
   try {
-    await verifySession(locale);
+    await requireStaffRoles(locale, "admin", "editor");
   } catch {
-    return new Response("Unauthorized", { status: 401 });
+    return new Response("Forbidden", { status: 403 });
   }
 
   const sp = url.searchParams;
