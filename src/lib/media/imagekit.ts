@@ -49,6 +49,7 @@ export type UploadError =
   | "bad-type"
   | "bad-size"
   | "no-file"
+  | "too-many"
   | "upload-failed";
 
 /** Datos del fichero, ya estén anidados o en la raíz de la respuesta. */
@@ -85,6 +86,55 @@ export class UploadFailed extends Error {
  * Lanza `UploadFailed` si algo falla; quien llama decide qué responder. Nunca
  * filtra la clave privada al log.
  */
+/**
+ * Sube varias imágenes a ImageKit de una vez.
+ *
+ * Se hacen de tres en tres y en orden: ImageKit limita las peticiones
+ * simultáneas, y subir veinte de golpe acaba rechazando algunas. Devuelve las
+ * que hayan salido bien y las que fallaron, para que el panel pueda avisar sin
+ * perder lo que ya se subió.
+ */
+export async function uploadImagesToImageKit(
+  files: File[],
+  folder: string,
+): Promise<{ subidas: UploadResult[]; fallidas: { nombre: string; motivo: UploadError }[] }> {
+  const subidas: UploadResult[] = [];
+  const fallidas: { nombre: string; motivo: UploadError }[] = [];
+
+  const VALIDOS = files.slice(0, MAX_FILES_PER_UPLOAD);
+  // Si vienen de más, se avisa en vez de ignorarlas en silencio.
+  for (const sobra of files.slice(MAX_FILES_PER_UPLOAD)) {
+    fallidas.push({ nombre: sobra.name, motivo: "too-many" });
+  }
+
+  for (let i = 0; i < VALIDOS.length; i += PARALELISMO) {
+    const tanda = VALIDOS.slice(i, i + PARALELISMO);
+    const resultados = await Promise.all(
+      tanda.map(async (file) => {
+        try {
+          return { file, resultado: await uploadImageToImageKit(file, folder) };
+        } catch (err) {
+          const motivo =
+            err instanceof UploadFailed ? err.reason : ("upload-failed" as UploadError);
+          return { file, error: motivo };
+        }
+      }),
+    );
+    for (const r of resultados) {
+      if ("resultado" in r && r.resultado) subidas.push(r.resultado);
+      else fallidas.push({ nombre: r.file.name, motivo: r.error });
+    }
+  }
+
+  return { subidas, fallidas };
+}
+
+/** Cuántas fotos se aceptan de golpe. Tope para no comerse la ejecución del Worker. */
+export const MAX_FILES_PER_UPLOAD = 20;
+
+/** Cuántas se suben a la vez contra ImageKit. */
+const PARALELISMO = 3;
+
 export async function uploadImageToImageKit(
   file: File,
   folder: string,

@@ -69,7 +69,7 @@ Layout con sidebar y verificación de sesión: `admin/layout.tsx`.
 | `/es/admin/promos`, `/new`, `/[id]` | `admin/promos/...` + `PromoForm.tsx` | Códigos genéricos (cualquiera puede usarlos) |
 | `/es/admin/blog`, `/new`, `/[id]` | `admin/blog/...` + `ArticleForm.tsx` |
 | `/es/admin/faq`, `/new`, `/[id]` | `admin/faq/...` + `FaqForm.tsx` |
-| `/es/admin/gallery` | `admin/gallery/page.tsx` + `AddImageForm.tsx` |
+| `/es/admin/gallery` | `admin/gallery/page.tsx` + `AddImageForm.tsx` + `GalleryImageCard.tsx` | Alta de varias fotos de golpe y ficha editable de cada una (texto alternativo, leyenda, orden y publicar/ocultar) |
 | `/es/admin/messages` | `admin/messages/page.tsx` (mensajes de contacto) |
 | `/es/admin/users` | `admin/users/page.tsx` + `UserRowActions.tsx` + `CreateStaffForm.tsx` |
 | `/es/admin/settings` | `admin/settings/page.tsx` (ajustes: whatsapp, email, etc.) |
@@ -263,6 +263,13 @@ Otros: `src/proxy.ts` (idioma + protección `/admin`), `src/types/index.ts` (tip
   exista en los dos idiomas con las mismas fotos, ninguna rota, el contador
   visible y sin desbordamiento en móvil (`scripts/test-gallery.mjs`). No crea
   ni borra nada.
+- Test del panel de galería (`npm run test:gallery:admin -- [origen] [carpeta]`):
+  entra al panel, sube **tres fotos de golpe** con el botón, comprueba que se
+  crean tres fichas, edita el texto alternativo y el orden de una, la oculta y
+  la vuelve a publicar (`scripts/test-gallery-admin.mjs`). Borra al terminar sus
+  tres filas y sus tres ficheros de ImageKit, así que no deja rastro. **No
+  toca reservas ni manda correos.** Localiza sus filas por URL y aborta si el
+  alta no creó las 3, para no editar por error fotos que ya existían.
 - Test de categorías + push (`npm run test:categories -- [origen] [carpeta]`):
   crea una categoría solo en español y verifica la traducción automática (o el
   aviso de que el cupo se agotó), el slug, que aparezca en el formulario, el

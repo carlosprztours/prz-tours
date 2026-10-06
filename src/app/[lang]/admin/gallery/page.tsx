@@ -1,15 +1,18 @@
 /**
- * Galería del panel: rejilla con eliminar + formulario para agregar.
+ * Galería del panel: alta de varias fotos de golpe y ficha editable de cada una.
+ *
+ * Cada foto trae su formulario (texto alternativo, leyenda, orden y si está
+ * publicada) para poder corregirla sin borrarla y volver a subirla.
  */
 import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
-import { SafeImage } from "@/components/SafeImage";
-import { deleteGalleryImage, listAdminGallery } from "@/lib/admin/content";
 import { requireSection } from "@/lib/admin/access";
+import { deleteGalleryImage, listAdminGallery } from "@/lib/admin/content";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { AddImageForm } from "./AddImageForm";
+import { GalleryImageCard } from "./GalleryImageCard";
 
 export default async function AdminGalleryPage({
   params,
@@ -23,30 +26,30 @@ export default async function AdminGalleryPage({
   const es = locale === "es";
 
   const images = await listAdminGallery(locale);
+  const sinAlt = images.filter((i) => !i.alt?.trim()).length;
 
   return (
     <div className="grid gap-5">
-      <h1 className="font-display text-2xl font-extrabold text-ink-900">
-        {es ? "Galería" : "Gallery"} · {images.length}
-      </h1>
+      <div>
+        <h1 className="font-display text-2xl font-extrabold text-ink-900">
+          {es ? "Galería" : "Gallery"} · {images.length}
+        </h1>
+        {sinAlt > 0 && (
+          <p className="mt-1 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+            {es
+              ? `${sinAlt} foto(s) sin texto alternativo. Quien use un lector de pantalla no sabrá qué muestran: escríbelo en su ficha.`
+              : `${sinAlt} photo(s) have no alt text. A screen-reader user won't know what they show: write it on the photo's card.`}
+          </p>
+        )}
+      </div>
 
       <AddImageForm locale={locale} es={es} />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {images.map((img) => (
-          <figure key={img.id} className="relative aspect-square overflow-hidden rounded-2xl bg-sand-100">
-            <SafeImage
-              src={img.url}
-              alt={img.alt || ""}
-              fill
-              sizes="25vw"
-              className="object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-2 pt-6">
-              <span className="truncate text-xs font-semibold text-white">
-                {img.caption || img.url}
-              </span>
+          <div key={img.id} className="relative">
+            <GalleryImageCard image={img} locale={locale} es={es} />
+            <div className="absolute right-2 top-2">
               <DeleteButton
                 locale={locale}
                 id={img.id}
@@ -55,12 +58,7 @@ export default async function AdminGalleryPage({
                 label="✕"
               />
             </div>
-            {img.is_published !== 1 && (
-              <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
-                {es ? "Oculto" : "Hidden"}
-              </span>
-            )}
-          </figure>
+          </div>
         ))}
       </div>
     </div>

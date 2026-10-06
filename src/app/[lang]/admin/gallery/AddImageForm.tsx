@@ -1,67 +1,126 @@
 /**
- * Formulario para agregar una foto a la galería (componente de cliente).
+ * Formulario para agregar fotos a la galería (componente de cliente).
+ *
+ * Se pueden elegir varias de golpe: el botón las sube juntas y se crea una
+ * ficha por cada una, con su URL. El texto alternativo y el pie de foto se
+ * aplican a la primera; el resto se rellenan luego en la ficha de cada foto.
  */
 "use client";
 
-import { useActionState, useMemo } from "react";
+import { useActionState, useMemo, useState } from "react";
 
 import { UploadButton } from "@/components/admin/UploadButton";
-import {
-  createGalleryImage,
-  type SimpleResult,
-} from "@/lib/admin/content";
+import { createGalleryImage, type SimpleResult } from "@/lib/admin/content";
 
 const initialState: SimpleResult = { ok: false, error: "" };
+
+/** La acción devuelve claves cortas; aquí se traducen para el staff. */
+const ERRORES: Record<string, { es: string; en: string }> = {
+  required: {
+    es: "Sube al menos una foto o pega una URL.",
+    en: "Upload at least one photo or paste a URL.",
+  },
+};
 
 export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
   const action = useMemo(() => createGalleryImage.bind(null, locale), [locale]);
   const [state, formAction, pending] = useActionState(action, initialState);
+
+  /** URLs ya subidas, a la espera de que se pulse «Agregar». */
+  const [subidas, setSubidas] = useState<string[]>([]);
+
   const input =
     "h-10 w-full rounded-xl border border-sand-200 bg-white px-3 text-sm text-ink-900 outline-none focus:border-ocean-500";
 
   return (
     <form action={formAction} className="grid gap-3 rounded-2xl border border-sand-200 bg-white p-5">
       <h2 className="font-display text-lg font-bold text-ink-900">
-        {es ? "Agregar foto" : "Add photo"}
+        {es ? "Agregar fotos" : "Add photos"}
       </h2>
+
       <div className="flex flex-wrap items-center gap-2">
         <UploadButton
           targetId="gallery-url"
           folder="gallery"
+          multiple
+          onUploaded={(urls) => setSubidas(urls)}
           labels={
             es
               ? {
-                  upload: "Subir foto",
+                  upload: "Subir fotos",
                   uploading: "Subiendo…",
                   failed: "No se pudo subir.",
                   reasons: {
                     notConfigured: "Falta configurar ImageKit.",
                     badType: "Formato no válido (JPG, PNG, WebP, AVIF o GIF).",
-                    badSize: "La foto supera los 10 MB.",
+                    badSize: "Alguna foto supera los 10 MB.",
+                    tooMany: "Máximo 20 fotos de golpe.",
                   },
                 }
               : {
-                  upload: "Upload photo",
+                  upload: "Upload photos",
                   uploading: "Uploading…",
                   failed: "Upload failed.",
                   reasons: {
                     notConfigured: "ImageKit is not configured.",
                     badType: "Unsupported format (JPG, PNG, WebP, AVIF or GIF).",
-                    badSize: "The photo is larger than 10 MB.",
+                    badSize: "One of the photos is larger than 10 MB.",
+                    tooMany: "Up to 20 photos at a time.",
                   },
                 }
           }
         />
-        <span className="text-xs text-ink-500">{es ? "o pega una URL" : "or paste a URL"}</span>
+        <span className="text-xs text-ink-500">
+          {es ? "elige varias de golpe" : "pick several at once"}
+        </span>
       </div>
+
+      {subidas.length > 0 && (
+        <p className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+          {subidas.length === 1
+            ? es
+              ? "1 foto lista. Pulsa «Agregar» para guardarla."
+              : "1 photo ready. Press “Add” to save it."
+            : es
+              ? `${subidas.length} fotos listas. Pulsa «Agregar» para guardarlas todas.`
+              : `${subidas.length} photos ready. Press “Add” to save them all.`}
+        </p>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-xs font-bold text-ink-500 sm:col-span-2">
-          URL (/img/… o https://…)
-          <input id="gallery-url" name="url" required placeholder="/img/mi-foto.jpg" className={input} />
+          {subidas.length > 0
+            ? es
+              ? `URL de ${subidas.length} foto(s) — no hace falta tocarla`
+              : `URL of ${subidas.length} photo(s) — no need to edit it`
+            : es
+              ? "URL (/img/… o https://…)"
+              : "URL (/img/… or https://…)"}
+          {/* Sin `required`: con fotos ya subidas este campo se queda vacío a
+              propósito, y el navegador bloquearía el envío sin llegar a la
+              Server Action. Si no hay ninguna foto, lo avisa la acción. */}
+          <input
+            id="gallery-url"
+            name="url"
+            placeholder="/img/mi-foto.jpg"
+            className={input}
+            readOnly={subidas.length > 0}
+          />
         </label>
+
+        {/* Las fotos subidas llegan en `urls`; la URL pegada a mano, en `url`. */}
+        {subidas.map((u) => (
+          <input key={u} type="hidden" name="urls" value={u} />
+        ))}
+
         <label className="grid gap-1 text-xs font-bold text-ink-500">
           {es ? "Texto alternativo" : "Alt text"}
           <input name="alt" className={input} />
+          <span className="text-[11px] font-normal text-ink-400">
+            {es
+              ? "Lo que leerá en voz alta quien no ve la foto. Si subes varias, solo se aplica a la primera."
+              : "What a screen reader will announce. If you upload several, it only applies to the first one."}
+          </span>
         </label>
         <label className="grid gap-1 text-xs font-bold text-ink-500">
           {es ? "Leyenda (opcional)" : "Caption (optional)"}
@@ -76,14 +135,24 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
           {es ? "Publicado" : "Published"}
         </label>
       </div>
+
       {!state.ok && state.error && (
-        <p className="text-sm font-semibold text-red-600" role="alert">{state.error}</p>
+        <p className="text-sm font-semibold text-red-600" role="alert">
+          {ERRORES[state.error]?.[es ? "es" : "en"] ?? state.error}
+        </p>
       )}
       {state.ok && (
         <p className="text-sm font-semibold text-emerald-600" role="status">
-          {es ? "Agregada. Actualiza para verla." : "Added. Refresh to see it."}
+          {state.count && state.count > 1
+            ? es
+              ? `${state.count} fotos agregadas. Actualiza para verlas.`
+              : `${state.count} photos added. Refresh to see them.`
+            : es
+              ? "Agregada. Actualiza para verla."
+              : "Added. Refresh to see it."}
         </p>
       )}
+
       <button
         type="submit"
         disabled={pending}

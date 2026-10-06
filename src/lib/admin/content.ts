@@ -10,7 +10,8 @@ import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 import type { GalleryImage, Locale, Testimonial } from "@/types";
 
-export type SimpleResult = { ok: true } | { ok: false; error: string };
+/** `count` lo usan las acciones que crean varias filas de una vez (galería). */
+export type SimpleResult = { ok: true; count?: number } | { ok: false; error: string };
 
 async function requireStaff(rawLocale: string): Promise<Locale> {
   const { locale } = await requireEditor(rawLocale);
@@ -133,19 +134,81 @@ export async function createGalleryImage(
   formData: FormData,
 ): Promise<SimpleResult> {
   const locale = await requireGallery(rawLocale);
+
+  // Se aceptan varias fotos en un solo envío (`urls`), para no tener que
+  // repetir el formulario una por cada imagen. `url` sigue funcionando para
+  // cuando se pega una a mano.
+  const pegadas = formData
+    .getAll("urls")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  const sueltas = [String(formData.get("url") ?? "").trim()].filter(Boolean);
+  const urls = [...pegadas, ...sueltas];
+  if (urls.length === 0) return { ok: false, error: "required" };
+
+  const alt = String(formData.get("alt") ?? "").trim();
+  const caption = String(formData.get("caption") ?? "").trim();
+  const publicado = formData.get("is_published") === "on" ? 1 : 0;
+
+  // El campo «Orden» dice dónde coloca la(s) foto(s). El formulario pone 0 por
+  // defecto, que significa «al principio»; se respeta tal cual, y al subir
+  // varias de golpe se van siguiendo (0, 1, 2…) en el orden elegido. Si no
+  // viene el campo, se añaden al final de la lista.
+  const ordenPedido = String(formData.get("sort_order") ?? "").trim();
+  const ultimo = await queryOne<{ n: number }>(
+    `SELECT COALESCE(MAX(sort_order), 0) AS n FROM gallery_images`,
+  );
+  let siguiente = ordenPedido === "" ? (ultimo?.n ?? 0) : Math.round(Number(ordenPedido) || 0);
+
+  for (const [indice, url] of urls.entries()) {
+    siguiente += 1;
+    // Con varias fotos, un único texto alternativo no describe bien todas: se
+    // aplica solo a la primera y el fotógrafo escribe el de cada una en su
+    // ficha. Con una sola foto, el texto va a esa.
+    const altDeEsta = indice === 0 ? alt : "";
+    await execute(
+      `INSERT INTO gallery_images (url, alt, caption, is_published, sort_order)
+       VALUES (?, ?, ?, ?, ?)`,
+      url,
+      altDeEsta,
+      caption || null,
+      publicado,
+      siguiente,
+    );
+  }
+
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/gallery`);
+  revalidatePath(`/${locale}/admin/gallery`);
+  return { ok: true, count: urls.length };
+}
+
+export async function updateGalleryImage(
+  rawLocale: string,
+  _prev: SimpleResult | undefined,
+  formData: FormData,
+): Promise<SimpleResult> {
+  const locale = await requireGallery(rawLocale);
+  const id = Math.round(Number(formData.get("id")) || 0);
+  if (!id) return { ok: false, error: "required" };
+
   const url = String(formData.get("url") ?? "").trim();
   if (!url) return { ok: false, error: "required" };
 
   await execute(
-    `INSERT INTO gallery_images (url, alt, caption, is_published, sort_order)
-     VALUES (?, ?, ?, ?, ?)`,
+    `UPDATE gallery_images
+        SET url = ?, alt = ?, caption = ?, is_published = ?, sort_order = ?
+      WHERE id = ?`,
     url,
     String(formData.get("alt") ?? "").trim(),
     String(formData.get("caption") ?? "").trim() || null,
     formData.get("is_published") === "on" ? 1 : 0,
     Math.round(Number(formData.get("sort_order")) || 0),
+    id,
   );
+
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
   return { ok: true };
 }
@@ -157,6 +220,7 @@ export async function deleteGalleryImage(
   const locale = await requireGallery(rawLocale);
   await execute(`DELETE FROM gallery_images WHERE id = ?`, id);
   revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
   return { ok: true };
 }

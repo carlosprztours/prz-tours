@@ -1,9 +1,12 @@
 /**
- * Botón para subir una imagen a ImageKit e insertar su URL en un textarea
+ * Botón para subir imágenes a ImageKit e insertar sus URLs en un textarea
  * (componente de cliente).
  *
  * Se usa en el editor de tours (campo de imágenes) y en la galería. La subida
  * va a `POST /api/admin/upload`, que es quien tiene la clave privada.
+ *
+ * Con `multiple` se pueden elegir varias fotos de golpe: se suben juntas y se
+ * pega una línea por cada una, que es lo que evita subir de una en una.
  */
 "use client";
 
@@ -14,6 +17,10 @@ type Props = {
   targetId: string;
   /** Carpeta dentro de ImageKit (tours, gallery, misc). */
   folder?: string;
+  /** Permite elegir varias fotos de golpe. */
+  multiple?: boolean;
+  /** Al subir varias, esta función recibe las URLs en vez de escribirlas. */
+  onUploaded?: (urls: string[]) => void;
   labels: {
     upload: string;
     uploading: string;
@@ -23,6 +30,7 @@ type Props = {
       notConfigured?: string;
       badType?: string;
       badSize?: string;
+      tooMany?: string;
     };
   };
 };
@@ -32,51 +40,73 @@ const MOTIVOS: Record<string, keyof NonNullable<Props["labels"]["reasons"]>> = {
   "media-not-configured": "notConfigured",
   "bad-type": "badType",
   "bad-size": "badSize",
+  "too-many": "tooMany",
 };
 
-export function UploadButton({ targetId, folder = "misc", labels }: Props) {
+/** Una imagen devuelta por la API. */
+type Subida = { url: string; thumbnailUrl: string | null; fileId: string | null };
+
+export function UploadButton({
+  targetId,
+  folder = "misc",
+  multiple = false,
+  onUploaded,
+  labels,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onChange = async (file: File | undefined) => {
-    if (!file || busy) return;
+  const motivo = (clave: string | undefined, porDefecto: string) => {
+    const key = clave ? MOTIVOS[clave] : undefined;
+    return (key ? labels.reasons?.[key] : undefined) ?? porDefecto;
+  };
+
+  const onChange = async (elegidos: FileList | null) => {
+    const files = [...(elegidos ?? [])];
+    if (files.length === 0 || busy) return;
     setBusy(true);
     setError(null);
+
     try {
       const form = new FormData();
-      form.append("file", file);
+      for (const f of files) form.append("files", f);
       form.append("folder", folder);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        body: form,
-      });
+
+      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+      const cuerpo = (await res.json().catch(() => ({}))) as {
+        images?: Subida[];
+        url?: string;
+        failed?: { nombre: string; motivo: string }[];
+        error?: string;
+      };
 
       if (!res.ok) {
-        const reason = ((await res.json().catch(() => ({}))) as { error?: string })
-          .error;
-        const key = reason ? MOTIVOS[reason] : undefined;
-        const specific = key ? labels.reasons?.[key] : undefined;
-        throw new Error(specific ?? labels.failed);
+        throw new Error(motivo(cuerpo.error, labels.failed));
       }
 
-      const data = (await res.json()) as { url?: string };
-      if (!data.url) throw new Error(labels.failed);
+      const imagenes: Subida[] = cuerpo.images?.length
+        ? cuerpo.images
+        : cuerpo.url
+          ? [{ url: cuerpo.url, thumbnailUrl: null, fileId: null }]
+          : [];
+      if (imagenes.length === 0) throw new Error(labels.failed);
 
-      const target = document.getElementById(targetId) as
-        | HTMLTextAreaElement
-        | HTMLInputElement
-        | null;
-      if (target) {
-        if (target instanceof HTMLTextAreaElement) {
-          const line = `${data.url} | ${file.name.replace(/\s+/g, " ")}`;
-          target.value = target.value.trim()
-            ? `${target.value.trim()}\n${line}`
-            : line;
-        } else {
-          target.value = data.url;
-        }
-        target.dispatchEvent(new Event("change", { bubbles: true }));
+      // Las que no salieron se avisan, pero no se pierden las que sí.
+      if (cuerpo.failed?.length) {
+        setError(
+          `${cuerpo.failed.length} no se pudieron subir (${motivo(
+            cuerpo.failed[0]?.motivo,
+            labels.failed,
+          )}). Se añadieron las demás.`,
+        );
+      }
+
+      if (onUploaded) {
+        onUploaded(imagenes.map((i) => i.url));
+      } else {
+        const nombres = files.map((f) => f.name);
+        escribirEnCampo(targetId, imagenes, nombres, imagenes.length === 1);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : labels.failed);
@@ -92,9 +122,10 @@ export function UploadButton({ targetId, folder = "misc", labels }: Props) {
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
+        multiple={multiple}
         className="hidden"
         aria-label={labels.upload}
-        onChange={(e) => onChange(e.target.files?.[0])}
+        onChange={(e) => onChange(e.target.files)}
       />
       <button
         type="button"
@@ -102,7 +133,11 @@ export function UploadButton({ targetId, folder = "misc", labels }: Props) {
         onClick={() => inputRef.current?.click()}
         className="inline-flex h-9 items-center rounded-full bg-ocean-100 px-4 text-xs font-bold text-ocean-800 transition hover:bg-ocean-200 disabled:opacity-60"
       >
-        {busy ? labels.uploading : labels.upload}
+        {busy
+          ? labels.uploading
+          : multiple
+            ? `${labels.upload} · varias`
+            : labels.upload}
       </button>
       {error && (
         <span className="text-xs font-semibold text-red-600" role="alert">
@@ -111,4 +146,40 @@ export function UploadButton({ targetId, folder = "misc", labels }: Props) {
       )}
     </span>
   );
+}
+
+/**
+ * Pega las URLs en el textarea o input indicado, una por línea.
+ *
+ * En un textarea se escribe `url | nombre`, que es el formato que espera el
+ * campo de imágenes de los tours. Si solo se sube una, se respeta que el
+ * textarea no estuviera vacío.
+ */
+function escribirEnCampo(
+  targetId: string,
+  imagenes: Subida[],
+  nombresOriginales: string[],
+  unaSola: boolean,
+) {
+  const target = document.getElementById(targetId) as
+    | HTMLTextAreaElement
+    | HTMLInputElement
+    | null;
+  if (!target) return;
+
+  const lineas = imagenes.map(
+    (imagen, i) => `${imagen.url} | ${(nombresOriginales[i] ?? imagen.url).replace(/\s+/g, " ")}`,
+  );
+
+  if (target instanceof HTMLTextAreaElement) {
+    const actual = target.value.trim();
+    target.value = actual ? `${actual}\n${lineas.join("\n")}` : lineas.join("\n");
+  } else if (unaSola) {
+    target.value = imagenes[0]?.url ?? "";
+  } else {
+    // Un input de una sola línea con varias fotos no cabe: se deja la primera
+    // y el resto se ignoran, que es lo mejor que se puede hacer sin romper.
+    target.value = imagenes[0]?.url ?? "";
+  }
+  target.dispatchEvent(new Event("change", { bubbles: true }));
 }
