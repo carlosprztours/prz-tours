@@ -218,15 +218,15 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
         {(["es", "en"] as const).map((l) => (
           <div key={l} className={`mt-4 grid gap-3 ${tab === l ? "" : "hidden"}`}>
             <label className={labelClass}>
-              {labels.title} ({l.toUpperCase()})
+              {labels.title} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
               <input name={`title_${l}`} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
             </label>
             <label className={labelClass}>
-              {labels.summary} ({l.toUpperCase()})
+              {labels.summary} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
               <input name={`summary_${l}`} defaultValue={tr(l)?.summary ?? ""} className={inputClass} />
             </label>
             <label className={labelClass}>
-              {labels.description} ({l.toUpperCase()})
+              {labels.description} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
               <textarea name={`description_${l}`} rows={8} defaultValue={tr(l)?.description ?? ""} className={areaClass} />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -307,7 +307,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
             <div key={section} className="mt-3 grid gap-2 sm:grid-cols-2">
               {(["es", "en"] as const).map((l) => (
                 <label key={l} className={labelClass}>
-                  {section === "included" ? labels.included : section === "excluded" ? labels.excluded : labels.bring} ({l.toUpperCase()})
+                  {section === "included" ? labels.included : section === "excluded" ? labels.excluded : labels.bring} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
                   <textarea
                     name={`${section}_${l}`}
                     rows={4}

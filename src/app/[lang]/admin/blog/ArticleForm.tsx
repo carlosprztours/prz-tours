@@ -86,15 +86,15 @@ export function ArticleForm({
         {(["es", "en"] as const).map((l) => (
           <div key={l} className={`mt-4 grid gap-3 ${tab === l ? "" : "hidden"}`}>
             <label className={labelClass}>
-              {es ? "Título" : "Title"} ({l.toUpperCase()})
+              {es ? "Título" : "Title"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
               <input name={`title_${l}`} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
             </label>
             <label className={labelClass}>
-              {es ? "Resumen" : "Excerpt"} ({l.toUpperCase()})
+              {es ? "Resumen" : "Excerpt"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
               <input name={`excerpt_${l}`} defaultValue={tr(l)?.excerpt ?? ""} className={inputClass} />
             </label>
             <label className={labelClass}>
-              {es ? "Contenido (párrafos separados por línea en blanco)" : "Body (paragraphs separated by blank lines)"} ({l.toUpperCase()})
+              {es ? "Contenido (párrafos separados por línea en blanco)" : "Body (paragraphs separated by blank lines)"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
               <textarea name={`body_${l}`} rows={10} defaultValue={tr(l)?.body ?? ""} className={areaClass} />
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
