@@ -58,6 +58,7 @@ export function CookieBanner({
     <div
       role="dialog"
       aria-live="polite"
+      aria-label={es ? "Aviso de cookies" : "Cookie notice"}
       className="fixed inset-x-0 bottom-0 z-50 mx-auto mb-3 max-w-3xl rounded-2xl border border-sand-200 bg-white/95 px-4 py-4 shadow-2xl backdrop-blur"
     >
       <p className="text-sm text-ink-700">
