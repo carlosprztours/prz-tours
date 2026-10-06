@@ -1,3 +1,0 @@
-module.exports=[68599,a=>{"use strict";var b=a.i(87924),c=a.i(72131),d=a.i(50944);a.s(["DeleteButton",0,function({locale:a,id:e,action:f,confirmMessage:g,label:h}){let i=(0,d.useRouter)(),[j,k]=(0,c.useTransition)();return(0,b.jsx)("button",{type:"button",disabled:j,onClick:()=>{confirm(g)&&k(async()=>{let b=await f(a,e);b.ok||alert(b.error??"?"),i.refresh()})},className:"rounded-full bg-red-100 px-3 py-1.5 text-xs font-bold text-red-700 transition hover:bg-red-200 disabled:opacity-50",children:h})}])}];
-
-//# sourceMappingURL=src_components_admin_DeleteButton_tsx_0pn53kp._.js.map

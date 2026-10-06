@@ -1,4 +1,0 @@
-module.exports=[70183,e=>{"use strict";var r=e.i(64375);async function t(e){let t=e.trim().toUpperCase();return t?(0,r.queryOne)("SELECT * FROM promo_codes WHERE code = ? COLLATE NOCASE",t):null}async function o(e,r){if(!e||!e.trim())return{ok:!1,error:"not-found"};let o=await t(e);if(!o||1!==o.is_active)return{ok:!1,error:"inactive"};let n=new Date().toISOString().slice(0,10);if(o.valid_from&&n<o.valid_from||o.valid_to&&n>o.valid_to)return{ok:!1,error:"expired"};if(null!==o.max_uses&&o.used_count>=o.max_uses)return{ok:!1,error:"exhausted"};let u="percent"===o.kind?Math.round(r*o.value/100*100)/100:Math.min(o.value,r);return{ok:!0,promo:o,discount:u}}async function n(e){await (0,r.execute)(`UPDATE promo_codes SET used_count = used_count + 1, updated_at = datetime('now')
-     WHERE id = ?`,e)}e.s(["checkPromo",0,o,"consumePromoUse",0,n])}];
-
-//# sourceMappingURL=src_lib_db_promos_ts_1abvzrd._.js.map
