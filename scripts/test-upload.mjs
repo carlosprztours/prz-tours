@@ -8,10 +8,12 @@
  * formulario es de ImageKit, que la imagen carga en la web y que el borrador
  * se puede guardar.
  *
- * Deja un mensaje en la galería con una imagen de prueba; se indica su
- * referencia en la salida para poder borrarlo desde el panel.
+ * Al terminar borra la fila de la galería y el fichero de ImageKit, así que no
+ * deja rastro ni en la base de datos ni en la cuenta de ImageKit. Para eso
+ * necesita la clave privada de `.dev.vars`; si no está, avisa y deja la foto
+ * puesta para poder borrarla a mano desde el panel.
  */
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -52,8 +54,9 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const pageErrors = [];
 page.on("pageerror", (e) => pageErrors.push(String(e).split("\n")[0].slice(0, 160)));
 
-/** URL de la imagen subida, para poder informarla al final. */
+/** URL de la imagen subida y su id en ImageKit, para poder limpiarla. */
 let uploadedUrl = "";
+let uploadedFileId = null;
 
 try {
   // ── Sesión ──────────────────────────────────────────────────────────────
@@ -76,6 +79,16 @@ try {
   check("abre la galería", await page.getByRole("heading", { name: /galer|galle/i }).first().isVisible());
 
   const fileInput = page.locator('input[type="file"]').first();
+
+  // La API devuelve el `fileId` de ImageKit. Lo escuchamos para poder borrar
+  // el fichero al terminar: la API de listado no está disponible con la clave
+  // privada, pero el borrado por id sí.
+  page.on("response", async (res) => {
+    if (!res.url().includes("/api/admin/upload") || !res.ok()) return;
+    const body = await res.json().catch(() => null);
+    if (body?.fileId) uploadedFileId = body.fileId;
+  });
+
   await fileInput.setInputFiles(imagePath);
 
   // El botón se pone en «Subiendo…» mientras va; esperamos a que la URL llegue
@@ -147,15 +160,73 @@ try {
   check("sin errores JS", pageErrors.length === 0, pageErrors.join(" | "));
 } catch (err) {
   check("sin errores inesperados", false, String(err).split("\n")[0].slice(0, 180));
-} finally {
-  await browser.close();
 }
 
 const fallos = results.filter((r) => !r).length;
 console.log(`\n${results.length - fallos}/${results.length} checks OK`);
-if (uploadedUrl) {
-  console.log("Queda una foto de prueba en la galería («Prueba automática ImageKit»):");
-  console.log(`  ${uploadedUrl}`);
-  console.log("Bórrala desde /admin/gallery cuando quieras.");
+
+// ── Limpieza ────────────────────────────────────────────────────────────
+// Borrar la foto del panel (imagen de 3x3 que solo ocupa hueco) y el fichero
+// de ImageKit, para no dejar basura en la base de datos ni en la cuenta.
+async function limpiar() {
+  if (!uploadedUrl) return;
+
+  // 1) Fila de la galería: se borra desde el propio panel. Buscamos la tarjeta
+  //    por la URL de la foto (el nombre sale en el `src` de la imagen, también
+  //    con la transformación de ImageKit), no por texto: el nombre alternativo
+  //    es un atributo `alt`, no contenido visible.
+  try {
+    await page.goto(`${origin}/es/admin/gallery`, { waitUntil: "networkidle", timeout: 60000 });
+    const nombre = decodeURIComponent(uploadedUrl.split("/").pop() ?? "");
+    const porFoto = () =>
+      page.locator("figure").filter({ has: page.locator(`img[src*="${nombre}"]`) });
+
+    if (await porFoto().count()) {
+      // El botón de borrar pide confirmación con `window.confirm` y se llama
+      // «✕», así que hay que aceptar el diálogo antes de pulsarlo.
+      page.once("dialog", (d) => d.accept());
+      await porFoto().first().getByRole("button", { name: /✕/ }).click();
+      await page.waitForTimeout(3000);
+      console.log(
+        (await porFoto().count()) === 0
+          ? "· foto borrada del panel."
+          : "· la foto sigue en la galería.",
+      );
+    } else {
+      console.log("· no se encontró la tarjeta de la foto en el panel.");
+    }
+  } catch (err) {
+    console.log(`· no se pudo borrar la foto del panel: ${String(err).slice(0, 80)}`);
+  }
+
+  // 2) Fichero de ImageKit. El listado de ficheros no está disponible con la
+  //    clave privada (devuelve 0 aunque existan), pero el borrado por id sí, y
+  //    el id lo devolvió la API al subir.
+  if (!uploadedFileId) {
+    console.log("· la API no devolvió fileId; el fichero se queda en ImageKit.");
+    return;
+  }
+  try {
+    const clave = readFileSync(".dev.vars", "utf8")
+      .split("\n")
+      .find((l) => l.startsWith("IMAGEKIT_PRIVATE_KEY="))
+      ?.slice("IMAGEKIT_PRIVATE_KEY=".length)
+      .trim();
+    if (!clave) throw new Error("sin clave en .dev.vars");
+
+    const auth = `Basic ${Buffer.from(`${clave}:`).toString("base64")}`;
+    const del = await fetch(`https://api.imagekit.io/v1/files/${uploadedFileId}`, {
+      method: "DELETE",
+      headers: { Authorization: auth },
+    });
+    console.log(`· fichero borrado de ImageKit (HTTP ${del.status}).`);
+  } catch (err) {
+    console.log(`· no se pudo borrar de ImageKit: ${String(err).slice(0, 80)}`);
+  }
 }
+
+await limpiar();
+// El navegador se cierra al final: la limpieza necesita la página para borrar
+// la foto desde el propio panel.
+await browser.close();
 process.exit(fallos > 0 ? 1 : 0);
