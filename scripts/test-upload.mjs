@@ -123,6 +123,27 @@ try {
   await page.waitForSelector("text=/Agregada|Added/", { timeout: 45000 });
   check("el panel acepta guardarla", true);
 
+  // ── La foto se sirve transformada, no por el optimizador de Next ────────
+  // ImageKit rechaza las peticiones del Worker, así que la URL debe llegar al
+  // navegador tal cual, con la transformación `tr:` de ImageKit puesta.
+  await page.waitForTimeout(1200);
+  const render = await page.evaluate(() => {
+    const img = [...document.querySelectorAll("img")].find((el) =>
+      (el.currentSrc || el.src).includes("imagekit.io"),
+    );
+    return img ? (img.currentSrc || img.src) : "";
+  });
+  check(
+    "la galería pinta la foto con la transformación de ImageKit",
+    render.includes("/tr:") && render.includes("f-auto"),
+    render.slice(render.indexOf("/tr:"), render.indexOf("/tr:") + 34) || "no encontrada",
+  );
+  check(
+    "no pasa por el optimizador de Next",
+    !render.includes("/_next/image"),
+    render.includes("/_next/image") ? "usa /_next/image" : "",
+  );
+
   check("sin errores JS", pageErrors.length === 0, pageErrors.join(" | "));
 } catch (err) {
   check("sin errores inesperados", false, String(err).split("\n")[0].slice(0, 180));

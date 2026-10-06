@@ -1,8 +1,7 @@
 /**
- * Galería de fotos (rejilla con next/image).
+ * Galería de fotos (rejilla con SafeImage, que deja pasar las de ImageKit).
  */
-import Image from "next/image";
-
+import { SafeImage } from "@/components/SafeImage";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import type { Dictionary } from "@/lib/i18n";
 import type { GalleryImage } from "@/types";
@@ -24,7 +23,7 @@ export function Gallery({ dict, images }: Props) {
               key={img.id}
               className="group relative aspect-square overflow-hidden rounded-2xl bg-sand-100"
             >
-              <Image
+              <SafeImage
                 src={img.url}
                 alt={img.alt || img.caption || "Perez Tours"}
                 fill

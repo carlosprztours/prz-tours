@@ -1,10 +1,10 @@
 /**
  * Galería del panel: rejilla con eliminar + formulario para agregar.
  */
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { SafeImage } from "@/components/SafeImage";
 import { deleteGalleryImage, listAdminGallery } from "@/lib/admin/content";
 import { requireSection } from "@/lib/admin/access";
 import { isLocale } from "@/lib/i18n";
@@ -35,7 +35,7 @@ export default async function AdminGalleryPage({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {images.map((img) => (
           <figure key={img.id} className="relative aspect-square overflow-hidden rounded-2xl bg-sand-100">
-            <Image
+            <SafeImage
               src={img.url}
               alt={img.alt || ""}
               fill

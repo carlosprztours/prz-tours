@@ -4,9 +4,9 @@
  * Foto, categoría, título, resumen, duración, precio y CTA.
  * Toda la navegación usa el prefijo de idioma.
  */
-import Image from "next/image";
 import Link from "next/link";
 
+import { SafeImage } from "@/components/SafeImage";
 import { formatPrice, priceUnitLabel } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale, TourWithContent } from "@/types";
@@ -79,7 +79,7 @@ export function TourCard({ tour, locale, dict, categories }: Props) {
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-sand-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
       <Link href={href} className="relative block aspect-[4/3] overflow-hidden bg-sand-100">
         {cover ? (
-          <Image
+          <SafeImage
             src={cover.url}
             alt={cover.alt || tour.translation.title}
             fill

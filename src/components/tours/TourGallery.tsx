@@ -4,8 +4,7 @@
  * Sin JavaScript: rejilla simple y rápida. (Un lightbox quedaría para una
  * mejora futura; la prioridad es que cargue rápido en móviles de turistas.)
  */
-import Image from "next/image";
-
+import { SafeImage } from "@/components/SafeImage";
 import type { TourImage } from "@/types";
 
 export function TourGallery({
@@ -21,7 +20,7 @@ export function TourGallery({
   return (
     <div className="grid gap-3">
       <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-sand-100">
-        <Image
+        <SafeImage
           src={cover.url}
           alt={cover.alt || title}
           fill
@@ -34,7 +33,7 @@ export function TourGallery({
         <div className={`grid gap-3 ${rest.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3"}`}>
           {rest.slice(0, 3).map((img) => (
             <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-sand-100">
-              <Image
+              <SafeImage
                 src={img.url}
                 alt={img.alt || title}
                 fill
