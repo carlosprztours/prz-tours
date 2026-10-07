@@ -1,13 +1,16 @@
 /**
  * Cabecera del sitio (Server Component).
  *
- * Fija arriba:
- * - Escritorio (lg+): una fila con logo + navegación (Inicio, Galería,
- *   Nosotros, Contacto) a la izquierda; a la derecha los botones destacados
- *   Tours | Traslados junto a la campana, el idioma y el CTA de reserva.
- * - Móvil: fila superior (burger, logo, campana, cuenta) + una fila inferior
- *   con "Tours" y "Traslados" como botones a lo ancho; el idioma pasa al
- *   menú hamburguesa.
+ * Fija arriba, en una sola fila y en tres zonas:
+ * - Escritorio (lg+): a la izquierda el burger (menú con el cambio de idioma)
+ *   + navegación (Inicio, Galería, Nosotros, Contacto); al centro el logo con
+ *   los botones Tours | Traslados pegados a él; a la derecha la campana,
+ *   Reservar y Cuenta.
+ * - Móvil (<lg): la misma fila única — el logo queda junto al burger y los
+ *   botones Tours | Traslados se reparten el ancho disponible de la fila.
+ *
+ * El cambio de idioma vive SOLO en el menú desplegable (no en la barra), así
+ * que el burger está visible en todas las medidas.
  *
  * El botón de WhatsApp del header se retiró: el botón flotante
  * (`ConditionalFloat`) ya cubre esa acción en todas las páginas.
@@ -18,7 +21,6 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { HeaderMiniLogo } from "./HeaderMiniLogo";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MobileMenu } from "./MobileMenu";
 import { NotificationsBell } from "./NotificationsBell";
 
@@ -71,22 +73,21 @@ async function SiteHeaderInner({ locale, dict }: Props) {
   ];
 
   const toursButtonClass =
-    "inline-flex h-10 items-center gap-1.5 rounded-full border border-ocean-200 bg-ocean-50 px-4 text-sm font-bold text-ocean-800 transition hover:border-ocean-400 hover:bg-ocean-100";
+    "inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-full border border-ocean-200 bg-ocean-50 px-2.5 text-sm font-bold text-ocean-800 transition hover:border-ocean-400 hover:bg-ocean-100";
   const transfersButtonClass =
-    "inline-flex h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-4 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700";
+    "inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-full border border-sand-200 bg-white px-2.5 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700";
 
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-white/90 backdrop-blur">
-      <div className="container-site py-2 lg:flex lg:h-24 lg:items-center lg:justify-between lg:gap-4 lg:py-0">
-        {/* Fila 1 (móvil) / bloque izquierdo (escritorio): burger + logo + nav */}
-        <div className="flex min-w-0 items-center gap-2 lg:gap-3">
+      <div className="container-site grid grid-cols-[auto_1fr_auto] items-center gap-2 py-2 lg:grid-cols-[1fr_auto_1fr] lg:h-24 lg:gap-x-10 lg:py-0">
+        {/* Izquierda (escritorio): burger (menú con idioma) + navegación */}
+        <div className="flex min-w-0 items-center gap-2">
           <MobileMenu
             locale={locale}
             dict={dict.nav}
             links={menuLinks}
             bookHref={`${base}/tours`}
           />
-          <HeaderMiniLogo href={base} siteName={dict.meta.siteName} />
           <nav className="hidden items-center gap-1 lg:flex" aria-label={dict.nav.menu}>
             <Link
               href={base}
@@ -106,24 +107,30 @@ async function SiteHeaderInner({ locale, dict }: Props) {
           </nav>
         </div>
 
-        {/* Cluster derecho: Tours | Traslados · campana · idioma · Reservar · Cuenta */}
-        <div className="mt-2 flex items-center justify-between gap-1.5 lg:mt-0 lg:justify-end lg:gap-2">
-          <div className="hidden items-center gap-1.5 lg:flex">
-            <Link href={`${base}/tours`} className={toursButtonClass}>
-              {CompassIcon}
-              {dict.nav.tours}
-            </Link>
-            <Link href={`${base}/transfers`} className={transfersButtonClass}>
-              {TransferIcon}
-              {dict.nav.transfers}
-            </Link>
-          </div>
+        {/* Centro: logo + Tours | Traslados (en móvil reparten el ancho; en escritorio quedan pegados y centrados) */}
+        <div className="flex min-w-0 items-center justify-between gap-1 lg:justify-center lg:gap-3">
+          <HeaderMiniLogo href={base} siteName={dict.meta.siteName} />
+          <Link
+            href={`${base}/tours`}
+            aria-label={dict.nav.tours}
+            className={toursButtonClass}
+          >
+            <span className="hidden sm:block">{CompassIcon}</span>
+            {dict.nav.tours}
+          </Link>
+          <Link
+            href={`${base}/transfers`}
+            aria-label={dict.nav.transfers}
+            className={transfersButtonClass}
+          >
+            <span className="hidden sm:block">{TransferIcon}</span>
+            {dict.nav.transfers}
+          </Link>
+        </div>
+
+        {/* Derecha: campana · Reservar · Cuenta (el idioma está en el menú) */}
+        <div className="flex items-center justify-end gap-1.5">
           <NotificationsBell labels={dict.notify} accountHref={`${base}/account`} />
-          <LanguageSwitcher
-            locale={locale}
-            label={dict.nav.switchLanguage}
-            className="hidden lg:inline-flex"
-          />
           <Link
             href={`${base}/tours`}
             className="hidden h-10 items-center rounded-full bg-coral-700 px-5 text-sm font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800 lg:inline-flex"
@@ -141,24 +148,6 @@ async function SiteHeaderInner({ locale, dict }: Props) {
             </span>
           </Link>
         </div>
-      </div>
-
-      {/* Fila móvil: Tours | Traslados a lo ancho */}
-      <div className="container-site grid grid-cols-2 gap-2 pb-2 lg:hidden">
-        <Link
-          href={`${base}/tours`}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-ocean-200 bg-ocean-50 text-sm font-bold text-ocean-800 transition hover:bg-ocean-100"
-        >
-          {CompassIcon}
-          {dict.nav.tours}
-        </Link>
-        <Link
-          href={`${base}/transfers`}
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-sand-200 bg-white text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700"
-        >
-          {TransferIcon}
-          {dict.nav.transfers}
-        </Link>
       </div>
     </header>
   );

@@ -1,6 +1,8 @@
 /**
- * Botón hamburguesa + panel móvil del header (componente de cliente).
+ * Botón hamburguesa + panel desplegable del header (componente de cliente).
  *
+ * Está visible en todas las medidas: además de la navegación, el panel
+ * contiene el cambio de idioma (ES/EN), que es su único punto de acceso.
  * El header es Server Component; solo la interacción del menú vive aquí.
  */
 "use client";
@@ -46,7 +48,7 @@ export function MobileMenu({ locale, dict, links, bookHref }: Props) {
   }, [open]);
 
   return (
-    <div className="lg:hidden">
+    <div>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
