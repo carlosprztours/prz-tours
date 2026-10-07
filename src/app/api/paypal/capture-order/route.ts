@@ -76,7 +76,10 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     console.error("[paypal] fallo al capturar:", err);
-    return NextResponse.json({ error: "capture-failed" }, { status: 502 });
+    return NextResponse.json(
+      { error: "capture-failed", detail: String(err) },
+      { status: 502 },
+    );
   }
 }
 
