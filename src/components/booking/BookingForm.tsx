@@ -35,24 +35,18 @@ export type BookingOption = {
 type Props = {
   locale: Locale;
   booking: Dictionary["booking"];
-  /** "opcional" / "optional" (de common). */
   optionalLabel: string;
-  /** Título de la sección de traslados (para el selector de rutas). */
   transfersTitle: string;
   kind: "tour" | "transfer" | "custom";
   tours: BookingOption[];
   routes: { id: number; label: string; price15: number; price611: number }[];
   preselectedTourId?: number;
   preselectedRouteId?: number;
-  /** Datos del cliente logueado para pre-rellenar (opcional). */
   defaults?: { name?: string; email?: string; phone?: string };
-  /** `false` si el visitante aún no entra (se pide login con modal). */
   isAuthenticated: boolean;
-  /** Ruta actual (p. ej. `/es/book?type=transfer`): a dónde volver tras Google/signup. */
   returnPath: string;
 };
 
-/** "validation.nameRequired" -> booking.validation.nameRequired */
 function resolveError(
   booking: Dictionary["booking"],
   code: string,
@@ -61,6 +55,9 @@ function resolveError(
   if (code === "validation.routeRequired") return booking.routeRequired;
   if (code === "validation.serverError") return booking.serverError;
   if (code === "validation.customRequired") return booking.customRequired;
+  if (code === "validation.paypalNotConfigured") return booking.paypalNotConfigured;
+  if (code === "validation.paypalError") return booking.paypalError;
+  if (code === "validation.paymentMethodRequired") return booking.paymentMethodRequired;
   if (code.startsWith("validation.")) {
     const key = code.slice("validation.".length);
     const table = booking.validation as Record<string, string>;
@@ -79,7 +76,6 @@ function FieldError({ message }: { message?: string }) {
 const inputClass =
   "h-12 w-full rounded-xl border border-sand-200 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100";
 
-/** Borrador del formulario en `sessionStorage` (no se pierde al ir al login). */
 const DRAFT_KEY = "prz-booking-draft";
 
 type BookingDraft = {
@@ -118,7 +114,6 @@ function loadDraft(): BookingDraft | null {
     const raw = sessionStorage.getItem(DRAFT_KEY);
     if (!raw) return null;
     const draft = JSON.parse(raw) as BookingDraft;
-    // Borradores de más de un día se descartan.
     if (!draft.savedAt || Date.now() - draft.savedAt > 24 * 60 * 60 * 1000) {
       sessionStorage.removeItem(DRAFT_KEY);
       return null;
@@ -172,7 +167,6 @@ export function BookingForm({
     [locale],
   );
   const [state, formAction, pending] = useActionState(action, initialState);
-  // Borrador guardado al ir al login/Google/registro (se lee una sola vez).
   const [draft] = useState<BookingDraft | null>(() => {
     const d = loadDraft();
     if (d) clearDraft();
@@ -188,16 +182,41 @@ export function BookingForm({
   const successRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // NUEVO: estado para elegir método de pago antes de enviar
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal" | null>(null);
+  const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
+
   const authed = isAuthenticated || justLogged;
+
+  // Redirigir a PayPal cuando la acción devuelve un orderId
+  useEffect(() => {
+    const s = state as { ok: true; paypalOrderId?: string };
+    if (s.ok && s.paypalOrderId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPaypalOrderId(s.paypalOrderId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ok]);
+
+  // Redirección a PayPal
+  useEffect(() => {
+    if (paypalOrderId) {
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = `/api/paypal/redirect?orderID=${paypalOrderId}`;
+    }
+  }, [paypalOrderId]);
 
   // Al confirmar, lleva la vista al mensaje de éxito (el formulario es
   // largo y el mensaje aparece arriba).
   useEffect(() => {
-    if (state.ok) {
+    const s = state as { ok: true; paypalOrderId?: string };
+    if (s.ok && !s.paypalOrderId) {
       clearDraft();
       successRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ok]);
+
   const [tourSel, setTourSel] = useState(
     draft?.tourId ?? (preselectedTourId ? String(preselectedTourId) : ""),
   );
@@ -275,8 +294,6 @@ export function BookingForm({
 
   const errors = state.ok ? {} : state.errors;
 
-  // Sin sesión: guarda el borrador y pide entrar (el modal no navega,
-  // salvo Google/registro, que vuelven aquí con el borrador intacto).
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (authed) return;
     e.preventDefault();
@@ -301,267 +318,342 @@ export function BookingForm({
 
   return (
     <>
-    <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
-      <input type="hidden" name="kind" value={kind} />
+      <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
+        <input type="hidden" name="kind" value={kind} />
 
-      {/* Honeypot anti-spam: oculto para humanos, visible para bots. */}
-      <input
-        type="text"
-        name="website"
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        className="hidden"
-      />
+        {/* Honeypot anti-spam: oculto para humanos, visible para bots. */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="hidden"
+        />
 
-      {welcome && (
-        <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700" role="status">
-          {t.authWelcome}
-        </p>
-      )}
+        {welcome && (
+          <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700" role="status">
+            {t.authWelcome}
+          </p>
+        )}
 
-      {kind === "tour" ? (
-        <div>
-          <label htmlFor="tourId" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.tourLabel}
-          </label>
-          <select
-            id="tourId"
-            name="tourId"
-            required
-            value={tourSel}
-            onChange={(e) => setTourSel(e.target.value)}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              {t.tourLabel}…
-            </option>
-            {tours.map((tour) => (
-              <option key={tour.id} value={tour.id}>
-                {tour.title} · ${tour.price}
-              </option>
-            ))}
-          </select>
-          <FieldError message={errors.tourId && resolveError(t, errors.tourId)} />
-        </div>
-      ) : kind === "transfer" ? (
-        <div>
-          <label htmlFor="transferRouteId" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {transfersTitle}
-          </label>
-          <select
-            id="transferRouteId"
-            name="transferRouteId"
-            required
-            defaultValue={draft?.transferRouteId ?? preselectedRouteId ?? ""}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              {transfersTitle}…
-            </option>
-            {routes.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label} · ${r.price15}–${r.price611}
-              </option>
-            ))}
-          </select>
-          <FieldError message={errors.transferRouteId && resolveError(t, errors.transferRouteId)} />
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-coral-500/30 bg-coral-500/5 p-4">
-          <label htmlFor="notes-custom" className="mb-1.5 block font-display text-base font-bold text-ink-900">
-            {t.customDescription}
-          </label>
-          <textarea
-            id="notes-custom"
-            name="notes"
-            rows={5}
-            required
-            minLength={10}
-            defaultValue={draft?.notes ?? ""}
-            placeholder={t.customPlaceholder}
-            className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
-          />
-          <FieldError message={errors.notes && resolveError(t, errors.notes)} />
-        </div>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="bookedFor-button" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {kind === "transfer" ? t.dateLabelTransfer : t.dateLabel}
-          </label>
-          <DatePicker
-            id="bookedFor-button"
-            name="bookedFor"
-            locale={locale}
-            value={date}
-            onChange={setDate}
-            labels={{
-              placeholder: t.datePlaceholder,
-              today: t.todayLabel,
-              clear: t.clearLabel,
-              prevMonth: t.prevMonthLabel,
-              nextMonth: t.nextMonthLabel,
-            }}
-          />
-          <p className="mt-1 text-xs text-ink-500">{t.dateHint}</p>
-          {kind === "tour" && tourSel && date && (
-            <AvailabilityNote
-              tourId={Number(tourSel)}
-              date={date}
-              labels={{
-                available: t.spotsLeft,
-                lastSpots: t.lastSpots,
-                soldOut: t.soldOutHint,
-              }}
-            />
-          )}
-          <FieldError message={errors.bookedFor && resolveError(t, errors.bookedFor)} />
-        </div>
-        <div>
-          <label htmlFor="guests" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.guestsLabel}
-          </label>
-          {kind === "transfer" ? (
-            <input
-              id="guests"
-              name="guests"
-              type="number"
-              min={1}
-              max={60}
-              defaultValue={draft?.guests ?? 2}
+        {kind === "tour" ? (
+          <div>
+            <label htmlFor="tourId" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.tourLabel}
+            </label>
+            <select
+              id="tourId"
+              name="tourId"
               required
+              value={tourSel}
+              onChange={(e) => setTourSel(e.target.value)}
               className={inputClass}
-            />
-          ) : (
-            <select id="guests" name="guests" required defaultValue={draft?.guests ?? 2} className={inputClass}>
-              {Array.from({ length: 10 }, (_, i) => i + 2).map((n) => (
-                <option key={n} value={n}>
-                  {n}
+            >
+              <option value="" disabled>
+                {t.tourLabel}…
+              </option>
+              {tours.map((tour) => (
+                <option key={tour.id} value={tour.id}>
+                  {tour.title} · ${tour.price}
                 </option>
               ))}
             </select>
-          )}
-          {kind !== "transfer" ? (
-            <p className="mt-1 text-xs text-ink-500">{t.guestsHint}</p>
-          ) : (
-            <p className="mt-1 text-xs text-ink-500">{t.guestsHintTransfer}</p>
-          )}
-          <FieldError message={errors.guests && resolveError(t, errors.guests)} />
+            <FieldError message={errors.tourId && resolveError(t, errors.tourId)} />
+          </div>
+        ) : kind === "transfer" ? (
+          <div>
+            <label htmlFor="transferRouteId" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {transfersTitle}
+            </label>
+            <select
+              id="transferRouteId"
+              name="transferRouteId"
+              required
+              defaultValue={draft?.transferRouteId ?? preselectedRouteId ?? ""}
+              className={inputClass}
+            >
+              <option value="" disabled>
+                {transfersTitle}…
+              </option>
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.label} · ${r.price15}–${r.price611}
+                </option>
+              ))}
+            </select>
+            <FieldError message={errors.transferRouteId && resolveError(t, errors.transferRouteId)} />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-coral-500/30 bg-coral-500/5 p-4">
+            <label htmlFor="notes-custom" className="mb-1.5 block font-display text-base font-bold text-ink-900">
+              {t.customDescription}
+            </label>
+            <textarea
+              id="notes-custom"
+              name="notes"
+              rows={5}
+              required
+              minLength={10}
+              defaultValue={draft?.notes ?? ""}
+              placeholder={t.customPlaceholder}
+              className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
+            />
+            <FieldError message={errors.notes && resolveError(t, errors.notes)} />
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="bookedFor-button" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {kind === "transfer" ? t.dateLabelTransfer : t.dateLabel}
+            </label>
+            <DatePicker
+              id="bookedFor-button"
+              name="bookedFor"
+              locale={locale}
+              value={date}
+              onChange={setDate}
+              labels={{
+                placeholder: t.datePlaceholder,
+                today: t.todayLabel,
+                clear: t.clearLabel,
+                prevMonth: t.prevMonthLabel,
+                nextMonth: t.nextMonthLabel,
+              }}
+            />
+            <p className="mt-1 text-xs text-ink-500">{t.dateHint}</p>
+            {kind === "tour" && tourSel && date && (
+              <AvailabilityNote
+                tourId={Number(tourSel)}
+                date={date}
+                labels={{
+                  available: t.spotsLeft,
+                  lastSpots: t.lastSpots,
+                  soldOut: t.soldOutHint,
+                }}
+              />
+            )}
+            <FieldError message={errors.bookedFor && resolveError(t, errors.bookedFor)} />
+          </div>
+          <div>
+            <label htmlFor="guests" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.guestsLabel}
+            </label>
+            {kind === "transfer" ? (
+              <input
+                id="guests"
+                name="guests"
+                type="number"
+                min={1}
+                max={60}
+                defaultValue={draft?.guests ?? 2}
+                required
+                className={inputClass}
+              />
+            ) : (
+              <select id="guests" name="guests" required defaultValue={draft?.guests ?? 2} className={inputClass}>
+                {Array.from({ length: 10 }, (_, i) => i + 2).map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            )}
+            {kind !== "transfer" ? (
+              <p className="mt-1 text-xs text-ink-500">{t.guestsHint}</p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-500">{t.guestsHintTransfer}</p>
+            )}
+            <FieldError message={errors.guests && resolveError(t, errors.guests)} />
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="customerName" className="mb-1.5 block text-sm font-bold text-ink-900">
-          {t.nameLabel}
-        </label>
-        <input
-          id="customerName"
-          name="customerName"
-          type="text"
-          autoComplete="name"
-          required
-          defaultValue={draft?.customerName ?? defaults?.name ?? ""}
-          placeholder={t.namePlaceholder}
-          className={inputClass}
-        />
-        <FieldError message={errors.customerName && resolveError(t, errors.customerName)} />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="customerEmail" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.emailLabel}
+          <label htmlFor="customerName" className="mb-1.5 block text-sm font-bold text-ink-900">
+            {t.nameLabel}
           </label>
           <input
-            id="customerEmail"
-            name="customerEmail"
-            type="email"
-            autoComplete="email"
+            id="customerName"
+            name="customerName"
+            type="text"
+            autoComplete="name"
             required
-            defaultValue={draft?.customerEmail ?? defaults?.email ?? ""}
-            placeholder={t.emailPlaceholder}
+            defaultValue={draft?.customerName ?? defaults?.name ?? ""}
+            placeholder={t.namePlaceholder}
             className={inputClass}
           />
-          <FieldError message={errors.customerEmail && resolveError(t, errors.customerEmail)} />
+          <FieldError message={errors.customerName && resolveError(t, errors.customerName)} />
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="customerEmail" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.emailLabel}
+            </label>
+            <input
+              id="customerEmail"
+              name="customerEmail"
+              type="email"
+              autoComplete="email"
+              required
+              defaultValue={draft?.customerEmail ?? defaults?.email ?? ""}
+              placeholder={t.emailPlaceholder}
+              className={inputClass}
+            />
+            <FieldError message={errors.customerEmail && resolveError(t, errors.customerEmail)} />
+          </div>
+          <div>
+            <label htmlFor="customerPhone" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.phoneLabel}
+            </label>
+            <PhoneInput
+              id="customerPhone"
+              name="customerPhone"
+              locale={locale}
+              required
+              defaultValue={draft?.customerPhone ?? defaults?.phone ?? ""}
+              placeholder={t.phonePlaceholder}
+            />
+            <FieldError message={errors.customerPhone && resolveError(t, errors.customerPhone)} />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="hotel" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.hotelLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+            </label>
+            <input id="hotel" name="hotel" type="text" maxLength={160} defaultValue={draft?.hotel ?? ""} placeholder={t.hotelPlaceholder} className={inputClass} />
+            <p className="mt-1 text-xs text-ink-500">{t.hotelHint}</p>
+          </div>
+          <div>
+            <label htmlFor="cruisePort" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.cruisePortLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+            </label>
+            <input id="cruisePort" name="cruisePort" type="text" maxLength={160} defaultValue={draft?.cruisePort ?? ""} placeholder={t.cruisePortPlaceholder} className={inputClass} />
+            <p className="mt-1 text-xs text-ink-500">{t.cruisePortHint}</p>
+            <FieldError message={errors.cruisePort && resolveError(t, errors.cruisePort)} />
+          </div>
+        </div>
+
         <div>
-          <label htmlFor="customerPhone" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.phoneLabel}
+          <label htmlFor="pickupTime-button" className="mb-1.5 block text-sm font-bold text-ink-900">
+            {t.pickupTimeLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
           </label>
-          <PhoneInput
-            id="customerPhone"
-            name="customerPhone"
+          <TimePicker
+            id="pickupTime-button"
+            name="pickupTime"
             locale={locale}
-            required
-            defaultValue={draft?.customerPhone ?? defaults?.phone ?? ""}
-            placeholder={t.phonePlaceholder}
+            defaultValue={draft?.pickupTime ?? ""}
+            labels={{ placeholder: t.timePlaceholder, clear: t.anyTimeLabel }}
           />
-          <FieldError message={errors.customerPhone && resolveError(t, errors.customerPhone)} />
         </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="hotel" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.hotelLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+          <label htmlFor="promoCode" className="mb-1.5 block text-sm font-bold text-ink-900">
+            {t.promoLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
           </label>
-          <input id="hotel" name="hotel" type="text" maxLength={160} defaultValue={draft?.hotel ?? ""} placeholder={t.hotelPlaceholder} className={inputClass} />
-          <p className="mt-1 text-xs text-ink-500">{t.hotelHint}</p>
-        </div>
-        <div>
-          <label htmlFor="cruisePort" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.cruisePortLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
-          </label>
-          <input id="cruisePort" name="cruisePort" type="text" maxLength={160} defaultValue={draft?.cruisePort ?? ""} placeholder={t.cruisePortPlaceholder} className={inputClass} />
-          <p className="mt-1 text-xs text-ink-500">{t.cruisePortHint}</p>
-          <FieldError message={errors.cruisePort && resolveError(t, errors.cruisePort)} />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="pickupTime-button" className="mb-1.5 block text-sm font-bold text-ink-900">
-          {t.pickupTimeLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
-        </label>
-        <TimePicker
-          id="pickupTime-button"
-          name="pickupTime"
-          locale={locale}
-          defaultValue={draft?.pickupTime ?? ""}
-          labels={{ placeholder: t.timePlaceholder, clear: t.anyTimeLabel }}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="promoCode" className="mb-1.5 block text-sm font-bold text-ink-900">
-          {t.promoLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
-        </label>
-        <input
-          id="promoCode"
-          name="promoCode"
-          type="text"
-          autoComplete="off"
-          defaultValue={draft?.promoCode ?? ""}
-          placeholder={t.promoPlaceholder}
-          className={`${inputClass} uppercase`}
-        />
-        <FieldError message={errors.promoCode && resolveError(t, errors.promoCode)} />
-      </div>
-
-      {kind !== "custom" && (
-        <div>
-          <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-ink-900">
-            {t.notesLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows={3}
-            defaultValue={draft?.notes ?? ""}
-            placeholder={t.notesPlaceholder}
-            className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
+          <input
+            id="promoCode"
+            name="promoCode"
+            type="text"
+            autoComplete="off"
+            defaultValue={draft?.promoCode ?? ""}
+            placeholder={t.promoPlaceholder}
+            className={`${inputClass} uppercase`}
           />
+          <FieldError message={errors.promoCode && resolveError(t, errors.promoCode)} />
+        </div>
+
+        {kind !== "custom" && (
+          <div>
+            <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-ink-900">
+              {t.notesLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows={3}
+              defaultValue={draft?.notes ?? ""}
+              placeholder={t.notesPlaceholder}
+              className="w-full rounded-xl border border-sand-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100"
+            />
+          </div>
+        )}
+
+        {errors.form && (
+          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {resolveError(t, errors.form)}
+          </p>
+        )}
+
+        {/* Selector de método de pago */}
+        {!paymentMethod && (
+          <div className="mt-4 rounded-2xl border border-sand-200 bg-white p-5">
+            <h3 className="font-display text-base font-bold text-ink-900 mb-3">
+              {t.paymentMethodTitle}
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("paypal")}
+                disabled={pending}
+                className="relative flex flex-col items-center p-4 rounded-xl border-2 border-ocean-200 bg-white hover:border-ocean-500 hover:bg-ocean-50 transition disabled:opacity-50"
+              >
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-ocean-100 text-ocean-700 mb-2">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 1.5c4.61 0 8.35 3.17 9.65 7.54-.86.84-1.97 1.5-3.16 1.5H8.4v-3.6h4.48c-.74-2.4-2.94-4.41-5.74-4.41-3.26 0-5.92 2.66-5.92 5.92 0 3.25 2.67 5.92 5.92 5.92 2.47 0 4.55-1.77 5.22-4.08l-3.32-2.36c-.91 1.13-2.13 1.9-3.56 1.9-2.78 0-5.02-2.25-5.02-5.03 0-2.79 2.23-5.03 5.01-5.03 1.63 0 3.06.96 3.75 2.27l2.92-2.82C14.72 3.62 13.02 3 11.03 3 7.59 3 4.8 5.79 4.8 9.24c0 1.58.56 3.04 1.46 4.15L3 16.74c3.63-.85 6.5-3.61 6.5-6.74z"/>
+                  </svg>
+                </div>
+                <span className="font-bold text-ink-900">{t.paymentMethodPaypal}</span>
+                <span className="text-xs text-ink-500 mt-1 text-center">{t.paymentMethodPaypalDesc}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("cash")}
+                disabled={pending}
+                className="relative flex flex-col items-center p-4 rounded-xl border-2 border-sand-200 bg-white hover:border-sand-400 hover:bg-sand-50 transition disabled:opacity-50"
+              >
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-sand-100 text-sand-700 mb-2">
+                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                </div>
+                <span className="font-bold text-ink-900">{t.paymentMethodCash}</span>
+                <span className="text-xs text-ink-500 mt-1 text-center">{t.paymentMethodCashDesc}</span>
+              </button>
+            </div>
+          </div>
+      )}
+
+      {paymentMethod && (
+        <div className="mt-4 rounded-2xl border-2 border-coral-300 bg-coral-50 p-4">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span className="text-sm font-bold text-coral-800">
+              {paymentMethod === "paypal" ? (
+                <>
+                  {t.paymentMethodPaypal} · {t.paymentMethodPaypalDesc}
+                </>
+              ) : (
+                <>
+                  {t.paymentMethodCash} · {t.paymentMethodCashDesc}
+                </>
+              )}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod(null)}
+            className="mt-2 text-xs font-bold text-coral-700 underline"
+          >
+            Cambiar método
+          </button>
+          <input type="hidden" name="paymentMethod" value={paymentMethod} />
         </div>
       )}
 
@@ -581,41 +673,41 @@ export function BookingForm({
       {pending && <p className="text-center text-xs text-ink-500">{t.submittingHint}</p>}
     </form>
 
-      {showLogin && (
+    {showLogin && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.authModalTitle}
+        onClick={() => setShowLogin(false)}
+      >
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={t.authModalTitle}
-          onClick={() => setShowLogin(false)}
+          className="anim-pop max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="anim-pop max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl sm:p-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowLogin(false)}
-                aria-label={t.authClose}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition hover:bg-sand-100"
-              >
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-            <ModalLoginForm
-              locale={locale}
-              dict={t}
-              email={modalEmail}
-              googleHref={`/api/auth/google?locale=${locale}&next=${encodeURIComponent(returnPath)}`}
-              signupHref={`/${locale}/signup?next=${encodeURIComponent(returnPath)}`}
-              onSuccess={handleLoginSuccess}
-            />
+          <div className="mb-4 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowLogin(false)}
+              aria-label={t.authClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-ink-500 transition hover:bg-sand-100"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
           </div>
+          <ModalLoginForm
+            locale={locale}
+            dict={t}
+            email={modalEmail}
+            googleHref={`/api/auth/google?locale=${locale}&next=${encodeURIComponent(returnPath)}`}
+            signupHref={`/${locale}/signup?next=${encodeURIComponent(returnPath)}`}
+            onSuccess={handleLoginSuccess}
+          />
         </div>
-      )}
+      </div>
+    )}
     </>
   );
 }

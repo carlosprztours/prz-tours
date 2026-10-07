@@ -66,6 +66,7 @@ export const bookingSchema = z.object({
   cruisePort: z.string().trim().max(160).optional(),
   meetingPoint: z.string().trim().max(160).optional(),
   notes: z.string().trim().max(2000).optional(),
+  paymentMethod: z.enum(["cash", "paypal"]).optional(),
 }).refine(
   (d) => d.kind === "transfer" || d.guests >= 2,
   { error: "validation.guestsRange", path: ["guests"] },
