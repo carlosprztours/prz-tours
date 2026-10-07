@@ -108,7 +108,11 @@ export async function capturePayPalOrder(
   const token = await getAccessToken(cfg);
   const res = await fetch(`${apiBase(cfg.mode)}/v2/checkout/orders/${orderId}/capture`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
   });
   const body = (await res.json().catch(() => ({}))) as { status?: string };
   if (!res.ok || !body.status) throw new Error("paypal-capture");
