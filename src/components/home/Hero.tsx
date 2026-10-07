@@ -4,6 +4,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HeroCarousel } from "@/components/home/HeroCarousel";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -15,17 +16,18 @@ type Props = {
 
 export function Hero({ locale, dict, stats }: Props) {
   const base = `/${locale}`;
+
+  const heroSlides = [
+    { src: "/img/hero/hero-1.jpg", alt: "Cayo Arena, Paradise Island", caption: "Paradise Island (Cayo Arena) — Aguas cristalinas y arena blanca" },
+    { src: "/img/hero/hero-2.jpg", alt: "Cascadas de Damajagua", caption: "Cascadas de Damajagua — Aventura y naturaleza" },
+    { src: "/img/hero/hero-3.jpg", alt: "Aventura en ATV", caption: "Aventura en ATV — Diversión extrema por la montaña" },
+    { src: "/img/hero/hero-4.jpg", alt: "City Tour Puerto Plata", caption: "City Tour Puerto Plata — Historia y cultura" },
+    { src: "/img/hero/hero-5.jpg", alt: "Monkey Jungle", caption: "Monkey Jungle — Encuentro con monos ardilla" },
+  ];
+
   return (
     <section className="relative overflow-hidden bg-ocean-950 text-white">
-      <Image
-        src="/img/island-hero.jpg"
-        alt="Cayo Arena, Paradise Island"
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover opacity-50"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-ocean-950 via-ocean-950/40 to-transparent" aria-hidden="true" />
+      <HeroCarousel slides={heroSlides} intervalMs={6000} />
 
       {/* En móvil el alto útil real es pequeño (barra de direcciones + barra
           de navegación): ~660-730px. Con el hero completo el titular se
