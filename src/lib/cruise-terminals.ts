@@ -5,7 +5,6 @@
 export const CRUISE_TERMINALS: string[] = [
   "Taino Bay (Puerto Plata)",
   "Amber Cove (Puerto Plata)",
-  "Puerto Plata",
   "Puerto de Santo Domingo (Santo Domingo)",
   "Cabo Caucedo (Santo Domingo Este)",
   "La Romana (Casa de Campo)",

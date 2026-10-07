@@ -247,7 +247,7 @@ export const es = {
       "Hemos registrado que pagarás en efectivo al hacer el tour. Verás el costo al llegar, donde haremos el cobro.",
     paymentChoicePaid: "¡Pago recibido! Tu reserva queda confirmada.",
     paymentMethodTitle: "Método de pago",
-    paymentMethodPaypal: "PayPal",
+    paymentMethodPaypal: "PayPal / Tarjeta",
     paymentMethodPaypalDesc:
       "Pagas con PayPal sin salir de la página. La reserva se crea solo tras confirmar el pago.",
     paymentMethodCash: "Efectivo en el tour",

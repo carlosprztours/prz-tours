@@ -252,7 +252,7 @@ export const en: typeof es = {
       "We noted you'll pay in cash at the tour. You'll see the charge when you arrive, where we'll collect it.",
     paymentChoicePaid: "Payment received! Your booking is confirmed.",
     paymentMethodTitle: "Payment method",
-    paymentMethodPaypal: "PayPal",
+    paymentMethodPaypal: "PayPal / Card",
     paymentMethodPaypalDesc:
       "Pay with PayPal without leaving the page. The booking is created only after payment is confirmed.",
     paymentMethodCash: "Cash on tour",
