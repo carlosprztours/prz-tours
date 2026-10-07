@@ -191,10 +191,12 @@ export const es = {
     hotelHint: "Nos ayuda a organizar la recogida.",
     airportLabel: "Aeropuerto de llegada",
     airportPlaceholder: "POP, SDQ, PUJ…",
-    cruisePortLabel: "Nombre de la terminal de cruceros",
-    cruisePortPlaceholder: "Taino Bay, Amber Cove…",
+    cruisePortLabel: "Terminal de cruceros",
+    cruisePortPlaceholder: "Selecciona tu terminal…",
     cruisePortHint:
-      "Si llegas en crucero, escribe la terminal, el barco y la hora de llegada. Coordinamos la recogida en la terminal.",
+      "Si llegas en crucero, elige tu terminal y escribe el nombre del barco. Coordinamos la recogida en la terminal.",
+    shipNameLabel: "Nombre del barco",
+    shipNamePlaceholder: "Ej.: Carnival Freedom",
     pickupTimeLabel: "Hora de recogida preferida",
     meetingPointLabel: "Punto de encuentro",
     notesLabel: "Notas o necesidades especiales",
@@ -286,6 +288,7 @@ export const es = {
       dateInvalid: "Elige una fecha válida del calendario.",
       messageTooLong: "El mensaje es demasiado largo.",
       authRequired: "Inicia sesión para continuar con tu reserva.",
+      shipNameRequired: "Escribe el nombre del barco.",
     },
   },
 

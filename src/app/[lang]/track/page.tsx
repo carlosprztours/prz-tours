@@ -145,6 +145,12 @@ export default async function TrackPage({ params, searchParams }: Props) {
                 </dt>
                 <dd className="font-semibold">{booking.cruise_port || "—"}</dd>
               </div>
+              <div>
+                <dt className="text-xs font-bold uppercase text-ink-500">
+                  {es ? "Nombre del barco" : "Ship name"}
+                </dt>
+                <dd className="font-semibold">{booking.cruise_ship || "—"}</dd>
+              </div>
             </dl>
           </div>
         )}

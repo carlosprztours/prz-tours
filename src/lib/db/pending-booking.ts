@@ -26,6 +26,7 @@ export interface PendingBookingData {
   hotel?: string;
   airport?: string;
   cruisePort?: string;
+  shipName?: string;
   meetingPoint?: string;
   notes?: string;
 }

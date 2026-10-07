@@ -187,6 +187,7 @@ export type Booking = {
   hotel: string | null;
   airport: string | null;
   cruise_port: string | null;
+  cruise_ship?: string | null;
   meeting_point: string | null;
   locale: Locale;
   notes: string | null;

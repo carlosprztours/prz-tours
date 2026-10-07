@@ -64,12 +64,16 @@ export const bookingSchema = z.object({
   hotel: z.string().trim().max(160).optional(),
   airport: z.string().trim().max(40).optional(),
   cruisePort: z.string().trim().max(160).optional(),
+  shipName: z.string().trim().max(160).optional(),
   meetingPoint: z.string().trim().max(160).optional(),
   notes: z.string().trim().max(2000).optional(),
   paymentMethod: z.enum(["cash", "paypal"]).optional(),
 }).refine(
   (d) => d.kind === "transfer" || d.guests >= 2,
   { error: "validation.guestsRange", path: ["guests"] },
+).refine(
+  (d) => (d.cruisePort ? !!d.shipName?.trim() : true),
+  { error: "validation.shipNameRequired", path: ["shipName"] },
 );
 
 export type BookingFormData = z.infer<typeof bookingSchema>;

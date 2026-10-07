@@ -144,6 +144,7 @@ export async function bookTour(
       hotel: data.hotel,
       airport: data.airport,
       cruisePort: data.cruisePort,
+      shipName: data.shipName,
       meetingPoint: data.meetingPoint,
       locale,
       notes: data.notes,
@@ -225,6 +226,7 @@ async function createBookingDirect(
       hotel: data.hotel,
       airport: data.airport,
       cruisePort: data.cruisePort,
+      shipName: data.shipName,
       meetingPoint: data.meetingPoint,
       locale,
       notes: data.notes,
@@ -318,6 +320,12 @@ export async function sendBookingEmails(
       ? definitionRow(
           es ? "Terminal de cruceros" : "Cruise terminal",
           booking.cruise_port,
+        )
+      : "",
+    booking.cruise_ship
+      ? definitionRow(
+          es ? "Nombre del barco" : "Ship name",
+          booking.cruise_ship,
         )
       : "",
     definitionRow(es ? "Nombre" : "Name", booking.customer_name),

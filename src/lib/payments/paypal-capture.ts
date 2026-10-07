@@ -46,6 +46,7 @@ export async function finishPendingBooking(orderId: string): Promise<CaptureResu
       hotel: pending.data.hotel,
       airport: pending.data.airport,
       cruisePort: pending.data.cruisePort,
+      shipName: pending.data.shipName,
       meetingPoint: pending.data.meetingPoint,
       locale: pending.locale as Locale,
       notes: pending.data.notes,
@@ -91,6 +92,12 @@ export async function finishPendingBooking(orderId: string): Promise<CaptureResu
           : "",
         definitionRow(es ? "Personas" : "Guests", String(booking.guests)),
         booking.hotel ? definitionRow(es ? "Hotel" : "Hotel", booking.hotel) : "",
+        booking.cruise_port
+          ? definitionRow(es ? "Terminal de cruceros" : "Cruise terminal", booking.cruise_port)
+          : "",
+        booking.cruise_ship
+          ? definitionRow(es ? "Nombre del barco" : "Ship name", booking.cruise_ship)
+          : "",
         definitionRow(es ? "Nombre" : "Name", booking.customer_name),
         definitionRow(
           es ? "Total estimado" : "Estimated total",

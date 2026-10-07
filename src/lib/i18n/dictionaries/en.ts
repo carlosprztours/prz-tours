@@ -196,10 +196,12 @@ export const en: typeof es = {
     hotelHint: "Helps us organise the pickup.",
     airportLabel: "Arrival airport",
     airportPlaceholder: "POP, SDQ, PUJ…",
-    cruisePortLabel: "Cruise terminal name",
-    cruisePortPlaceholder: "Taino Bay, Amber Cove…",
+    cruisePortLabel: "Cruise terminal",
+    cruisePortPlaceholder: "Select your terminal…",
     cruisePortHint:
-      "If arriving by cruise, add the terminal, ship and arrival time. We'll coordinate pickup at the terminal.",
+      "If arriving by cruise, choose your terminal and add the ship name. We'll coordinate pickup at the terminal.",
+    shipNameLabel: "Ship name",
+    shipNamePlaceholder: "E.g.: Carnival Freedom",
     pickupTimeLabel: "Preferred pickup time",
     meetingPointLabel: "Meeting point",
     notesLabel: "Notes or special requests",
@@ -291,6 +293,7 @@ export const en: typeof es = {
       dateInvalid: "Pick a valid date from the calendar.",
       messageTooLong: "Your message is too long.",
       authRequired: "Please sign in to continue with your booking.",
+      shipNameRequired: "Enter the ship name.",
     },
   },
 

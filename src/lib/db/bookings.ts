@@ -31,6 +31,7 @@ export type CreateBookingInput = {
   hotel?: string;
   airport?: string;
   cruisePort?: string;
+  shipName?: string;
   meetingPoint?: string;
   locale: Locale;
   notes?: string;
@@ -207,10 +208,10 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
             customer_name, customer_email, customer_phone, customer_country,
             guests, unit_price, total_price, currency,
             promo_code, discount_amount, deposit_due,
-            booked_for, pickup_time, hotel, airport, cruise_port, meeting_point,
+            booked_for, pickup_time, hotel, airport, cruise_port, cruise_ship, meeting_point,
             locale, notes, status, payment_status, source, client_ip)
          VALUES
-           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
+           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
         reference,
         input.kind,
         input.tourId ?? null,
@@ -235,6 +236,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
         input.hotel ?? null,
         input.airport ?? null,
         input.cruisePort ?? null,
+        input.shipName ?? null,
         input.meetingPoint ?? null,
         input.locale,
         input.notes ?? null,

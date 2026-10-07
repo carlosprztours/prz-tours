@@ -22,6 +22,7 @@ import type { Locale } from "@/types";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { PhoneInput } from "@/components/ui/PhoneInput";
 import { TimePicker } from "@/components/ui/TimePicker";
+import { CRUISE_TERMINALS } from "@/lib/cruise-terminals";
 import { ModalLoginForm } from "@/components/auth/ModalLoginForm";
 import { AvailabilityNote } from "./AvailabilityNote";
 import { PaymentChoice } from "./PaymentChoice";
@@ -92,6 +93,7 @@ type BookingDraft = {
   customerPhone?: string;
   hotel?: string;
   cruisePort?: string;
+  shipName?: string;
   pickupTime?: string;
   promoCode?: string;
   notes?: string;
@@ -108,6 +110,7 @@ const DRAFT_FIELDS = [
   "customerPhone",
   "hotel",
   "cruisePort",
+  "shipName",
   "pickupTime",
   "promoCode",
   "notes",
@@ -178,6 +181,7 @@ export function BookingForm({
   // por redirección, etc.). Solo se limpia al confirmar una reserva.
   const [draft] = useState<BookingDraft | null>(() => loadDraft());
   const [date, setDate] = useState(draft?.bookedFor ?? "");
+  const [cruisePort, setCruisePort] = useState(draft?.cruisePort ?? "");
   const [showLogin, setShowLogin] = useState(false);
   const [justLogged, setJustLogged] = useState(false);
   const [welcome, setWelcome] = useState(false);
@@ -621,10 +625,42 @@ export function BookingForm({
             <label htmlFor="cruisePort" className="mb-1.5 block text-sm font-bold text-ink-900">
               {t.cruisePortLabel} <span className="font-medium text-ink-500">({optionalLabel})</span>
             </label>
-            <input id="cruisePort" name="cruisePort" type="text" maxLength={160} defaultValue={draft?.cruisePort ?? ""} placeholder={t.cruisePortPlaceholder} className={inputClass} />
+            <select
+              id="cruisePort"
+              name="cruisePort"
+              value={cruisePort}
+              onChange={(e) => setCruisePort(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">{t.cruisePortPlaceholder}</option>
+              {CRUISE_TERMINALS.map((port) => (
+                <option key={port} value={port}>
+                  {port}
+                </option>
+              ))}
+            </select>
             <p className="mt-1 text-xs text-ink-500">{t.cruisePortHint}</p>
             <FieldError message={errors.cruisePort && resolveError(t, errors.cruisePort)} />
           </div>
+          {cruisePort && (
+            <div>
+              <label htmlFor="shipName" className="mb-1.5 block text-sm font-bold text-ink-900">
+                {t.shipNameLabel}{" "}
+                <span className="text-coral-700" aria-hidden="true">*</span>
+              </label>
+              <input
+                id="shipName"
+                name="shipName"
+                type="text"
+                maxLength={160}
+                required
+                defaultValue={draft?.shipName ?? ""}
+                placeholder={t.shipNamePlaceholder}
+                className={inputClass}
+              />
+              <FieldError message={errors.shipName && resolveError(t, errors.shipName)} />
+            </div>
+          )}
         </div>
 
         <div>
