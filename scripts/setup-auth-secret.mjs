@@ -92,4 +92,4 @@ if (put.status !== 0) {
   console.error("✗ No se pudo definir el secreto en el Worker.");
   process.exit(put.status ?? 1);
 }
-console.log("✓ AUTH_SECRET definido en el Worker prz-tours-v2.");
+console.log("✓ AUTH_SECRET definido en el Worker prz-tours.");

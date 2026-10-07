@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "prz-tours-v2",
+  "name": "prz-tours",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -11,7 +11,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "prz-tours-v2"
+      "service": "prz-tours"
     }
   ],
   // Dominio propio. `custom_domain` hace que Cloudflare cree el registro DNS
