@@ -18,11 +18,11 @@ export function Hero({ locale, dict, stats }: Props) {
   const base = `/${locale}`;
 
   const heroSlides = [
-    { src: "/img/hero/hero-1.jpg", alt: "Cayo Arena, Paradise Island", caption: "Paradise Island (Cayo Arena) — Aguas cristalinas y arena blanca" },
-    { src: "/img/hero/hero-2.jpg", alt: "Cascadas de Damajagua", caption: "Cascadas de Damajagua — Aventura y naturaleza" },
-    { src: "/img/hero/hero-3.jpg", alt: "Aventura en ATV", caption: "Aventura en ATV — Diversión extrema por la montaña" },
-    { src: "/img/hero/hero-4.jpg", alt: "City Tour Puerto Plata", caption: "City Tour Puerto Plata — Historia y cultura" },
-    { src: "/img/hero/hero-5.jpg", alt: "Monkey Jungle", caption: "Monkey Jungle — Encuentro con monos ardilla" },
+    { src: "https://ik.imagekit.io/PrzCV/prz/hero/6bd270dd-0fb2-420c-87d6-6a58220ddb42_QIgCCbrJ8.jpg", alt: "Cayo Arena, Paradise Island", caption: "Paradise Island (Cayo Arena) — Aguas cristalinas y arena blanca" },
+    { src: "https://ik.imagekit.io/PrzCV/prz/hero/fcb98e6b-fddf-4c84-b37c-a492a3be3d81_fADHUcl1k.jpg", alt: "Cascadas de Damajagua", caption: "Cascadas de Damajagua — Aventura y naturaleza" },
+    { src: "https://ik.imagekit.io/PrzCV/prz/hero/07ae8255-24c6-4ba3-9d3f-bfd44580d834_FayTzkk7f.jpg", alt: "Aventura en ATV", caption: "Aventura en ATV — Diversión extrema por la montaña" },
+    { src: "https://ik.imagekit.io/PrzCV/prz/hero/e5bc8871-59e0-40fb-951f-fa05025f48e4_zgOa-oSMm.jpg", alt: "City Tour Puerto Plata", caption: "City Tour Puerto Plata — Historia y cultura" },
+    { src: "https://ik.imagekit.io/PrzCV/prz/hero/27621360-8fb6-4f49-96fb-babcb9a39a71_VKXJevC16.jpg", alt: "Monkey Jungle", caption: "Monkey Jungle — Encuentro con monos ardilla" },
   ];
 
   return (
