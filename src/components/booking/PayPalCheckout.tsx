@@ -95,7 +95,7 @@ export function PayPalCheckout({ orderId, clientId, mode, currency, labels, onPa
     const host = mode === "sandbox" ? "https://www.sandbox.paypal.com" : "https://www.paypal.com";
     const script = document.createElement("script");
     script.id = scriptId;
-    script.src = `${host}/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency.toUpperCase())}`;
+    script.src = `${host}/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency.toUpperCase())}&disable-funding=card`;
     script.async = true;
     script.onload = render;
     script.onerror = () => setError(labels.fail);

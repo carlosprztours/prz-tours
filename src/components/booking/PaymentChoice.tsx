@@ -95,7 +95,7 @@ export function PaymentChoice({ reference, currency, labels }: Props) {
     }
     const script = document.createElement("script");
     script.id = scriptId;
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency.toUpperCase())}`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency.toUpperCase())}&disable-funding=card`;
     script.async = true;
     script.onload = render;
     script.onerror = () => setError(labels.paypalFail);
