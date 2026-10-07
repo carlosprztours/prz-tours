@@ -42,7 +42,7 @@ export function d1(sqlText, { remote }) {
     "wrangler",
     "d1",
     "execute",
-    "prz-tours-new",
+    "prz-tours",
     flag,
     "--command",
     sqlText,
@@ -228,7 +228,7 @@ export function crearLimpiador(origin) {
         console.log(
           `\nÃ¢Å¡Â  No se pudo limpiar de ${destino}: ${fallado.join(", ")}.\n` +
             `  Se puede borrar a mano con:\n` +
-            `  node scripts/with-secrets.mjs -- npx wrangler d1 execute prz-tours-new ${remote ? "--remote" : "--local"} --command "Ã¢â‚¬Â¦"\n` +
+            `  node scripts/with-secrets.mjs -- npx wrangler d1 execute prz-tours ${remote ? "--remote" : "--local"} --command "Ã¢â‚¬Â¦"\n` +
             `  Lo pendiente es: ${JSON.stringify(this.resumen())}`,
         );
       }

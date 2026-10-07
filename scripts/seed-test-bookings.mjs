@@ -36,5 +36,5 @@ SELECT id, NULL, 'pending', 'Reserva de prueba', 'seed'
 FROM bookings WHERE reference LIKE 'PRZ-TEST%';
 `;
 
-d1Execute("prz-tours-new", "--local", sql);
+d1Execute("prz-tours", "--local", sql);
 console.log("✓ 4 reservas de prueba insertadas (TEST01 pendiente, TEST02 confirmada, TEST03 completada, TEST04 cancelada).");

@@ -43,11 +43,11 @@ function run(args, { capture = false } = {}) {
 function runFile(statements) {
   const file = join(tmpdir(), `prz-restore-${Date.now()}.sql`);
   writeFileSync(file, statements.join("\n"), "utf8");
-  run(`d1 execute prz-tours-new ${flag} --file="${file}"`);
+  run(`d1 execute prz-tours ${flag} --file="${file}"`);
 }
 
 function query(sql) {
-  const out = run(`d1 execute prz-tours-new ${flag} --command "${sql}" --json`, {
+  const out = run(`d1 execute prz-tours ${flag} --command "${sql}" --json`, {
     capture: true,
   });
   const start = out.indexOf("[");
