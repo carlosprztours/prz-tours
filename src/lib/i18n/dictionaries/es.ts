@@ -246,7 +246,8 @@ export const es = {
     paymentChoicePaid: "¡Pago recibido! Tu reserva queda confirmada.",
     paymentMethodTitle: "Método de pago",
     paymentMethodPaypal: "PayPal (tarjeta o cuenta PayPal)",
-    paymentMethodPaypalDesc: "Serás redirigido a PayPal para completar el pago. La reserva se crea solo tras pagar.",
+    paymentMethodPaypalDesc:
+      "Pagas con PayPal sin salir de la página. La reserva se crea solo tras confirmar el pago.",
     paymentMethodCash: "Efectivo en el tour",
     paymentMethodCashDesc: "Pagas directamente al conductor/guía el día del tour. Reserva creada al instante.",
     paymentMethodRequired: "Selecciona un método de pago.",
@@ -255,6 +256,17 @@ export const es = {
     paymentMethodChange: "Cambiar método",
     paypalNotConfigured: "PayPal no está configurado todavía. Contacta con el administrador.",
     paypalError: "No pudimos procesar el pago con PayPal. Inténtalo de nuevo.",
+    submitPaypal: "Reservar y pagar con PayPal",
+    paypalCheckoutTitle: "Paga tu reserva",
+    paypalCheckoutHint:
+      "Se abrirá PayPal en una ventana. Al completar el pago, tu reserva se confirma y tus datos quedan guardados.",
+    paypalProcessing: "Procesando tu pago…",
+    paypalCancelHint:
+      "¿Cerraste PayPal sin pagar? Puedes volver a intentarlo: tus datos siguen aquí.",
+    paypalRedirectCancelled:
+      "Cancelaste el pago en PayPal y la reserva no se creó. Tus datos siguen aquí: vuelve a intentarlo cuando quieras.",
+    paypalRedirectFailed:
+      "No pudimos confirmar tu pago con PayPal. Tus datos siguen aquí: vuelve a intentarlo o elige otro método de pago.",
     errorTitle: "No pudimos enviar tu solicitud",
     errorHint: "Revisa los campos marcados e inténtalo de nuevo.",
     tourRequired: "Elige un tour para continuar.",

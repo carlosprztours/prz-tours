@@ -68,7 +68,7 @@ export default async function LangLayout({ children, params }: Props) {
           >
             {dict.common.skipToContent}
           </a>
-          <SiteHeader locale={lang} dict={dict} whatsapp={whatsapp} />
+          <SiteHeader locale={lang} dict={dict} />
           <ConditionalFloat phone={whatsapp} texts={dict.whatsapp} />
           {pwaPrompt && (
             <PwaInstallPrompt

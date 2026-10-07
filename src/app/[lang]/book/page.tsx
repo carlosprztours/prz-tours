@@ -19,7 +19,7 @@ import type { Locale } from "@/types";
 
 type Props = {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ type?: string; route?: string }>;
+  searchParams: Promise<{ type?: string; route?: string; error?: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -40,7 +40,7 @@ export default async function BookPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
-  const { type, route } = await searchParams;
+  const { type, route, error } = await searchParams;
 
   const kind = type === "transfer" ? "transfer" : type === "custom" ? "custom" : "tour";
   const routeId = route ? Number(route) : undefined;
@@ -52,6 +52,14 @@ export default async function BookPage({ params, searchParams }: Props) {
     getBookingDefaults(),
   ]);
   const session = await getCurrentUser().catch(() => null);
+
+  const redirectError =
+    error === "paypal-cancelled"
+      ? dict.booking.paypalRedirectCancelled
+      : error === "paypal-failed" || error === "paypal-missing-order"
+        ? dict.booking.paypalRedirectFailed
+        : undefined;
+
   const returnPath =
     kind === "transfer"
       ? `/${locale}/book?type=transfer${Number.isInteger(routeId) ? `&route=${routeId}` : ""}`
@@ -88,6 +96,7 @@ export default async function BookPage({ params, searchParams }: Props) {
             defaults={defaults}
             isAuthenticated={session !== null}
             returnPath={returnPath}
+            redirectError={redirectError}
           />
         </div>
       </div>

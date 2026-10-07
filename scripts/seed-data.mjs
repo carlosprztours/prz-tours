@@ -16,10 +16,13 @@ export const settings = {
   phone_display: "+1 (809) 835-4101",
   whatsapp: "18098354101",
   email: "asistencia@perez-tours.com",
-  // Avisos automáticos (reservas, pagos, contacto) a esta lista, separada por
-  // comas. Si se borra, quedan solo los de `email`.
-  notify_emails:
-    "asistencia@perez-tours.com,pereztoursandtransfer@gmail.com,carlosdavidpere@gmail.com",
+  // Avisos generales (contacto, cambios de estado y copia BCC de constancia de
+  // todo lo que sale de la web). Separada por comas; si se borra, quedan solo
+  // los de `email`.
+  notify_emails: "asistencia@perez-tours.com",
+  // Aviso de RESERVA NUEVA (tours y traslados): a esta lista SOLO le llega el
+  // mensaje cuando se confirma una reserva, no el resto de correos de la web.
+  notify_booking_emails: "pereztoursandtransfer@gmail.com",
   address: "Puerto Plata, República Dominicana",
   hours: "Lun – Sáb · 7:00 AM – 8:00 PM",
   hours_es: "Lun – Sáb · 7:00 AM – 8:00 PM",

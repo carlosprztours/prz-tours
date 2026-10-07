@@ -7,7 +7,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
+import { locales } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -20,6 +22,19 @@ type Props = {
 
 export function MobileMenu({ locale, dict, links, bookHref }: Props) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Cambiar el prefijo de idioma en la URL manteniendo la misma página.
+  const langTarget = (target: Locale) => {
+    const segments = pathname.split("/");
+    if (locales.includes(segments[1] as Locale)) {
+      segments[1] = target;
+      return segments.join("/") || "/";
+    }
+    return `/${target}`;
+  };
+  const esTarget = langTarget("es");
+  const enTarget = langTarget("en");
 
   // Si se abre y el usuario desliza, el menú se cierra solo: no debe
   // quedar flotando sobre el contenido ni pelear con el header.
@@ -70,6 +85,35 @@ export function MobileMenu({ locale, dict, links, bookHref }: Props) {
             >
               {dict.bookNow}
             </Link>
+            <div className="mt-2 flex items-center justify-between rounded-xl bg-sand-50 px-4 py-3">
+              <span className="text-sm font-bold text-ink-700">{dict.switchLanguage}</span>
+              <div className="flex overflow-hidden rounded-full border border-sand-200 bg-white text-xs font-bold">
+                <Link
+                  href={esTarget}
+                  onClick={() => setOpen(false)}
+                  aria-current={locale === "es" ? "page" : undefined}
+                  className={`px-3 py-1.5 transition ${
+                    locale === "es"
+                      ? "bg-ocean-700 text-white"
+                      : "bg-white text-ink-600 hover:text-ocean-700"
+                  }`}
+                >
+                  ES
+                </Link>
+                <Link
+                  href={enTarget}
+                  onClick={() => setOpen(false)}
+                  aria-current={locale === "en" ? "page" : undefined}
+                  className={`px-3 py-1.5 transition ${
+                    locale === "en"
+                      ? "bg-ocean-700 text-white"
+                      : "bg-white text-ink-600 hover:text-ocean-700"
+                  }`}
+                >
+                  EN
+                </Link>
+              </div>
+            </div>
             <p className="px-4 pt-2 text-sm text-ink-500">
               {locale === "es" ? "Puerto Plata · República Dominicana" : "Puerto Plata · Dominican Republic"}
             </p>

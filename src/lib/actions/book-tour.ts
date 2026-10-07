@@ -25,7 +25,7 @@ import {
 import {
   definitionRow,
   emailLayout,
-  getInternalRecipients,
+  getBookingNotifyRecipients,
   sendEmail,
 } from "@/lib/notify/email";
 import {
@@ -159,11 +159,21 @@ export async function bookTour(
     }
 
     try {
+      // URLs de retorno para el flujo sin JS: si el SDK no está disponible,
+      // el cliente paga en PayPal y vuelve a /api/paypal/return.
+      const proto = headerList.get("x-forwarded-proto") ?? "https";
+      const host =
+        headerList.get("host") ??
+        headerList.get("x-forwarded-host") ??
+        "www.perez-tours.com";
+      const origin = `${proto}://${host}`;
       const { id: paypalOrderId } = await createPayPalOrder(paypalConfig, {
         amount,
         currency: quote.currency,
         reference: `pending-${Date.now()}`, // referencia temporal
         description: `Reserva ${data.kind} · ${data.tourSlug || data.transferRouteId || "custom"}`,
+        returnUrl: `${origin}/api/paypal/return?locale=${locale}`,
+        cancelUrl: `${origin}/api/paypal/return?locale=${locale}&cancelled=1`,
       });
 
       // Guardar datos de la reserva pendiente en sesión/cookie para recuperarlos en capture
@@ -328,7 +338,7 @@ export async function sendBookingEmails(
   });
   if (customerResult.sent) await markBookingNotified(booking.id, "email");
 
-  const recipients = await getInternalRecipients();
+  const recipients = await getBookingNotifyRecipients();
   if (recipients.length > 0) {
     await sendEmail({
       to: recipients,

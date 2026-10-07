@@ -25,6 +25,7 @@ import { TimePicker } from "@/components/ui/TimePicker";
 import { ModalLoginForm } from "@/components/auth/ModalLoginForm";
 import { AvailabilityNote } from "./AvailabilityNote";
 import { PaymentChoice } from "./PaymentChoice";
+import { PayPalCheckout } from "./PayPalCheckout";
 
 export type BookingOption = {
   id: number;
@@ -45,6 +46,8 @@ type Props = {
   defaults?: { name?: string; email?: string; phone?: string };
   isAuthenticated: boolean;
   returnPath: string;
+  /** Aviso de vuelta de PayPal por redirección (sin JS): cancelación o fallo. */
+  redirectError?: string;
 };
 
 function resolveError(
@@ -92,6 +95,7 @@ type BookingDraft = {
   pickupTime?: string;
   promoCode?: string;
   notes?: string;
+  paymentMethod?: string;
 };
 
 const DRAFT_FIELDS = [
@@ -107,6 +111,7 @@ const DRAFT_FIELDS = [
   "pickupTime",
   "promoCode",
   "notes",
+  "paymentMethod",
 ] as const;
 
 function loadDraft(): BookingDraft | null {
@@ -161,17 +166,17 @@ export function BookingForm({
   defaults,
   isAuthenticated,
   returnPath,
+  redirectError,
 }: Props) {
   const action = useMemo(
     () => bookTour.bind(null, locale),
     [locale],
   );
   const [state, formAction, pending] = useActionState(action, initialState);
-  const [draft] = useState<BookingDraft | null>(() => {
-    const d = loadDraft();
-    if (d) clearDraft();
-    return d;
-  });
+  // El borrador NO se borra al montar: se conserva para que el cliente no
+  // pierda sus datos si recarga la página (login con Google, vuelta de PayPal
+  // por redirección, etc.). Solo se limpia al confirmar una reserva.
+  const [draft] = useState<BookingDraft | null>(() => loadDraft());
   const [date, setDate] = useState(draft?.bookedFor ?? "");
   const [showLogin, setShowLogin] = useState(false);
   const [justLogged, setJustLogged] = useState(false);
@@ -182,9 +187,23 @@ export function BookingForm({
   const successRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // NUEVO: estado para elegir método de pago antes de enviar
-  const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal" | null>(null);
+  // NUEVO: estado para elegir método de pago antes de enviar (se restaura
+  // desde el borrador para que sobreviva a la vuelta del login con Google).
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "paypal" | null>(() => {
+    const m = draft?.paymentMethod;
+    return m === "paypal" || m === "cash" ? m : null;
+  });
   const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
+  // Orden de PayPal ya creada en el servidor: al tenerla, se muestran los
+  // botones del SDK inline (sin salir de la página).
+  const [paypalOrder, setPaypalOrder] = useState<{
+    id: string;
+    clientId: string;
+    mode: "sandbox" | "live";
+    currency: string;
+  } | null>(null);
+  const [paypalBusy, setPaypalBusy] = useState(false);
+  const [paypalError, setPaypalError] = useState<string | null>(null);
 
   const authed = isAuthenticated || justLogged;
 
@@ -198,9 +217,10 @@ export function BookingForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ok]);
 
-  // Redirección a PayPal
+  // Redirección a PayPal (solo flujo sin JS: la acción devolvió un orderId)
   useEffect(() => {
     if (paypalOrderId) {
+      clearDraft();
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = `/api/paypal/redirect?orderID=${paypalOrderId}`;
     }
@@ -295,16 +315,73 @@ export function BookingForm({
   const errors = state.ok ? {} : state.errors;
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    if (authed) return;
-    e.preventDefault();
+    // El borrador se guarda en CADA intento para que los datos sobrevivan
+    // al login o a cualquier recarga intermedia.
     saveDraft(e.currentTarget);
-    const typed = new FormData(e.currentTarget).get("customerEmail");
-    setLoginEmail(
-      typeof typed === "string" && typed.includes("@")
-        ? typed.trim()
-        : (draft?.customerEmail ?? defaults?.email ?? ""),
-    );
-    setShowLogin(true);
+    if (!authed) {
+      e.preventDefault();
+      const typed = new FormData(e.currentTarget).get("customerEmail");
+      setLoginEmail(
+        typeof typed === "string" && typed.includes("@")
+          ? typed.trim()
+          : (draft?.customerEmail ?? defaults?.email ?? ""),
+      );
+      setShowLogin(true);
+      return;
+    }
+    if (paymentMethod === "paypal") {
+      // Pago inline: creamos la orden sin salir de la página y mostramos
+      // los botones de PayPal aquí mismo (los datos NO se pierden).
+      e.preventDefault();
+      void startPayPalCheckout(e.currentTarget);
+    }
+  }
+
+  async function startPayPalCheckout(form: HTMLFormElement) {
+    setPaypalBusy(true);
+    setPaypalError(null);
+    try {
+      const payload: Record<string, string> = {};
+      for (const [key, value] of new FormData(form).entries()) {
+        if (typeof value === "string") payload[key] = value;
+      }
+      const res = await fetch("/api/paypal/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, locale }),
+      });
+      const body = (await res.json().catch(() => null)) as
+        | {
+            ok?: boolean;
+            reference?: string;
+            id?: string;
+            clientId?: string;
+            mode?: "sandbox" | "live";
+            currency?: string;
+          }
+        | null;
+      if (res.ok && body?.ok && body.reference) {
+        // No había nada que cobrar: la reserva ya se creó en el servidor.
+        clearDraft();
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = `/${locale}/book/success?ref=${encodeURIComponent(body.reference)}`;
+        return;
+      }
+      if (res.ok && body?.id && body.clientId && body.mode && body.currency) {
+        setPaypalOrder({
+          id: body.id,
+          clientId: body.clientId,
+          mode: body.mode,
+          currency: body.currency,
+        });
+        return;
+      }
+      setPaypalError(t.paypalError);
+    } catch {
+      setPaypalError(t.paypalError);
+    } finally {
+      setPaypalBusy(false);
+    }
   }
 
   function handleLoginSuccess() {
@@ -319,6 +396,19 @@ export function BookingForm({
   return (
     <>
       <form action={formAction} onSubmit={handleSubmit} className="grid gap-4">
+        {redirectError && (
+          <div
+            className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
+            role="alert"
+          >
+            <p className="flex items-start gap-2">
+              <svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              {redirectError}
+            </p>
+          </div>
+        )}
         <input type="hidden" name="kind" value={kind} />
 
         {/* Honeypot anti-spam: oculto para humanos, visible para bots. */}
@@ -651,13 +741,23 @@ export function BookingForm({
           </div>
           <button
             type="button"
-            onClick={() => setPaymentMethod(null)}
+            onClick={() => {
+              setPaymentMethod(null);
+              setPaypalOrder(null);
+              setPaypalError(null);
+            }}
             className="mt-2 text-xs font-bold text-coral-700 underline"
           >
             {t.paymentMethodChange}
           </button>
           <input type="hidden" name="paymentMethod" value={paymentMethod} />
         </div>
+      )}
+
+      {paypalError && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" role="alert">
+          {paypalError}
+        </p>
       )}
 
       {errors.form && (
@@ -668,10 +768,16 @@ export function BookingForm({
 
       <button
         type="submit"
-        disabled={pending || !paymentMethod}
+        disabled={pending || paypalBusy || !!paypalOrder || !paymentMethod}
         className="inline-flex h-12 items-center justify-center rounded-full bg-coral-700 px-8 font-display text-base font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? t.submitting : t.submit}
+        {paymentMethod === "paypal"
+          ? paypalBusy
+            ? t.paypalProcessing
+            : t.submitPaypal
+          : pending
+            ? t.submitting
+            : t.submit}
       </button>
       {!paymentMethod && !pending && (
         <p className="text-center text-xs font-semibold text-coral-700" role="status">
@@ -679,6 +785,27 @@ export function BookingForm({
         </p>
       )}
       {pending && <p className="text-center text-xs text-ink-500">{t.submittingHint}</p>}
+
+      {paypalOrder && (
+        <PayPalCheckout
+          orderId={paypalOrder.id}
+          clientId={paypalOrder.clientId}
+          mode={paypalOrder.mode}
+          currency={paypalOrder.currency}
+          labels={{
+            title: t.paypalCheckoutTitle,
+            hint: t.paypalCheckoutHint,
+            processing: t.paypalProcessing,
+            cancel: t.paypalCancelHint,
+            fail: t.paymentChoicePaypalFail,
+          }}
+          onPaid={(reference) => {
+            clearDraft();
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+            window.location.href = `/${locale}/book/success?ref=${encodeURIComponent(reference)}`;
+          }}
+        />
+      )}
     </form>
 
     {showLogin && (

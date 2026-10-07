@@ -1,9 +1,16 @@
 /**
  * Cabecera del sitio (Server Component).
  *
- * Fija arriba, con el logo, la navegación principal, el selector de idioma,
- * el teléfono y el CTA de reserva. El menú móvil es un componente de cliente
- * aparte (`MobileMenu`).
+ * Fija arriba:
+ * - Escritorio (lg+): una fila con logo + navegación (Inicio, Galería,
+ *   Nosotros, Contacto) a la izquierda; a la derecha los botones destacados
+ *   Tours | Traslados junto a la campana, el idioma y el CTA de reserva.
+ * - Móvil: fila superior (burger, logo, campana, cuenta) + una fila inferior
+ *   con "Tours" y "Traslados" como botones a lo ancho; el idioma pasa al
+ *   menú hamburguesa.
+ *
+ * El botón de WhatsApp del header se retiró: el botón flotante
+ * (`ConditionalFloat`) ya cubre esa acción en todas las páginas.
  */
 import Link from "next/link";
 
@@ -18,19 +25,36 @@ import { NotificationsBell } from "./NotificationsBell";
 type Props = {
   locale: Locale;
   dict: Dictionary;
-  whatsapp: string;
 };
 
-export function SiteHeader({ locale, dict, whatsapp }: Props) {
-  return <SiteHeaderInner locale={locale} dict={dict} whatsapp={whatsapp} />;
+export function SiteHeader({ locale, dict }: Props) {
+  return <SiteHeaderInner locale={locale} dict={dict} />;
 }
 
-async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
+const CompassIcon = (
+  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="m15.5 8.5-2.2 5-5 2.2 2.2-5 5-2.2z" />
+  </svg>
+);
+
+const TransferIcon = (
+  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17 3l4 4-4 4M14 7h7M7 21l-4-4 4-4M10 17H3" />
+  </svg>
+);
+
+const UserIcon = (
+  <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+    <circle cx="12" cy="8" r="3.5" />
+    <path strokeLinecap="round" d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5" />
+  </svg>
+);
+
+async function SiteHeaderInner({ locale, dict }: Props) {
   const session = await getCurrentUser().catch(() => null);
   const base = `/${locale}`;
-  const links = [
-    { href: `${base}/tours`, label: dict.nav.tours },
-    { href: `${base}/transfers`, label: dict.nav.transfers },
+  const navLinks = [
     { href: `${base}/gallery`, label: dict.nav.gallery },
     { href: `${base}/about`, label: dict.nav.about },
     { href: `${base}/contact`, label: dict.nav.contact },
@@ -38,30 +62,43 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
   const accountLink = session
     ? { href: `${base}/account`, label: dict.nav.myAccount }
     : { href: `${base}/login`, label: dict.nav.signIn };
+  const menuLinks = [
+    { href: base, label: dict.nav.home },
+    { href: `${base}/tours`, label: dict.nav.tours },
+    { href: `${base}/transfers`, label: dict.nav.transfers },
+    ...navLinks,
+    accountLink,
+  ];
+
+  const toursButtonClass =
+    "inline-flex h-10 items-center gap-1.5 rounded-full border border-ocean-200 bg-ocean-50 px-4 text-sm font-bold text-ocean-800 transition hover:border-ocean-400 hover:bg-ocean-100";
+  const transfersButtonClass =
+    "inline-flex h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-4 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700";
 
   return (
     <header className="sticky top-0 z-40 border-b border-sand-200/70 bg-white/90 backdrop-blur">
-      <div className="container-site relative flex h-20 items-center justify-between gap-3 md:h-24">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="container-site py-2 lg:flex lg:h-24 lg:items-center lg:justify-between lg:gap-4 lg:py-0">
+        {/* Fila 1 (móvil) / bloque izquierdo (escritorio): burger + logo + nav */}
+        <div className="flex min-w-0 items-center gap-2 lg:gap-3">
           <MobileMenu
             locale={locale}
             dict={dict.nav}
-            links={[{ href: base, label: dict.nav.home }, ...links, accountLink]}
+            links={menuLinks}
             bookHref={`${base}/tours`}
           />
           <HeaderMiniLogo href={base} siteName={dict.meta.siteName} />
           <nav className="hidden items-center gap-1 lg:flex" aria-label={dict.nav.menu}>
             <Link
               href={base}
-              className="rounded-full px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
+              className="rounded-full px-3 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
             >
               {dict.nav.home}
             </Link>
-            {links.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
+                className="rounded-full px-3 py-2 text-sm font-semibold text-ink-700 transition hover:bg-sand-100 hover:text-ocean-700"
               >
                 {link.label}
               </Link>
@@ -69,23 +106,24 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
-          <NotificationsBell
-            labels={dict.notify}
-            accountHref={`${base}/account`}
+        {/* Cluster derecho: Tours | Traslados · campana · idioma · Reservar · Cuenta */}
+        <div className="mt-2 flex items-center justify-between gap-1.5 lg:mt-0 lg:justify-end lg:gap-2">
+          <div className="hidden items-center gap-1.5 lg:flex">
+            <Link href={`${base}/tours`} className={toursButtonClass}>
+              {CompassIcon}
+              {dict.nav.tours}
+            </Link>
+            <Link href={`${base}/transfers`} className={transfersButtonClass}>
+              {TransferIcon}
+              {dict.nav.transfers}
+            </Link>
+          </div>
+          <NotificationsBell labels={dict.notify} accountHref={`${base}/account`} />
+          <LanguageSwitcher
+            locale={locale}
+            label={dict.nav.switchLanguage}
+            className="hidden lg:inline-flex"
           />
-          <LanguageSwitcher locale={locale} label={dict.nav.switchLanguage} />
-          <a
-            href={`https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(dict.whatsapp.defaultMessage)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden h-10 items-center gap-2 rounded-full bg-[#25d366]/10 px-4 text-sm font-bold text-[#166534] transition hover:bg-[#25d366]/20 md:inline-flex"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
-              <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0 1 12 4zm-3.2 3.5c-.2 0-.5 0-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.9 3 4.7 4 .6.3 1.1.4 1.5.6.6.2 1.2.1 1.6-.2.5-.3 1-1.3 1.1-1.7.1-.4.1-.8 0-.9l-.3-.2-1.9-.9c-.2-.1-.4 0-.6.2l-.8 1c-.1.2-.3.2-.5.1a7.5 7.5 0 0 1-2.2-1.3 8.2 8.2 0 0 1-1.5-1.9c-.2-.3 0-.5.1-.6l.5-.6c.1-.2.2-.4.1-.6L9.4 6c-.1-.3-.4-.5-.6-.5z" />
-            </svg>
-            WhatsApp
-          </a>
           <Link
             href={`${base}/tours`}
             className="hidden h-10 items-center rounded-full bg-coral-700 px-5 text-sm font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800 lg:inline-flex"
@@ -94,15 +132,33 @@ async function SiteHeaderInner({ locale, dict, whatsapp }: Props) {
           </Link>
           <Link
             href={accountLink.href}
-            className="hidden h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-4 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700 sm:inline-flex"
+            aria-label={accountLink.label}
+            className="hidden h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-3 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700 sm:inline-flex"
           >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <circle cx="12" cy="8" r="3.5" />
-              <path strokeLinecap="round" d="M5 20c1.5-3.5 4-5 7-5s5.5 1.5 7 5" />
-            </svg>
-            {session ? session.user.name.split(" ")[0] : accountLink.label}
+            {UserIcon}
+            <span className="hidden xl:inline">
+              {session ? session.user.name.split(" ")[0] : accountLink.label}
+            </span>
           </Link>
         </div>
+      </div>
+
+      {/* Fila móvil: Tours | Traslados a lo ancho */}
+      <div className="container-site grid grid-cols-2 gap-2 pb-2 lg:hidden">
+        <Link
+          href={`${base}/tours`}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-ocean-200 bg-ocean-50 text-sm font-bold text-ocean-800 transition hover:bg-ocean-100"
+        >
+          {CompassIcon}
+          {dict.nav.tours}
+        </Link>
+        <Link
+          href={`${base}/transfers`}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-sand-200 bg-white text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700"
+        >
+          {TransferIcon}
+          {dict.nav.transfers}
+        </Link>
       </div>
     </header>
   );

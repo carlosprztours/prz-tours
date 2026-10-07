@@ -15,9 +15,11 @@ import type { Locale } from "@/types";
 export function LanguageSwitcher({
   locale,
   label,
+  className = "",
 }: {
   locale: Locale;
   label: string;
+  className?: string;
 }) {
   const pathname = usePathname();
   const other: Locale = locale === "es" ? "en" : "es";
@@ -38,7 +40,7 @@ export function LanguageSwitcher({
         locale === "es" ? `Ver en English (${other.toUpperCase()})` : `View in Español (${other.toUpperCase()})`
       }
       title={label}
-      className="inline-flex h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-3 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700"
+      className={`inline-flex h-10 items-center gap-1.5 rounded-full border border-sand-200 bg-white px-3 text-sm font-bold text-ink-700 transition hover:border-ocean-300 hover:text-ocean-700 ${className}`}
     >
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
         <circle cx="12" cy="12" r="9" />

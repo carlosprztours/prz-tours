@@ -22,7 +22,7 @@ const SECRETS_FILE = join(
   "tokens.env",
 );
 
-const email = (process.argv[2] ?? "carlosdavidpere@gmail.com").trim().toLowerCase();
+const email = (process.argv[2] ?? "asistencia@perez-tours.com").trim().toLowerCase();
 const name = process.argv[3] ?? "Carlos Perez";
 
 if (!existsSync(SECRETS_FILE)) {

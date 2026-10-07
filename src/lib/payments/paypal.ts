@@ -45,12 +45,34 @@ async function getAccessToken(cfg: PayPalConfig): Promise<string> {
   return body.access_token;
 }
 
-/** Crea una orden de pago y devuelve el id para que el SDK la abra. */
+/**
+ * Crea una orden de pago y devuelve el id para que el SDK la abra.
+ *
+ * `returnUrl`/`cancelUrl` son OPCIONALES: si se dan (p. ej. en el flujo de
+ * redirección sin JS) se añaden a `application_context` para que PayPal
+ * devuelva al cliente a nuestra web tras aprobar o cancelar el pago.
+ */
 export async function createPayPalOrder(
   cfg: PayPalConfig,
-  opts: { amount: number; currency: string; reference: string; description?: string },
+  opts: {
+    amount: number;
+    currency: string;
+    reference: string;
+    description?: string;
+    returnUrl?: string;
+    cancelUrl?: string;
+  },
 ): Promise<{ id: string }> {
   const token = await getAccessToken(cfg);
+  const applicationContext =
+    opts.returnUrl || opts.cancelUrl
+      ? {
+          return_url: opts.returnUrl,
+          cancel_url: opts.cancelUrl,
+          brand_name: "Perez Tours",
+          user_action: "PAY_NOW",
+        }
+      : undefined;
   const res = await fetch(`${apiBase(cfg.mode)}/v2/checkout/orders`, {
     method: "POST",
     headers: {
@@ -59,6 +81,7 @@ export async function createPayPalOrder(
     },
     body: JSON.stringify({
       intent: "CAPTURE",
+      ...(applicationContext ? { application_context: applicationContext } : {}),
       purchase_units: [
         {
           reference_id: opts.reference,

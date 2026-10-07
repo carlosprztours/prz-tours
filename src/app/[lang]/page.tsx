@@ -72,8 +72,8 @@ export default async function HomePage({ params }: Props) {
       addressCountry: "DO",
     },
     telephone: phoneDisplay,
-    email: "carlosdavidpere@gmail.com",
-    url: "https://pereztours.cloud",
+    email: "asistencia@perez-tours.com",
+    url: "https://www.perez-tours.com",
     priceRange: "$40 - $125",
   };
 

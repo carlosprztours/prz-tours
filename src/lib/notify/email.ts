@@ -153,6 +153,32 @@ export async function getInternalRecipients(): Promise<string[]> {
   const raw = list.trim() || legacy.trim();
   if (!raw) return [];
 
+  return splitEmailList(raw);
+}
+
+/**
+ * Destinatarios del aviso de RESERVA NUEVA (tours y traslados).
+ *
+ * Es la lista que recibe «Nueva reserva web …» cuando se confirma una
+ * reserva: los buzones de negocio (`notify_emails`, p. ej. el buzón del
+ * dominio) más los correos de `notify_booking_emails` (p. ej. el correo del
+ * guía/negocio). Estos últimos SOLO se usan aquí: no reciben los mensajes de
+ * contacto ni la copia BCC del resto de correos que salen de la web.
+ *
+ * Para cambiar quién recibe qué, se edita en `/admin/settings`:
+ * - `notify_emails`:        contacto + copia BCC de constancia de todo.
+ * - `notify_booking_emails`: solo confirmaciones de reserva.
+ */
+export async function getBookingNotifyRecipients(): Promise<string[]> {
+  const [bookingList, internal] = await Promise.all([
+    getSetting("notify_booking_emails", ""),
+    getInternalRecipients(),
+  ]);
+  const extra = bookingList.trim() ? splitEmailList(bookingList) : [];
+  return dedupe([...internal, ...extra]);
+}
+
+function splitEmailList(raw: string): string[] {
   return [
     ...new Set(
       raw

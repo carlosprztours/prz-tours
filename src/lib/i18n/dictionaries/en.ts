@@ -251,7 +251,8 @@ export const en: typeof es = {
     paymentChoicePaid: "Payment received! Your booking is confirmed.",
     paymentMethodTitle: "Payment method",
     paymentMethodPaypal: "PayPal (card or PayPal account)",
-    paymentMethodPaypalDesc: "You'll be redirected to PayPal to complete payment. Booking is created only after payment.",
+    paymentMethodPaypalDesc:
+      "Pay with PayPal without leaving the page. The booking is created only after payment is confirmed.",
     paymentMethodCash: "Cash on tour",
     paymentMethodCashDesc: "Pay the driver/guide directly on tour day. Booking created instantly.",
     paymentMethodRequired: "Please select a payment method.",
@@ -260,6 +261,17 @@ export const en: typeof es = {
     paymentMethodChange: "Change method",
     paypalNotConfigured: "PayPal is not configured yet. Please contact the administrator.",
     paypalError: "We could not process the PayPal payment. Please try again.",
+    submitPaypal: "Book and pay with PayPal",
+    paypalCheckoutTitle: "Pay for your booking",
+    paypalCheckoutHint:
+      "PayPal will open in a window. Once you pay, your booking is confirmed and your details stay saved.",
+    paypalProcessing: "Processing your payment…",
+    paypalCancelHint:
+      "Closed PayPal without paying? You can try again — your details are still here.",
+    paypalRedirectCancelled:
+      "You cancelled the PayPal payment, so no booking was created. Your details are still here: try again whenever you're ready.",
+    paypalRedirectFailed:
+      "We couldn't confirm your PayPal payment. Your details are still here: try again or choose another payment method.",
     errorTitle: "We couldn't send your request",
     errorHint: "Please review the highlighted fields and try again.",
     tourRequired: "Choose a tour to continue.",

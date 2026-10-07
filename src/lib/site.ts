@@ -12,4 +12,5 @@ export const DEFAULT_WHATSAPP = "18098354101";
 
 export const DEFAULT_PHONE_DISPLAY = "+1 (809) 835-4101";
 
-export const DEFAULT_EMAIL = "carlosdavidpere@gmail.com";
+/** Buzón del dominio: correo de contacto y reply_to por defecto. */
+export const DEFAULT_EMAIL = "asistencia@perez-tours.com";
