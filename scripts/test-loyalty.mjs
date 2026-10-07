@@ -71,7 +71,7 @@ const check = (name, ok, detail = "") => {
 
 function dq(sql) {
   const cmd =
-    `${WR} d1 execute prz-tours ${DBFLAG} --command "${sql.replace(/"/g, "'")}" --json`;
+    `${WR} d1 execute prz-tours-new ${DBFLAG} --command "${sql.replace(/"/g, "'")}" --json`;
   const out = execSync(cmd, {
     encoding: "utf8",
     cwd: "C:\\Users\\VIP\\Documents\\prz\\prz-web",

@@ -255,6 +255,9 @@ export const en: typeof es = {
     paymentMethodCash: "Cash on tour",
     paymentMethodCashDesc: "Pay the driver/guide directly on tour day. Booking created instantly.",
     paymentMethodRequired: "Please select a payment method.",
+    paymentMethodChooseFirst:
+      "To send your request you must choose how to pay. If you pick cash, you confirm you'll pay on the tour day.",
+    paymentMethodChange: "Change method",
     paypalNotConfigured: "PayPal is not configured yet. Please contact the administrator.",
     paypalError: "We could not process the PayPal payment. Please try again.",
     errorTitle: "We couldn't send your request",

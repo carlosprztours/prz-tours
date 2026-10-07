@@ -11,7 +11,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "prz-tours"
+      "service": "prz-tours-v2"
     }
   ],
   // Dominio propio. `custom_domain` hace que Cloudflare cree el registro DNS

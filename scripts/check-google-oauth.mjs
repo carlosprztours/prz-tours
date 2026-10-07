@@ -42,7 +42,7 @@ console.log(`scope:        ${scope}\n`);
 const expected = [
   "https://perez-tours.com/api/auth/google/callback",
   "https://www.perez-tours.com/api/auth/google/callback",
-  "https://prz-tours.carlosprz-tours.workers.dev/api/auth/google/callback",
+  "https://prz-tours-v2.carlosprz-tours.workers.dev/api/auth/google/callback",
 ];
 
 console.log("URI que hay que tener autorizada:");

@@ -83,7 +83,7 @@ const dir = mkdtempSync(join(tmpdir(), "prz-sync-"));
 for (let i = 0; i < out.length; i += CHUNK) {
   const file = join(dir, `sync-${i}.sql`);
   writeFileSync(file, out.slice(i, i + CHUNK).join("\n"), "utf8");
-  d1ExecuteFile("prz-tours", mode, file);
+  d1ExecuteFile("prz-tours-new", mode, file);
 }
 rmSync(dir, { recursive: true, force: true });
 console.log(`✓ Contenido sincronizado (${mode}): ${out.length} sentencias.`);

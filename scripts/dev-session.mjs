@@ -29,7 +29,7 @@ if (!secret || secret.length < 32) {
 }
 
 const found = d1Execute(
-  "prz-tours",
+  "prz-tours-new",
   "--local",
   "SELECT id, role FROM users WHERE email = 'admin@pereztours.local';",
 );
@@ -41,7 +41,7 @@ if (!user) {
 
 const sid = randomUUID();
 d1Execute(
-  "prz-tours",
+  "prz-tours-new",
   "--local",
   `INSERT INTO sessions (id, user_id, expires_at) VALUES ('${sid}', ${user.id}, datetime('now', '+7 days'));`,
 );

@@ -250,6 +250,9 @@ export const es = {
     paymentMethodCash: "Efectivo en el tour",
     paymentMethodCashDesc: "Pagas directamente al conductor/guía el día del tour. Reserva creada al instante.",
     paymentMethodRequired: "Selecciona un método de pago.",
+    paymentMethodChooseFirst:
+      "Para enviar la solicitud debes elegir cómo pagar. Si eliges efectivo, confirmas que pagarás el día del tour.",
+    paymentMethodChange: "Cambiar método",
     paypalNotConfigured: "PayPal no está configurado todavía. Contacta con el administrador.",
     paypalError: "No pudimos procesar el pago con PayPal. Inténtalo de nuevo.",
     errorTitle: "No pudimos enviar tu solicitud",

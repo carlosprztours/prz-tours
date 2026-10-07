@@ -19,7 +19,7 @@ import { d1ExecuteFile } from "./lib/run-wrangler.mjs";
 
 const remote = process.argv.includes("--remote");
 const flag = remote ? "--remote" : "--local";
-const DB = "prz-tours";
+const DB = "prz-tours-new";
 
 /** Escapa un valor para una sentencia SQL de SQLite. */
 const q = (v) => {

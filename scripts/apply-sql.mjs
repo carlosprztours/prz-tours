@@ -21,5 +21,5 @@ if (!sql.trim()) {
   console.error("✗ Archivo vacío o ilegible.");
   process.exit(1);
 }
-d1ExecuteFile("prz-tours", mode, file);
+d1ExecuteFile("prz-tours-new", mode, file);
 console.log(`✓ Aplicado (${mode}): ${file}`);

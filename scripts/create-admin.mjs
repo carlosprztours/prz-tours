@@ -16,7 +16,7 @@ import { d1Execute } from "./lib/run-wrangler.mjs";
 
 const remote = process.argv.includes("--remote");
 const flag = remote ? "--remote" : "--local";
-const DB = "prz-tours";
+const DB = "prz-tours-new";
 
 const q = (v) =>
   v === null || v === undefined

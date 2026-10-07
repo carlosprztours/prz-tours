@@ -7,8 +7,8 @@
  *    - "paypal": crea orden de PayPal, redirige al cliente. La reserva
  *      se crea SOLO tras capturar el pago en `/api/paypal/capture-order`.
  *
- * Flujo legacy (para compatibilidad): si no se envía paymentMethod,
- * se crea la reserva directamente y se ofrece pagar después (Stripe/PayPal).
+ * El método de pago es OBLIGATORIO: si no llega "cash" o "paypal", la
+ * solicitud se rechaza y NO se crea ninguna reserva.
  */
 "use server";
 
@@ -69,7 +69,7 @@ function zodErrors(error: unknown): Record<string, string> {
  * - paymentMethod === "cash": crea la reserva ya, devuelve referencia y WhatsApp.
  * - paymentMethod === "paypal": crea orden de PayPal, devuelve paypalOrderId para redirigir.
  *   La reserva se crea en `/api/paypal/capture-order` tras capturar el pago.
- * - Sin paymentMethod (legacy): crea la reserva y ofrece pagar depósito después.
+ * - Sin paymentMethod: se rechaza con "validation.paymentMethodRequired".
  */
 export async function bookTour(
   locale: Locale,
@@ -187,7 +187,7 @@ export async function bookTour(
     }
   }
 
-  // --- CASO CASH (o legacy sin paymentMethod): crear reserva directa ---
+  // --- CASO CASH: crear reserva directa ---
   return createBookingDirect(data, locale, session.user.id, clientIp);
 }
 

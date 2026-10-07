@@ -582,18 +582,21 @@ export function BookingForm({
           </div>
         )}
 
-        {errors.form && (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            {resolveError(t, errors.form)}
-          </p>
-        )}
-
-        {/* Selector de método de pago */}
+        {/* Selector de método de pago (obligatorio) */}
         {!paymentMethod && (
-          <div className="mt-4 rounded-2xl border border-sand-200 bg-white p-5">
-            <h3 className="font-display text-base font-bold text-ink-900 mb-3">
+          <div className="mt-4 rounded-2xl border-2 border-dashed border-sand-300 bg-white p-5">
+            <h3 className="font-display text-base font-bold text-ink-900 mb-1">
               {t.paymentMethodTitle}
+              <span className="ml-1 text-coral-700" aria-hidden="true">
+                *
+              </span>
             </h3>
+            <p className="mb-3 text-xs font-medium text-ink-500">
+              {t.paymentMethodChooseFirst}
+            </p>
+            {errors.paymentMethod && (
+              <FieldError message={resolveError(t, errors.paymentMethod)} />
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
@@ -651,7 +654,7 @@ export function BookingForm({
             onClick={() => setPaymentMethod(null)}
             className="mt-2 text-xs font-bold text-coral-700 underline"
           >
-            Cambiar método
+            {t.paymentMethodChange}
           </button>
           <input type="hidden" name="paymentMethod" value={paymentMethod} />
         </div>
@@ -665,11 +668,16 @@ export function BookingForm({
 
       <button
         type="submit"
-        disabled={pending}
-        className="inline-flex h-12 items-center justify-center rounded-full bg-coral-700 px-8 font-display text-base font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800 disabled:cursor-wait disabled:opacity-70"
+        disabled={pending || !paymentMethod}
+        className="inline-flex h-12 items-center justify-center rounded-full bg-coral-700 px-8 font-display text-base font-bold text-white shadow-lg shadow-coral-500/30 transition hover:bg-coral-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {pending ? t.submitting : t.submit}
       </button>
+      {!paymentMethod && !pending && (
+        <p className="text-center text-xs font-semibold text-coral-700" role="status">
+          {t.paymentMethodRequired}
+        </p>
+      )}
       {pending && <p className="text-center text-xs text-ink-500">{t.submittingHint}</p>}
     </form>
 
