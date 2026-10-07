@@ -10,7 +10,8 @@ import { locales } from "@/lib/i18n/config";
 /** Siempre bajo demanda: el sitemap debe reflejar la BD de producción. */
 export const dynamic = "force-dynamic";
 
-const BASE = "https://pereztours.cloud";
+/** Dominio canónico (mismo que src/proxy.ts → CANONICAL_HOST). */
+const BASE = "https://www.perez-tours.com";
 const STATIC_ROUTES = ["", "/tours", "/transfers", "/about", "/contact", "/book", "/blog", "/track"];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

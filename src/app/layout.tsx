@@ -36,7 +36,9 @@ const sans = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://pereztours.cloud"),
+  // Dominio canónico (mismo que src/proxy.ts → CANONICAL_HOST): todas las
+  // URLs relativas (canonical, og, hreflang) se resuelven contra él.
+  metadataBase: new URL("https://www.perez-tours.com"),
   title: {
     default: "Perez Tours & Transfers · Puerto Plata",
     template: "%s · Perez Tours",

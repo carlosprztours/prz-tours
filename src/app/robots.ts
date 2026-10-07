@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const BASE = "https://pereztours.cloud";
+/** Dominio canónico (mismo que src/proxy.ts → CANONICAL_HOST). */
+const BASE = "https://www.perez-tours.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {

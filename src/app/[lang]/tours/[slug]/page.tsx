@@ -86,7 +86,7 @@ export default async function TourDetailPage({ params }: Props) {
       price: tour.price,
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
-      url: `https://pereztours.cloud/${locale}/tours/${slug}`,
+      url: `https://www.perez-tours.com/${locale}/tours/${slug}`,
     },
     provider: {
       "@type": "TravelAgency",
