@@ -11,10 +11,12 @@ import { Hero } from "@/components/home/Hero";
 import { Testimonials } from "@/components/home/Testimonials";
 import { WhyUs } from "@/components/home/WhyUs";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { GalleryVideos } from "@/components/gallery/GalleryVideos";
 import {
   countPublishedGalleryImages,
   listPublishedGalleryImages,
   listPublishedTestimonials,
+  listPublishedGalleryVideos,
 } from "@/lib/db/content";
 import { getSetting } from "@/lib/db/content";
 import { listPublishedTours } from "@/lib/db/tours";
@@ -52,13 +54,14 @@ export default async function HomePage({ params }: Props) {
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
 
-  const [dict, all, testimonials, gallery, phoneDisplay, galleryTotal] = await Promise.all([
+  const [dict, all, testimonials, gallery, phoneDisplay, galleryTotal, videos] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
     listPublishedTestimonials(6),
     listPublishedGalleryImages(8),
     getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
     countPublishedGalleryImages(),
+    listPublishedGalleryVideos(),
   ]);
 
   const orgJsonLd = {
@@ -85,6 +88,7 @@ export default async function HomePage({ params }: Props) {
       <HomeTours locale={locale} dict={dict} tours={all} />
       <Testimonials locale={locale} dict={dict} testimonials={testimonials} />
       <Gallery dict={dict} locale={locale} images={gallery} total={galleryTotal} />
+      <GalleryVideos videos={videos} />
       <CtaBanner locale={locale} dict={dict} />
     </>
   );
