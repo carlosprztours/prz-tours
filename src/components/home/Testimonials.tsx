@@ -14,12 +14,13 @@ type Props = {
 
 export function Testimonials({ locale, dict, testimonials }: Props) {
   if (testimonials.length === 0) return null;
+  const displayTestimonials = testimonials.slice(0, 3); // máx 3 en home
   return (
     <section className="bg-sand-50 py-16 sm:py-20">
       <div className="container-site">
         <SectionHeading title={dict.home.testimonialsTitle} subtitle={dict.home.testimonialsSubtitle} />
         <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t) => (
+          {displayTestimonials.map((t) => (
             <figure key={t.id} className="flex flex-col rounded-2xl border border-sand-200 bg-white p-6 shadow-sm">
               <Stars rating={t.rating} />
               <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-ink-700">

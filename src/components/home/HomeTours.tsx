@@ -21,12 +21,13 @@ type Props = {
 
 export function HomeTours({ locale, dict, tours }: Props) {
   if (tours.length === 0) return null;
+  const displayTours = tours.slice(0, 3); // máx 3 en home
   return (
     <section className="py-16 sm:py-20">
       <div className="container-site">
         <SectionHeading title={dict.home.allToursTitle} subtitle={dict.home.allToursSubtitle} />
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {tours.map((tour) => (
+          {displayTours.map((tour) => (
             <TourCard key={tour.id} tour={tour} locale={locale} dict={dict} />
           ))}
         </div>

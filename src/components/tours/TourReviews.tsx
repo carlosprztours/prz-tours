@@ -56,9 +56,9 @@ export function TourReviews({
       {reviews.length > 0 && (
         <div className="mt-8 grid gap-5 md:grid-cols-2">
           {reviews.map((t) => (
-            <figure key={t.id} className="flex flex-col rounded-2xl border border-sand-200 bg-white p-6 shadow-sm">
+            <figure key={t.id} className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-sand-200 bg-white p-6 shadow-sm">
               <Stars rating={t.rating} />
-              <blockquote className="mt-3 flex-1 text-sm leading-relaxed text-ink-700">
+              <blockquote className="mt-3 flex-1 break-words text-sm leading-relaxed text-ink-700">
                 “{locale === "es" ? t.text_es || t.text_en : t.text_en || t.text_es}”
               </blockquote>
               <figcaption className="mt-4 border-t border-sand-100 pt-3">
@@ -90,8 +90,8 @@ export function TourReviews({
               aria-hidden="true"
               className="hidden"
             />
-            <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-              <div>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div className="min-w-0">
                 <label htmlFor="review-name" className="mb-1.5 block text-sm font-bold text-ink-900">
                   {labels.nameLabel}
                 </label>
@@ -108,7 +108,7 @@ export function TourReviews({
               </div>
               <div>
                 <span className="mb-1.5 block text-sm font-bold text-ink-900">{labels.ratingLabel}</span>
-                <span className="flex gap-1" role="radiogroup" aria-label={labels.ratingLabel}>
+                <span className="flex max-w-full flex-wrap gap-1" role="radiogroup" aria-label={labels.ratingLabel}>
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
                       key={n}
@@ -117,9 +117,18 @@ export function TourReviews({
                       aria-checked={rating === n}
                       aria-label={`${n}/5`}
                       onClick={() => setRating(n)}
-                      className="rounded transition hover:scale-110"
+                      className="shrink-0 rounded p-0.5 transition hover:scale-110"
                     >
-                      <Stars rating={n <= rating ? 1 : 0} className="h-7 w-7" />
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-7 w-7"
+                        fill={n <= rating ? "#f59e0b" : "none"}
+                        stroke={n <= rating ? "#f59e0b" : "#cbd5e1"}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                      >
+                        <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" />
+                      </svg>
                     </button>
                   ))}
                 </span>

@@ -35,13 +35,16 @@ export default async function LangLayout({ children, params }: Props) {
     listTourNavItems(lang),
   ]);
 
-  const [phoneDisplay, email, address, hours, whatsapp] =
+  const [phoneDisplay, email, address, hours, whatsapp, instagram, facebook, tiktok] =
     await Promise.all([
       getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
       getSetting("email", DEFAULT_EMAIL),
       getSetting("address", "Puerto Plata, República Dominicana"),
       getSetting(`hours_${lang}`, lang === "es" ? "Lun – Sáb · 7:00 AM – 8:00 PM" : "Mon – Sat · 7:00 AM – 8:00 PM"),
       getSetting("whatsapp", DEFAULT_WHATSAPP),
+      getSetting("instagram", "https://instagram.com/pereztours"),
+      getSetting("facebook", "https://www.facebook.com/profile.php?id=61556984834291"),
+      getSetting("tiktok", "https://www.tiktok.com/@pereztoursandtransfer"),
     ]);
 
   // Aviso de instalar la PWA / activar notificaciones: solo para clientes con
@@ -96,8 +99,9 @@ export default async function LangLayout({ children, params }: Props) {
             email,
             address,
             hours,
-            facebook: "https://www.facebook.com/profile.php?id=61556984834291",
-            tiktok: "https://www.tiktok.com/@pereztoursandtransfer?_r=1&_t=ZS-9AN4gR8R6sW",
+            instagram,
+            facebook,
+            tiktok,
           }}
           popularTours={navTours}
         />
