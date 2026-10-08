@@ -112,6 +112,7 @@ export function HeroCarousel({ slides, intervalMs = 6000 }: Props) {
               alt={slide.alt}
               fill
               priority={i === 0}
+              fetchPriority={i === 0 ? "high" : "auto"}
               sizes="100vw"
               className="object-cover"
               loading={i === 0 ? "eager" : "lazy"}

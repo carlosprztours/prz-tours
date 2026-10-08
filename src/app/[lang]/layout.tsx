@@ -59,7 +59,14 @@ export default async function LangLayout({ children, params }: Props) {
   }
 
   return (
-    <ChromeSwitcher
+    <html lang={lang}>
+      <head>
+        <link rel="preconnect" href="https://ik.imagekit.io" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://ik.imagekit.io" />
+        <link rel="preload" as="image" href="/img/hero/hero-1.jpg" />
+      </head>
+      <body>
+        <ChromeSwitcher
       header={
         <>
           <a
@@ -98,5 +105,7 @@ export default async function LangLayout({ children, params }: Props) {
     >
       {children}
     </ChromeSwitcher>
-  );
+  </body>
+</html>
+);
 }
