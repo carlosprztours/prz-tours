@@ -31,12 +31,11 @@ export function HeroCarousel({ slides, intervalMs = 6000 }: Props) {
   const touchStartX = useRef<number | null>(null);
 
   const goTo = useCallback(
-    (i: number) => setIndex((prev) => (i + slides.length) % slides.length),
+    (i: number) => setIndex(() => (i + slides.length) % slides.length),
     [slides.length],
   );
 
   const next = useCallback(() => goTo(index + 1), [goTo, index]);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- usado en JSX onClick, teclado y touch
   const prev = useCallback(() => goTo(index - 1), [goTo, index]);
 
   // Autoplay
