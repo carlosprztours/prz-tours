@@ -89,8 +89,8 @@ export default async function LangLayout({ children, params }: Props) {
             email,
             address,
             hours,
-            instagram: "https://instagram.com/pereztours",
             facebook: "https://facebook.com/pereztours",
+            tiktok: "https://tiktok.com/@pereztours",
           }}
           popularTours={navTours}
         />
