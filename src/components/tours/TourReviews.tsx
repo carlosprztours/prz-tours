@@ -15,7 +15,7 @@ import type { Locale, Testimonial } from "@/types";
 const initialState: ReviewResult = { ok: false, error: "" };
 
 const inputClass =
-  "h-12 w-full rounded-xl border border-sand-200 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100";
+  "h-11 w-full rounded-xl border border-sand-200 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-500/60 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-100";
 
 export type ReviewLabels = {
   title: string;
@@ -70,7 +70,7 @@ export function TourReviews({
         </div>
       )}
 
-      <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-sand-200 bg-white p-6 sm:p-8">
+      <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-sand-200 bg-white p-4 sm:p-6">
         {state.ok ? (
           <div className="text-center">
             <p className="font-display text-xl font-extrabold text-ink-900">{labels.successTitle}</p>
@@ -147,7 +147,7 @@ export function TourReviews({
             <button
               type="submit"
               disabled={pending}
-              className="h-12 justify-self-start rounded-full bg-ocean-700 px-8 font-display text-base font-bold text-white transition hover:bg-ocean-800 disabled:opacity-60"
+              className="h-11 justify-self-start rounded-full bg-ocean-700 px-8 font-display text-base font-bold text-white transition hover:bg-ocean-800 disabled:opacity-60"
             >
               {pending ? labels.submitting : labels.submit}
             </button>
