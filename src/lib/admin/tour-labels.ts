@@ -20,7 +20,7 @@ export function tourFormLabels(locale: Locale) {
     moderate: es ? "Moderada" : "Moderate",
     challenging: es ? "Desafiante" : "Challenging",
     ageMin: es ? "Edad mínima (vacío = todas)" : "Min. age (empty = all)",
-    maxGroup: es ? "Cupo máximo por día" : "Max group per day",
+    maxGroup: es ? "Cupo máximo por día (0 = sin límite)" : "Max group per day (0 = unlimited)",
     deposit: es ? "Anticipo % (0 = sin anticipo)" : "Deposit % (0 = none)",
     pickupNote: es ? "Nota de recogida" : "Pickup note",
     featured: es ? "Destacado en la home" : "Featured on home",

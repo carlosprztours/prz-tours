@@ -140,7 +140,8 @@ async function parseBase(form: FormData) {
     category: (await normalizeCategory(category)) as TourCategory,
     difficulty: (["easy", "moderate", "challenging"].includes(difficulty) ? difficulty : "easy") as Difficulty,
     age_min: str(form, "age_min") === "" ? null : Math.max(0, Math.round(num(form, "age_min", 0))),
-    max_group: Math.max(1, Math.round(num(form, "max_group", 20))),
+    // 0 = sin límite (libre, sin máximo de personas).
+    max_group: str(form, "max_group") === "" ? 0 : Math.max(0, Math.round(num(form, "max_group", 0))),
     cruise_friendly: form.get("cruise_friendly") === "on" ? 1 : 0,
     deposit_percent: Math.min(100, Math.max(0, Math.round(num(form, "deposit_percent", 0)))),
     pickup_note: str(form, "pickup_note") || null,

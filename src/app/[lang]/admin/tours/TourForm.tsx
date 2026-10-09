@@ -176,7 +176,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
           </label>
           <label className={labelClass}>
             {labels.maxGroup}
-            <input name="max_group" type="number" min={1} defaultValue={t?.max_group ?? 20} className={inputClass} />
+            <input name="max_group" type="number" min={0} step={1} placeholder="0 = sin límite" defaultValue={t?.max_group ?? 0} className={inputClass} />
           </label>
           <label className={labelClass}>
             {labels.deposit}

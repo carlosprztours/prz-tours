@@ -60,7 +60,7 @@ export function TransferForm({
           <input name="price_1_5" type="number" min={0} step={0.01} required defaultValue={initial?.price_1_5 ?? 0} className={inputClass} />
         </label>
         <label className={labelClass}>
-          {es ? "Precio 6–11 personas" : "Price 6–11 people"}
+          {es ? "Precio 6+ personas (sin máximo)" : "Price 6+ people (no maximum)"}
           <input name="price_6_11" type="number" min={0} step={0.01} required defaultValue={initial?.price_6_11 ?? 0} className={inputClass} />
         </label>
         <label className={`${labelClass} sm:col-span-2`}>

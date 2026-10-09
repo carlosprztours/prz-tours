@@ -49,7 +49,7 @@ export default async function AdminTransfersPage({ params }: Props) {
                 <strong className="font-display font-extrabold">${r.price_1_5}</strong>
               </span>
               <span>
-                <span className="text-xs text-ink-500">6–11: </span>
+                <span className="text-xs text-ink-500">6+: </span>
                 <strong className="font-display font-extrabold">${r.price_6_11}</strong>
               </span>
             </div>
@@ -84,7 +84,7 @@ export default async function AdminTransfersPage({ params }: Props) {
               <th className="px-4 py-3">{es ? "Origen" : "Origin"}</th>
               <th className="px-4 py-3">{es ? "Destino" : "Destination"}</th>
               <th className="px-4 py-3 text-right">1–5</th>
-              <th className="px-4 py-3 text-right">6–11</th>
+              <th className="px-4 py-3 text-right">6+</th>
               <th className="px-4 py-3">{es ? "Acciones" : "Actions"}</th>
             </tr>
           </thead>

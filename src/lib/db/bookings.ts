@@ -74,8 +74,6 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
   let tourTitle = "";
   let transferLabel: string | null = null;
   let depositPercent = 0;
-  let maxGroup = 20;
-  let tourId: number | null = null;
 
   if (input.kind === "transfer" && input.transferRouteId) {
     const route = await queryOne<{
@@ -124,28 +122,13 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
     unitPrice = tour.price;
     tourTitle = text?.title ?? fallback?.title ?? "";
     depositPercent = tour.deposit_percent ?? 0;
-    maxGroup = tour.max_group ?? 20;
-    tourId = input.tourId;
   } else {
     // Reserva personalizada: sin precio automático (lo fija el admin).
     tourTitle = input.locale === "es" ? "Tour personalizado" : "Custom tour";
   }
 
-  // Capacidad: si hay fecha y tour, no se puede exceder el cupo del día.
-  if (tourId && input.bookedFor && /^\d{4}-\d{2}-\d{2}$/.test(input.bookedFor)) {
-    const { getBookedGuests } = await import("./availability");
-    const booked = await getBookedGuests(tourId, input.bookedFor);
-    const remaining = Math.max(0, (maxGroup || 20) - booked);
-    if (input.guests > remaining) {
-      const err = new Error("Sold out for this date") as Error & {
-        code?: string;
-        remaining?: number;
-      };
-      err.code = "sold-out";
-      err.remaining = remaining;
-      throw err;
-    }
-  }
+  // Sin cupo máximo: se acepta cualquier número de pasajeros (mínimos
+  // validados en el esquema). No se bloquea por fecha llena.
 
   // Promo: primero el cupón personal (propiedad estricta), luego el genérico.
   let discount = 0;

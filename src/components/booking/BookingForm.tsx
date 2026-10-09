@@ -540,19 +540,20 @@ export function BookingForm({
                 name="guests"
                 type="number"
                 min={1}
-                max={60}
                 defaultValue={draft?.guests ?? 2}
                 required
                 className={inputClass}
               />
             ) : (
-              <select id="guests" name="guests" required defaultValue={draft?.guests ?? 2} className={inputClass}>
-                {Array.from({ length: 10 }, (_, i) => i + 2).map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
+              <input
+                id="guests"
+                name="guests"
+                type="number"
+                min={2}
+                defaultValue={draft?.guests ?? 2}
+                required
+                className={inputClass}
+              />
             )}
             {kind !== "transfer" ? (
               <p className="mt-1 text-xs text-ink-500">{t.guestsHint}</p>

@@ -58,7 +58,8 @@ export const bookingSchema = z.object({
   customerEmail: emailSchema,
   customerPhone: phoneSchema,
   customerCountry: z.string().trim().max(80).optional(),
-  guests: z.coerce.number().int().min(1).max(60),
+  // Sin máximo de personas: libre (solo mínimos por tipo).
+  guests: z.coerce.number().int().min(1),
   bookedFor: dateSchema,
   pickupTime: z.string().trim().max(20).optional(),
   hotel: z.string().trim().max(160).optional(),

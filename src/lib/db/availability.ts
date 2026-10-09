@@ -1,7 +1,8 @@
 /**
- * Disponibilidad por tour y fecha.
+ * Disponibilidad por tour y fecha (informativa, sin cupo máximo).
  *
- * REGLA: `max_group` es el cupo máximo de personas por día y tour.
+ * REGLA: sin restricción de pasajeros máximos. `getAvailability` devuelve
+ * null para no mostrar avisos de cupo ni bloquear por fecha llena.
  * Ocupado = suma de `guests` de reservas `pending` + `confirmed` para esa
  * fecha (las canceladas/completadas no ocupan). Las reservas sin fecha no
  * ocupan cupo.
@@ -35,19 +36,11 @@ export type Availability = {
 };
 
 export async function getAvailability(
-  tourId: number,
-  date: string | null | undefined,
+  _tourId: number,
+  _date: string | null | undefined,
 ): Promise<Availability | null> {
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  if (!Number.isInteger(tourId) || tourId <= 0) return null;
-  const tour = await query<{ max_group: number | null }>(
-    `SELECT max_group FROM tours WHERE id = ?`,
-    tourId,
-  );
-  const cap = Math.max(1, tour[0]?.max_group ?? 20);
-  const booked = await getBookedGuests(tourId, date);
-  const remaining = Math.max(0, cap - booked);
-  return { maxGroup: cap, booked, remaining, low: remaining <= 5 };
+  // Sin cupo máximo: no hay avisos de "quedan X" ni "agotado".
+  return null;
 }
 
 /**
