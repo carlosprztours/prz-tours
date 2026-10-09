@@ -40,6 +40,8 @@ export async function getAvailability(
   _date: string | null | undefined,
 ): Promise<Availability | null> {
   // Sin cupo máximo: no hay avisos de "quedan X" ni "agotado".
+  void _tourId;
+  void _date;
   return null;
 }
 
