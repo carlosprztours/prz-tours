@@ -152,6 +152,17 @@ export type GalleryVideo = {
   created_at: string;
 };
 
+/** Slide del carrusel hero de la portada (editable en /admin/portada). */
+export type HeroSlide = {
+  id: number;
+  image_url: string;
+  alt: string;
+  caption: string;
+  is_published: number;
+  sort_order: number;
+  created_at: string;
+};
+
 /** Estados posibles de una reserva. */
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 

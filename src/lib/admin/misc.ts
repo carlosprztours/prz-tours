@@ -5,7 +5,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireEditor, requireStaffRoles } from "./access";
+import { requireEditor, requireStaffRoles, isSuperAdminEmail } from "./access";
+import { ALL_TEXT_BASES, isSensitiveKey } from "./site-texts";
 import { execute, query, queryOne } from "@/lib/db/client";
 import type { ContactMessage, Locale } from "@/types";
 
@@ -16,9 +17,17 @@ async function requireStaff(rawLocale: string): Promise<Locale> {
   return locale;
 }
 
-async function requireAdminArea(rawLocale: string): Promise<Locale> {
-  const { locale } = await requireStaffRoles(rawLocale, "admin");
-  return locale;
+async function requireAdminArea(rawLocale: string) {
+  const { locale, session } = await requireStaffRoles(rawLocale, "admin");
+  return { locale, session };
+}
+
+/** Área de ajustes: admin siempre; sensibles solo super-admin. */
+async function requireSettingsAccess(rawLocale: string, key?: string) {
+  const { locale, session } = await requireAdminArea(rawLocale);
+  const isSuper = isSuperAdminEmail(session.user.email);
+  if (key && isSensitiveKey(key) && !isSuper) throw new Error("forbidden");
+  return { locale, isSuper };
 }
 
 // ───────────────────────────── Mensajes ─────────────────────────────
@@ -80,10 +89,15 @@ export async function saveSetting(
   _prev: SimpleResult | undefined,
   formData: FormData,
 ): Promise<SimpleResult> {
-  const locale = await requireAdminArea(rawLocale);
   const key = String(formData.get("key") ?? "").trim();
   const value = String(formData.get("value") ?? "");
   if (!key || !/^[a-z0-9_]+$/.test(key)) return { ok: false, error: "bad-key" };
+  let locale: Locale;
+  try {
+    ({ locale } = await requireSettingsAccess(rawLocale, key));
+  } catch {
+    return { ok: false, error: "forbidden" };
+  }
 
   await execute(
     `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
@@ -99,8 +113,48 @@ export async function deleteSetting(
   rawLocale: string,
   key: string,
 ): Promise<SimpleResult> {
-  const locale = await requireAdminArea(rawLocale);
+  let locale: Locale;
+  try {
+    ({ locale } = await requireSettingsAccess(rawLocale, key));
+  } catch {
+    return { ok: false, error: "forbidden" };
+  }
   await execute(`DELETE FROM settings WHERE key = ?`, key);
   revalidatePath(`/${locale}/admin/settings`);
+  return { ok: true };
+}
+
+/** ¿El lector actual puede ver/tocar claves sensibles? (para la UI). */
+export async function canSeeSensitive(rawLocale: string): Promise<boolean> {
+  const { isSuper } = await requireSettingsAccess(rawLocale);
+  return isSuper;
+}
+
+// ───────────────────────────── Textos editables ─────────────────────────────
+
+/**
+ * Guarda el par ES/EN de un texto del catálogo (Textos). Solo claves del
+ * catálogo: nada sensible pasa por aquí.
+ */
+export async function saveTextPair(
+  rawLocale: string,
+  _prev: SimpleResult | undefined,
+  formData: FormData,
+): Promise<SimpleResult> {
+  const { locale } = await requireStaffRoles(rawLocale, "admin", "editor");
+  const base = String(formData.get("base") ?? "").trim();
+  if (!base || !ALL_TEXT_BASES.includes(base)) return { ok: false, error: "bad-key" };
+  const es = String(formData.get("value_es") ?? "");
+  const en = String(formData.get("value_en") ?? "");
+  for (const [suffix, value] of [["es", es], ["en", en]] as const) {
+    await execute(
+      `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+      `${base}_${suffix}`,
+      value,
+    );
+  }
+  revalidatePath(`/${locale}/admin/textos`);
+  revalidatePath(`/${locale}`);
   return { ok: true };
 }

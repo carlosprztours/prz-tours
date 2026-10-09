@@ -8,7 +8,7 @@ import { redirect } from "next/navigation";
 
 import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
-import type { GalleryImage, GalleryVideo, Locale, Testimonial } from "@/types";
+import type { GalleryImage, GalleryVideo, HeroSlide, Locale, Testimonial } from "@/types";
 
 /** `count` lo usan las acciones que crean varias filas de una vez (galería). */
 export type SimpleResult = { ok: true; count?: number } | { ok: false; error: string };
@@ -354,5 +354,85 @@ export async function deleteGalleryVideo(
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
+  return { ok: true };
+}
+
+// ───────────────────────────── Portada / hero (editor+) ─────────────────────────────
+
+export async function listAdminHeroSlides(rawLocale: string): Promise<HeroSlide[]> {
+  await requireStaff(rawLocale);
+  return query<HeroSlide>(`SELECT * FROM hero_slides ORDER BY sort_order ASC, id ASC`);
+}
+
+export async function createHeroSlide(
+  rawLocale: string,
+  _prev: SimpleResult | undefined,
+  formData: FormData,
+): Promise<SimpleResult> {
+  const locale = await requireStaff(rawLocale);
+  const urls = formData
+    .getAll("urls")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+  const sueltas = [String(formData.get("url") ?? "").trim()].filter(Boolean);
+  const todas = [...urls, ...sueltas];
+  if (todas.length === 0) return { ok: false, error: "required" };
+
+  const alt = String(formData.get("alt") ?? "").trim();
+  const caption = String(formData.get("caption") ?? "").trim();
+  const publicado = formData.get("is_published") === "on" ? 1 : 0;
+  const ultimo = await queryOne<{ n: number }>(
+    `SELECT COALESCE(MAX(sort_order), 0) AS n FROM hero_slides`,
+  );
+  let siguiente = (ultimo?.n ?? 0) + 1;
+  for (const [indice, url] of todas.entries()) {
+    await execute(
+      `INSERT INTO hero_slides (image_url, alt, caption, is_published, sort_order)
+       VALUES (?, ?, ?, ?, ?)`,
+      url,
+      indice === 0 ? alt : "",
+      caption || "",
+      publicado,
+      siguiente++,
+    );
+  }
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/admin/portada`);
+  return { ok: true, count: todas.length };
+}
+
+export async function updateHeroSlide(
+  rawLocale: string,
+  _prev: SimpleResult | undefined,
+  formData: FormData,
+): Promise<SimpleResult> {
+  const locale = await requireStaff(rawLocale);
+  const id = Math.round(Number(formData.get("id")) || 0);
+  const url = String(formData.get("url") ?? "").trim();
+  if (!id || !url) return { ok: false, error: "required" };
+  await execute(
+    `UPDATE hero_slides
+        SET image_url = ?, alt = ?, caption = ?, is_published = ?, sort_order = ?
+      WHERE id = ?`,
+    url,
+    String(formData.get("alt") ?? "").trim(),
+    String(formData.get("caption") ?? "").trim(),
+    formData.get("is_published") === "on" ? 1 : 0,
+    Math.round(Number(formData.get("sort_order")) || 0),
+    id,
+  );
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/admin/portada`);
+  return { ok: true };
+}
+
+export async function deleteHeroSlide(
+  rawLocale: string,
+  id: number,
+): Promise<SimpleResult> {
+  const locale = await requireStaff(rawLocale);
+  await execute(`DELETE FROM hero_slides WHERE id = ?`, id);
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/admin/portada`);
   return { ok: true };
 }
