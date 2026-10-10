@@ -76,6 +76,78 @@ const areaClass =
   "w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-ocean-500";
 const labelClass = "grid gap-1 text-xs font-bold text-ink-500";
 
+/**
+ * Galería de imágenes del tour: muestra todas las fotos del textarea con
+ * miniaturas, clic para ver en grande y eliminar individualmente.
+ */
+function ImageGallery({
+  images,
+  es,
+  onChange,
+}: {
+  images: { url: string; alt: string }[];
+  es: boolean;
+  onChange: (images: { url: string; alt: string }[]) => void;
+}) {
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  if (images.length === 0) return null;
+
+  return (
+    <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+      {images.map((img, i) => (
+        <div key={i} className="group relative">
+          <button
+            type="button"
+            onClick={() => setLightbox(i)}
+            className="block w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-50"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={img.url}
+              alt={img.alt || `Foto ${i + 1}`}
+              className="aspect-square w-full object-cover transition group-hover:scale-105"
+              loading="lazy"
+            />
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange(images.filter((_, j) => j !== i))}
+            className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow transition hover:bg-red-700"
+            title={es ? "Eliminar foto" : "Remove photo"}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+
+      {lightbox !== null && images[lightbox] && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={images[lightbox].url}
+            alt={images[lightbox].alt || `Foto ${lightbox + 1}`}
+            className="max-h-[90vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white backdrop-blur transition hover:bg-white/30"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TourForm({ locale, initial, labels, categories, manageCategories }: Props) {
   const [tab, setTab] = useState<"es" | "en">("es");
   const action = useMemo(
@@ -86,6 +158,9 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
     [locale, initial],
   );
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [images, setImages] = useState<{ url: string; alt: string }[]>(
+    () => (initial?.images ?? []).map((i) => ({ url: i.url, alt: i.alt }))
+  );
   const t = initial?.tour;
 
   const tr = (loc: "es" | "en") => initial?.translations[loc];
@@ -176,7 +251,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
           </label>
           <label className={labelClass}>
             {labels.maxGroup}
-            <input name="max_group" type="number" min={0} step={1} placeholder="0 = sin límite" defaultValue={t?.max_group ?? 0} className={inputClass} />
+            <input name="max_group" type="number" min={1} defaultValue={t?.max_group ?? 20} className={inputClass} />
           </label>
           <label className={labelClass}>
             {labels.deposit}
@@ -261,7 +336,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
                       reasons: {
                         notConfigured: "Falta configurar ImageKit.",
                         badType: "Formato no válido (JPG, PNG, WebP, AVIF o GIF).",
-                        badSize: "Alguna foto supera los 10 MB.",
+                        badSize: "Alguna foto supera los 30 MB.",
                         tooMany: "Máximo 20 fotos de golpe.",
                       },
                     }
@@ -272,7 +347,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
                       reasons: {
                         notConfigured: "ImageKit is not configured.",
                         badType: "Unsupported format (JPG, PNG, WebP, AVIF or GIF).",
-                        badSize: "One of the photos is larger than 10 MB.",
+                        badSize: "One of the photos is larger than 30 MB.",
                         tooMany: "Up to 20 photos at a time.",
                       },
                     }
@@ -293,11 +368,19 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
             />
           </div>
           <p className="mt-1 text-xs text-ink-500">{labels.imagesHint}</p>
+          <ImageGallery images={images} es={locale === "es"} onChange={setImages} />
           <textarea
             id="tour-images"
             name="images"
             rows={6}
-            defaultValue={(initial?.images ?? []).map((i) => `${i.url} | ${i.alt}`).join("\n")}
+            value={images.map((i) => `${i.url} | ${i.alt}`).join("\n")}
+            onChange={(e) => {
+              const lines = e.target.value.split("\n").filter((l) => l.trim());
+              setImages(lines.map((line) => {
+                const [url, ...altParts] = line.split("|");
+                return { url: (url ?? "").trim(), alt: altParts.join("|").trim() };
+              }));
+            }}
             className={`${areaClass} mt-3 font-mono`}
           />
         </div>
