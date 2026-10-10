@@ -31,7 +31,7 @@ export function TourGallery({
       </div>
       {rest.length > 0 && (
         <div className={`grid gap-3 ${rest.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-3"}`}>
-          {rest.slice(0, 3).map((img) => (
+          {rest.map((img) => (
             <div key={img.id} className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-sand-100">
               <SafeImage
                 src={img.url}
