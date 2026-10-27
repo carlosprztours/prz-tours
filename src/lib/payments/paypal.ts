@@ -96,7 +96,14 @@ export async function createPayPalOrder(
     }),
   });
   const body = (await res.json().catch(() => ({}))) as { id?: string };
-  if (!res.ok || !body.id) throw new Error("paypal-create");
+  if (!res.ok || !body.id) {
+    console.error(
+      "[paypal] create-order falló:",
+      res.status,
+      JSON.stringify(body),
+    );
+    throw new Error("paypal-create");
+  }
   return { id: body.id };
 }
 
@@ -115,6 +122,13 @@ export async function capturePayPalOrder(
     body: "{}",
   });
   const body = (await res.json().catch(() => ({}))) as { status?: string; payer?: unknown };
-  if (!res.ok || !body.status) throw new Error("paypal-capture");
+  if (!res.ok || !body.status) {
+    console.error(
+      "[paypal] capture falló:",
+      res.status,
+      JSON.stringify(body),
+    );
+    throw new Error("paypal-capture");
+  }
   return { status: body.status, body };
 }

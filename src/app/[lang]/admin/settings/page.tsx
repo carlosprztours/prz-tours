@@ -5,8 +5,15 @@
  * (ver `settings` en el seed). Cambiar una clave aquí cambia el sitio.
  */
 import { notFound } from "next/navigation";
+import { useActionState } from "react";
 
-import { deleteSetting, listSettings, saveSetting } from "@/lib/admin/misc";
+import {
+  deleteSetting,
+  listSettings,
+  saveSetting,
+  testPayPalConfig,
+  type SimpleResult,
+} from "@/lib/admin/misc";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 
@@ -157,6 +164,16 @@ function PayPalSection({
   const secret = get("paypal_secret");
   const mode = get("paypal_mode") || "sandbox";
 
+  const [testResult, testAction, testPending] = useActionState(
+    async (
+      _prev: SimpleResult | undefined,
+      formData: FormData,
+    ): Promise<SimpleResult> => {
+      return testPayPalConfig(locale, _prev, formData);
+    },
+    undefined,
+  );
+
   return (
     <div className="mt-4 grid gap-4 rounded-2xl border-2 border-ocean-100 bg-ocean-50/50 p-5">
       <h2 className="font-display text-lg font-extrabold text-ink-900">
@@ -197,6 +214,43 @@ function PayPalSection({
           ? `Actual: client id ${clientId ? "✓" : "—"} · secreto ${secret ? "✓" : "—"} · modo ${mode}`
           : `Current: client id ${clientId ? "✓" : "—"} · secret ${secret ? "✓" : "—"} · mode ${mode}`}
       </p>
+      {testResult && (
+        <p
+          className={`text-xs mt-2 p-2 rounded ${
+            testResult.ok
+              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}
+        >
+          {testResult.ok
+            ? es
+              ? "✓ Conexión con PayPal OK: las credenciales funcionan."
+              : "✓ PayPal connection OK: credentials work."
+            : es
+              ? `✗ ${testResult.error}`
+              : `✗ ${testResult.error}`}
+        </p>
+      )}
+      <form
+        action={testAction}
+        className="grid gap-1 sm:grid-cols-3"
+      >
+        <input type="hidden" name="key" value="paypal_test" />
+        <button
+          type="submit"
+          disabled={testPending || !clientId || !secret}
+          className="mt-1 h-9 w-fit rounded-full bg-ocean-700 px-5 text-xs font-bold text-white transition hover:bg-ocean-800 disabled:opacity-50"
+        >
+          {es ? "Probar conexión PayPal" : "Test PayPal connection"}
+        </button>
+        {!clientId || !secret ? (
+          <p className="mt-1 text-[10px] text-ink-400">
+            {es
+              ? "Guarda client id y secreto primero."
+              : "Save client id and secret first."}
+          </p>
+        ) : null}
+      </form>
     </div>
   );
 }
