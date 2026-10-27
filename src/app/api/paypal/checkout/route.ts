@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
 
   // 6) Crear la orden (con return/cancel por si el SDK no está disponible).
   const origin = new URL(request.url).origin;
-  const reference = `pending-${Date.now()}`;
+  const reference = `pending-${crypto.randomUUID()}`;
   let orderId: string;
   try {
     const order = await createPayPalOrder(cfg, {

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getBookingByReference } from "@/lib/db/bookings";
+import { getCurrentUser } from "@/lib/auth/dal";
 import {
   capturePayPalOrder,
   getPayPalConfig,
@@ -16,6 +17,8 @@ import { sendBookingUpdateEmail } from "@/lib/notify/booking-email";
  * - Payment-first (nuevo): el orderID tiene una reserva pendiente guardada;
  *   se consume y se crea la reserva real marcada como pagada.
  * - Legacy: la reserva ya existía (anticipo) y se busca por referencia.
+ *
+ * Idempotente: si la orden ya se capturó antes, devuelve ok sin duplicar.
  */
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
@@ -31,10 +34,30 @@ export async function POST(request: NextRequest) {
   const cfg = await getPayPalConfig();
   if (!cfg) return NextResponse.json({ error: "not-configured" }, { status: 503 });
 
+  // Sesión del cliente (opcional, para vincular pagador de PayPal al usuario).
+  const session = await getCurrentUser().catch(() => null);
+
   try {
-    const { status } = await capturePayPalOrder(cfg, orderID);
+    const { status, body: paypalBody } = await capturePayPalOrder(cfg, orderID);
     if (status !== "COMPLETED") {
       return NextResponse.json({ ok: false, status }, { status: 402 });
+    }
+
+    // Verificar que el pagador de PayPal coincida con el usuario de sesión
+    // (solo advertencia: no se bloquea por si el cliente paga con email distinto).
+    const payerEmail =
+      paypalBody &&
+      typeof paypalBody === "object" &&
+      "payer" in paypalBody &&
+      paypalBody.payer &&
+      typeof paypalBody.payer === "object" &&
+      "email_address" in paypalBody.payer
+        ? String((paypalBody as { payer: { email_address?: string } }).payer.email_address ?? "")
+        : "";
+    if (session && payerEmail && payerEmail !== session.user.email) {
+      console.warn(
+        `[paypal] payer email (${payerEmail}) differs from session user (${session.user.email})`,
+      );
     }
 
     // --- FLUJO PAYMENT-FIRST: consumir reserva pendiente y crear la real ---
@@ -46,6 +69,10 @@ export async function POST(request: NextRequest) {
     // --- FLUJO LEGACY: si no hay pendiente, buscar por referencia ---
     const booking = reference ? await getBookingByReference(reference) : null;
     if (booking) {
+      // Idempotente: si ya está pagada, no volver a marcar.
+      if (booking.payment_status === "paid") {
+        return NextResponse.json({ ok: true, reference: booking.reference });
+      }
       await markPaidLegacy(reference);
       try {
         await sendBookingUpdateEmail(
@@ -68,6 +95,15 @@ export async function POST(request: NextRequest) {
         console.error("[paypal] no se pudo enviar el correo de pago:", err);
       }
       return NextResponse.json({ ok: true, reference });
+    }
+
+    // Si la pendiente ya fue consumida (doble captura) y no hay reference,
+    // el pago ya se procesó en PayPal: devolver ok para no mostrar fraude al cliente.
+    if (
+      pendingResult.error === "pending-not-found" &&
+      session
+    ) {
+      return NextResponse.json({ ok: true, reference: "" });
     }
 
     return NextResponse.json(

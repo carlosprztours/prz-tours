@@ -1,12 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getBookingByReference } from "@/lib/db/bookings";
+import { getCurrentUser } from "@/lib/auth/dal";
 import {
   createPayPalOrder,
   getPayPalConfig,
 } from "@/lib/payments/paypal";
 
 export async function POST(request: NextRequest) {
+  // 1) Exige sesión iniciada.
+  const session = await getCurrentUser().catch(() => null);
+  if (!session) {
+    return NextResponse.json({ error: "auth-required" }, { status: 401 });
+  }
+
   const body = (await request.json().catch(() => null)) as { reference?: string } | null;
   const reference = body?.reference;
   if (!reference) return NextResponse.json({ error: "no-reference" }, { status: 400 });
@@ -17,6 +24,19 @@ export async function POST(request: NextRequest) {
   ]);
   if (!cfg) return NextResponse.json({ error: "not-configured" }, { status: 503 });
   if (!booking) return NextResponse.json({ error: "not-found" }, { status: 404 });
+
+  // 2) Sólo el titular de la reserva (o staff) puede pagar por ella.
+  if (
+    booking.user_id !== session.user.id &&
+    !["admin", "editor", "photographer"].includes(session.user.role)
+  ) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  // 3) No volver a crear orden si ya está pagada.
+  if (booking.payment_status === "paid") {
+    return NextResponse.json({ error: "already-paid" }, { status: 409 });
+  }
 
   // Cobra el anticipo si existe; si no, el total estimado.
   const amount = booking.deposit_due > 0 ? booking.deposit_due : booking.total_price;

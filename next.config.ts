@@ -14,9 +14,7 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
 
-  // Cabeceras de seguridad para todas las respuestas. No definimos una CSP
-  // estricta a propósito: una CSP mal afinada rompe Next y ImageKit. Esto ya
-  // frena clickjacking, sniffing de MIME y abuso de permisos del navegador.
+  // Cabeceras de seguridad para todas las respuestas.
   async headers() {
     return [
       {
@@ -32,6 +30,20 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com https://www.google.com https://www.gstatic.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com https://www.sandbox.paypal.com https://api.resend.com https://*.imagekit.io https://ik.imagekit.io https://auth.google.com https://oauth2.googleapis.com",
+              "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://www.google.com https://accounts.google.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
           },
         ],
       },

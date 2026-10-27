@@ -100,11 +100,11 @@ export async function createPayPalOrder(
   return { id: body.id };
 }
 
-/** Captura la orden; devuelve el estado ("COMPLETED" si se cobró). */
+/** Captura la orden; devuelve el estado completo de PayPal. */
 export async function capturePayPalOrder(
   cfg: PayPalConfig,
   orderId: string,
-): Promise<{ status: string }> {
+): Promise<{ status: string; body?: unknown }> {
   const token = await getAccessToken(cfg);
   const res = await fetch(`${apiBase(cfg.mode)}/v2/checkout/orders/${orderId}/capture`, {
     method: "POST",
@@ -114,7 +114,7 @@ export async function capturePayPalOrder(
     },
     body: "{}",
   });
-  const body = (await res.json().catch(() => ({}))) as { status?: string };
+  const body = (await res.json().catch(() => ({}))) as { status?: string; payer?: unknown };
   if (!res.ok || !body.status) throw new Error("paypal-capture");
-  return { status: body.status };
+  return { status: body.status, body };
 }
