@@ -57,6 +57,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Verificar catálogo antes de auditar
+        run: npm run tools:check
       - name: Auditoría de dependencias de producción
         run: npm audit --omit=dev --audit-level=high
       - name: Auditoría completa de dependencias
