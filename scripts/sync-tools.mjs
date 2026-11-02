@@ -18,7 +18,7 @@ for (const key of ["dependencies", "devDependencies"]) {
 }
 const check = process.argv.includes("--check");
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const pkgMatches = ["dependencies", "devDependencies"].every((key) => same(pkg[key], catalog[key]));
+const pkgMatches = ["dependencies", "devDependencies", "overrides"].every((key) => same(pkg[key] ?? {}, catalog[key] ?? {}));
 const lockMatches = ["dependencies", "devDependencies"].every((key) => same(lock.packages?.[""]?.[key], catalog[key]));
 if (check) {
   if (!pkgMatches || !lockMatches) {
@@ -28,6 +28,7 @@ if (check) {
 } else {
   pkg.dependencies = catalog.dependencies;
   pkg.devDependencies = catalog.devDependencies;
+  pkg.overrides = catalog.overrides ?? {};
   writeFileSync(resolve(root, "package.json"), JSON.stringify(pkg, null, 2) + "\n");
   console.log("package.json sincronizado. Ejecuta npm install --package-lock-only para actualizar el lockfile.");
 }
