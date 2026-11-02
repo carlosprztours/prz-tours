@@ -20,6 +20,7 @@ function VideoCard({ video }: { video: GalleryVideo }) {
   const [started, setStarted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [posterFailed, setPosterFailed] = useState(false);
   const poster = video.poster || imageKitPoster(video.url);
   return (
     <figure className="overflow-hidden rounded-2xl border border-sand-200 bg-white">
@@ -45,9 +46,10 @@ function VideoCard({ video }: { video: GalleryVideo }) {
             type="button"
             onClick={() => setStarted(true)}
             aria-label={`Reproducir ${video.title || "vídeo"}`}
-            className="relative flex h-full w-full items-center justify-center overflow-hidden bg-slate-900 text-white"
+            className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-sky-700 via-cyan-600 to-teal-800 text-white"
           >
-            {poster && <Image src={poster} alt="" fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" />}
+            {poster && !posterFailed && <Image src={poster} alt="" fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" onError={() => setPosterFailed(true)} />}
+            {(!poster || posterFailed) && <span aria-hidden="true" className="absolute inset-0 flex items-end justify-start bg-gradient-to-t from-black/50 to-transparent p-5 text-left text-sm font-semibold tracking-wide">Descubre la experiencia Perez Tours</span>}
             <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-black/65 text-3xl shadow-lg ring-2 ring-white/80" aria-hidden="true">▶</span>
           </button>
         )}
