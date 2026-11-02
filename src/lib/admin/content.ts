@@ -151,6 +151,8 @@ export async function createGalleryImage(
     .map((v) => String(v).trim())
     .filter(Boolean);
   if (urls.length === 0 && videos.length === 0) return { ok: false, error: "required" };
+  if (urls.length + videos.length > 20) return { ok: false, error: "tooMany" };
+  if ([...urls, ...videos].some((url) => !(url.startsWith("/") && !url.startsWith("//")) && !/^https:\/\//i.test(url))) return { ok: false, error: "invalidUrl" };
 
   const alt = String(formData.get("alt") ?? "").trim();
   const caption = String(formData.get("caption") ?? "").trim();
