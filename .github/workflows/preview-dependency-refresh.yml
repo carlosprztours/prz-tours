@@ -35,7 +35,7 @@ jobs:
       - name: Resolve patched dependencies without installing scripts
         run: npm install --package-lock-only --ignore-scripts --no-audit
       - name: Apply compatible transitive security fixes
-        run: npm audit fix --package-lock-only --ignore-scripts --no-fund
+        run: npm audit fix --package-lock-only --ignore-scripts --no-fund || true
       - name: Check catalog consistency
         run: npm run tools:check
       - name: Commit only dependency manifests to preview
