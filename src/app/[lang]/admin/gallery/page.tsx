@@ -9,7 +9,6 @@ import { notFound } from "next/navigation";
 import { GalleryImageBrowser } from "./GalleryImageBrowser";
 import { requireSection } from "@/lib/admin/access";
 import {
-  deleteGalleryImage,
   deleteGalleryVideo,
   listAdminGallery,
   listAdminGalleryVideos,
