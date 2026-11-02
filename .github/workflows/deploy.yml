@@ -46,6 +46,24 @@ jobs:
         run: node scripts/check-content.mjs
 
   # ------------------------------------------------------------------
+  # Auditoría separada: no oculta el detalle ni despliega.
+  # ------------------------------------------------------------------
+  security:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Auditoría de dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
+      - name: Auditoría completa de dependencias
+        if: always()
+        run: npm audit --audit-level=high
+
+  # ------------------------------------------------------------------
   # Build del bundle de OpenNext (no despliega)
   # ------------------------------------------------------------------
   build:
