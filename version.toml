@@ -1,0 +1,6 @@
+# Fuente única de versión de Perez Tours.
+# Incrementa major.minor.patch antes de preparar una nueva versión.
+[app]
+name = "Perez Tours"
+version = "0.1.0"
+channel = "preview"
