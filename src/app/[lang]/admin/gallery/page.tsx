@@ -7,6 +7,7 @@
 import { notFound } from "next/navigation";
 
 import { GalleryImageBrowser } from "./GalleryImageBrowser";
+import { DeleteButton } from "@/components/admin/DeleteButton";
 import { requireSection } from "@/lib/admin/access";
 import {
   deleteGalleryVideo,
