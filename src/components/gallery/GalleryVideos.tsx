@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { GalleryVideo } from "@/types";
 
 type Props = { videos: GalleryVideo[] };
@@ -40,7 +41,7 @@ function VideoCard({ video }: { video: GalleryVideo }) {
             aria-label={`Reproducir ${video.title || "vídeo"}`}
             className="relative flex h-full w-full items-center justify-center overflow-hidden bg-slate-900 text-white"
           >
-            {poster && /* eslint-disable-next-line @next/next/no-img-element -- ImageKit ya optimiza la miniatura y Next no debe reprocesarla. */ <img src={poster} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />}
+            {poster && <Image src={poster} alt="" fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" />}
             <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-black/65 text-3xl shadow-lg ring-2 ring-white/80" aria-hidden="true">▶</span>
           </button>
         )}
