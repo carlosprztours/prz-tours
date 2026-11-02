@@ -30,6 +30,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Verificar versión centralizada
+        run: npm run version:check
+
       - name: Typecheck
         run: npx tsc --noEmit
 
