@@ -4,7 +4,10 @@ const nextConfig: NextConfig = {
   // Rutas con prefijo de idioma (/es, /en). El proxy.ts se encarga de redirigir
   // las peticiones sin locale hacia /es.
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    remotePatterns: [
+      { protocol: "https", hostname: "ik.imagekit.io" },
+      { protocol: "https", hostname: "*.imagekit.io" },
+    ],
   },
   // Envío de formularios vía Server Actions (no_route_segment config needed)
   experimental: {
