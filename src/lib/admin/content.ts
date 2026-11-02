@@ -154,6 +154,7 @@ export async function createGalleryImage(
 
   const alt = String(formData.get("alt") ?? "").trim();
   const caption = String(formData.get("caption") ?? "").trim();
+  const grupo = String(formData.get("group_name") ?? "").trim().slice(0, 120);
   const publicado = formData.get("is_published") === "on" ? 1 : 0;
 
   // El campo «Orden» dice dónde coloca la(s) foto(s). El formulario pone 0 por
@@ -171,13 +172,13 @@ export async function createGalleryImage(
     // Con varias fotos, un único texto alternativo no describe bien todas: se
     // aplica solo a la primera y el fotógrafo escribe el de cada una en su
     // ficha. Con una sola foto, el texto va a esa.
-    const altDeEsta = indice === 0 ? alt : "";
+    const altDeEsta = indice === 0 && alt ? alt : grupo ? `${grupo} — fotografía ${indice + 1}` : `Fotografía de galería ${indice + 1}`;
     await execute(
       `INSERT INTO gallery_images (url, alt, caption, is_published, sort_order)
        VALUES (?, ?, ?, ?, ?)`,
       url,
       altDeEsta,
-      caption || null,
+      caption || grupo || null,
       publicado,
       siguiente,
     );
