@@ -30,10 +30,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - name: Sync central catalog
-        run: npm run tools:sync
-      - name: Resolve patched dependencies without installing scripts
-        run: npm install --package-lock-only --ignore-scripts --no-audit
+      - name: Generate both npm manifests from central catalog
+        run: npm run tools:refresh
       - name: Apply compatible transitive security fixes
         run: npm audit fix --package-lock-only --ignore-scripts --no-fund || true
       - name: Check catalog consistency
