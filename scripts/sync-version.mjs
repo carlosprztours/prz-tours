@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const toml = readFileSync(resolve(root, "version.toml"), "utf8");
-const section = toml.match(/^\[app\]\s*$([\s\S]*?)(?=^\[|$(?![\s\S]))/m)?.[1] ?? toml;
+const section = toml.split(/^\[app\]\s*$/m)[1]?.split(/^\[[^\]]+\]\s*$/m)[0] ?? "";
 const version = section.match(/^version\s*=\s*"([^"]+)"\s*$/m)?.[1];
 const channel = section.match(/^channel\s*=\s*"([^"]+)"\s*$/m)?.[1];
 if (!version || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/.test(version)) throw new Error("version.toml: app.version debe ser SemVer");
