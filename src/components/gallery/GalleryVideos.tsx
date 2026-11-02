@@ -10,7 +10,7 @@ type Props = { videos: GalleryVideo[] };
 function imageKitPoster(url: string): string | undefined {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "https:" || parsed.hostname !== "ik.imagekit.io" || !/\\.(mp4|mov)$/i.test(parsed.pathname)) return undefined;
+    if (parsed.protocol !== "https:" || parsed.hostname !== "ik.imagekit.io" || !/\.(mp4|mov)$/i.test(parsed.pathname)) return undefined;
     // Una imagen comprimida del segundo 2 evita descargar el MP4 para mostrar la carátula.
     return `${parsed.origin}${parsed.pathname}/ik-thumbnail.jpg?tr=so-2,w-800,q-70`;
   } catch { return undefined; }
