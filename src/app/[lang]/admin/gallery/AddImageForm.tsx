@@ -20,6 +20,8 @@ const ERRORES: Record<string, { es: string; en: string }> = {
     es: "Sube al menos una foto o pega una URL.",
     en: "Upload at least one photo or paste a URL.",
   },
+  tooMany: { es: "Máximo 20 archivos por lote.", en: "Maximum 20 files per batch." },
+  invalidUrl: { es: "Una URL no es válida.", en: "One URL is invalid." },
 };
 
 export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
