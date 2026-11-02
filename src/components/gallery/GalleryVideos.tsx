@@ -18,12 +18,18 @@ function imageKitPoster(url: string): string | undefined {
 
 function VideoCard({ video }: { video: GalleryVideo }) {
   const [started, setStarted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const poster = video.poster || imageKitPoster(video.url);
   return (
     <figure className="overflow-hidden rounded-2xl border border-sand-200 bg-white">
       <div className="relative aspect-video bg-slate-900">
         {started ? (
           <video
+            onLoadStart={() => { setLoading(true); setFailed(false); }}
+            onPlaying={() => setLoading(false)}
+            onWaiting={() => setLoading(true)}
+            onError={() => { setLoading(false); setFailed(true); }}
             src={video.url}
             poster={poster}
             controls
@@ -46,6 +52,8 @@ function VideoCard({ video }: { video: GalleryVideo }) {
           </button>
         )}
       </div>
+      {started && loading && !failed && <p role="status" className="px-4 pt-3 text-sm text-ink-600">Preparando el vídeo… En conexiones lentas puede tardar unos segundos.</p>}
+      {started && failed && <div role="alert" className="px-4 pt-3 text-sm text-ink-600">No se pudo cargar el vídeo. <button type="button" className="font-bold underline" onClick={() => { setStarted(false); setFailed(false); }}>Reintentar</button></div>}
       {(video.title || video.caption) && (
         <figcaption className="p-4">
           {video.title && <p className="font-display font-bold text-ink-900">{video.title}</p>}
