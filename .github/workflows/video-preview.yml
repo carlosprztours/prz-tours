@@ -1,0 +1,38 @@
+name: Preview aislado - video ImageKit
+
+on:
+  push:
+    branches:
+      - fix/preview-imagekit-video-playback
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prz-tours-video-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npx opennextjs-cloudflare build
+      - name: Deploy solo Worker preview, sin migraciones ni rutas de produccion
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          npx wrangler deploy --config wrangler.preview.jsonc
