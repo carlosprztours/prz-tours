@@ -37,7 +37,8 @@
     "test:pages": "node scripts/test-pages.mjs",
     "create-admin": "node scripts/create-admin.mjs",
     "secrets": "node scripts/with-secrets.mjs",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "tools:refresh": "npm run tools:sync && npm install --package-lock-only --ignore-scripts --no-audit && npm run tools:check"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.8",
