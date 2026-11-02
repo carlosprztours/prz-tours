@@ -7,6 +7,7 @@
 import { notFound } from "next/navigation";
 
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { GalleryImageBrowser } from "./GalleryImageBrowser";
 import { requireSection } from "@/lib/admin/access";
 import {
   deleteGalleryImage,
@@ -19,7 +20,6 @@ import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { AddImageForm } from "./AddImageForm";
 import { AddVideoForm } from "./AddVideoForm";
-import { GalleryImageCard } from "./GalleryImageCard";
 import { VideoCard } from "./VideoCard";
 
 export default async function AdminGalleryPage({
@@ -55,22 +55,7 @@ export default async function AdminGalleryPage({
 
       <AddImageForm locale={locale} es={es} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {images.map((img) => (
-          <div key={img.id} className="relative">
-            <GalleryImageCard image={img} locale={locale} es={es} />
-            <div className="absolute right-2 top-2">
-              <DeleteButton
-                locale={locale}
-                id={img.id}
-                action={deleteGalleryImage}
-                confirmMessage={es ? "¿Eliminar esta foto?" : "Delete this photo?"}
-                label="✕"
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      <GalleryImageBrowser images={images} locale={locale} es={es} />
 
       {/* ── Vídeos ── */}
       <h2 className="mt-4 font-display text-xl font-extrabold text-ink-900">
