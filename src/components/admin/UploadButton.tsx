@@ -135,7 +135,7 @@ export function UploadButton({
         className="inline-flex h-9 items-center rounded-full bg-ocean-100 px-4 text-xs font-bold text-ocean-800 transition hover:bg-ocean-200 disabled:opacity-60"
       >
         {busy
-          ? `${labels.uploading} (${progress?.done ?? 0}/${progress?.total ?? files.length})`
+          ? `${labels.uploading} (${progress?.done ?? 0}/${progress?.total ?? 0})`
           : multiple
             ? `${labels.upload} · varias`
             : labels.upload}
