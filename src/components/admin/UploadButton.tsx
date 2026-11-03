@@ -56,6 +56,7 @@ export function UploadButton({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const motivo = (clave: string | undefined, porDefecto: string) => {
     const key = clave ? MOTIVOS[clave] : undefined;
@@ -67,51 +68,51 @@ export function UploadButton({
     if (files.length === 0 || busy) return;
     setBusy(true);
     setError(null);
+    setProgress({ done: 0, total: files.length });
 
     try {
-      const form = new FormData();
-      for (const f of files) form.append("files", f);
-      form.append("folder", folder);
-
-      const res = await fetch("/api/admin/upload", { method: "POST", body: form });
-      const cuerpo = (await res.json().catch(() => ({}))) as {
-        images?: Subida[];
-        url?: string;
-        failed?: { nombre: string; motivo: string }[];
-        error?: string;
-      };
-
-      if (!res.ok) {
-        throw new Error(motivo(cuerpo.error, labels.failed));
+      if (files.length > 100) throw new Error("Máximo 100 archivos por selección.");
+      const uploaded: Subida[] = [];
+      const uploadedNames: string[] = [];
+      const failures: string[] = [];
+      // Una selección puede contener 100 archivos; cada petición respeta el límite de 20.
+      for (let offset = 0; offset < files.length; offset += 20) {
+        const batch = files.slice(offset, offset + 20);
+        const form = new FormData();
+        batch.forEach((file) => form.append("files", file));
+        form.append("folder", folder);
+        const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+        const body = (await res.json().catch(() => ({}))) as {
+          images?: (Subida & { originalName?: string; originalIndex?: number })[];
+          url?: string;
+          failed?: { nombre: string; motivo: string; index?: number }[];
+          error?: string;
+        };
+        if (!res.ok) {
+          failures.push(`Lote ${Math.floor(offset / 20) + 1}: ${motivo(body.error, labels.failed)}`);
+        } else {
+          for (const image of body.images ?? []) {
+            uploaded.push(image);
+            uploadedNames.push(image.originalName ?? batch[image.originalIndex ?? -1]?.name ?? image.url);
+          }
+          for (const failed of body.failed ?? []) failures.push(`${failed.nombre}: ${motivo(failed.motivo, labels.failed)}`);
+          if (!body.images?.length && body.url) {
+            uploaded.push({ url: body.url, thumbnailUrl: null, fileId: null });
+            uploadedNames.push(batch[0]?.name ?? body.url);
+          }
+        }
+        setProgress({ done: Math.min(offset + batch.length, files.length), total: files.length });
       }
+      if (uploaded.length === 0) throw new Error(failures.join("; ") || labels.failed);
+      if (onUploaded) onUploaded(uploaded.map((image) => image.url));
+      else escribirEnCampo(targetId, uploaded, uploadedNames, uploaded.length === 1);
+      if (failures.length) setError(`${failures.length} errores: ${failures.slice(0, 3).join("; ")}`);
 
-      const imagenes: Subida[] = cuerpo.images?.length
-        ? cuerpo.images
-        : cuerpo.url
-          ? [{ url: cuerpo.url, thumbnailUrl: null, fileId: null }]
-          : [];
-      if (imagenes.length === 0) throw new Error(labels.failed);
-
-      // Las que no salieron se avisan, pero no se pierden las que sí.
-      if (cuerpo.failed?.length) {
-        setError(
-          `${cuerpo.failed.length} no se pudieron subir (${motivo(
-            cuerpo.failed[0]?.motivo,
-            labels.failed,
-          )}). Se añadieron las demás.`,
-        );
-      }
-
-      if (onUploaded) {
-        onUploaded(imagenes.map((i) => i.url));
-      } else {
-        const nombres = files.map((f) => f.name);
-        escribirEnCampo(targetId, imagenes, nombres, imagenes.length === 1);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : labels.failed);
     } finally {
       setBusy(false);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = "";
     }
   };
@@ -134,7 +135,7 @@ export function UploadButton({
         className="inline-flex h-9 items-center rounded-full bg-ocean-100 px-4 text-xs font-bold text-ocean-800 transition hover:bg-ocean-200 disabled:opacity-60"
       >
         {busy
-          ? labels.uploading
+          ? `${labels.uploading} (${progress?.done ?? 0}/${progress?.total ?? files.length})`
           : multiple
             ? `${labels.upload} · varias`
             : labels.upload}
