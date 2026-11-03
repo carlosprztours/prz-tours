@@ -1,14 +1,11 @@
-/**
- * Registro público: crea una cuenta normal. Si ya hay sesión, el proxy
- * redirige a la cuenta o al panel.
- */
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { SignupForm } from "./SignupForm";
 
@@ -30,6 +27,12 @@ export default async function SignupPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  // Un JWT firmado puede corresponder a una sesión revocada en D1.
+  const session = await getCurrentUser();
+  if (session) {
+    redirect(`/${locale}/${session.user.role === "customer" ? "account" : "admin"}`);
+  }
+
   const { next, ref } = await searchParams;
 
   const labels =
