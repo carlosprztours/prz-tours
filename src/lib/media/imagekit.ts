@@ -194,8 +194,8 @@ export async function uploadImageToImageKit(
   if (!res.ok) {
     // El cuerpo puede traer el motivo (límite de tamaño, quota, tipo…), pero
     // no lo pasamos al cliente: lo dejamos en el log del servidor.
-    console.error("[imagekit] subida rechazada:", res.status, raw.slice(0, 400));
-    throw new UploadFailed("upload-failed", `${res.status} ${raw.slice(0, 200)}`);
+    console.error("[imagekit] subida rechazada:", res.status);
+    throw new UploadFailed("upload-failed", `HTTP ${res.status}`);
   }
 
   // ImageKit tiene dos formas de responder y conviven según el endpoint:
@@ -206,7 +206,7 @@ export async function uploadImageToImageKit(
   try {
     body = JSON.parse(raw) as ImageKitResponse;
   } catch {
-    console.error("[imagekit] respuesta ilegible:", raw.slice(0, 200));
+    console.error("[imagekit] respuesta ilegible:");
     throw new UploadFailed("upload-failed", "respuesta ilegible");
   }
 
@@ -224,8 +224,8 @@ export async function uploadImageToImageKit(
 
   // `success` solo existe en la forma antigua; si viene a `false` es un fallo.
   if (body.success === false || !url) {
-    console.error("[imagekit] subida sin url:", raw.slice(0, 300));
-    throw new UploadFailed("upload-failed", body.message ?? "sin url");
+    console.error("[imagekit] subida sin url:");
+    throw new UploadFailed("upload-failed", "sin url");
   }
 
   // Guardamos la URL tal cual la devuelve ImageKit, pero comprobamos que

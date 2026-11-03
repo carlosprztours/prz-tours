@@ -10,6 +10,7 @@
  */
 "use client";
 
+import { splitUploadBatches } from "@/lib/media/upload-batches.mjs";
 import { useRef, useState } from "react";
 
 type Props = {
@@ -71,13 +72,12 @@ export function UploadButton({
     setProgress({ done: 0, total: files.length });
 
     try {
-      if (files.length > 100) throw new Error("Máximo 100 archivos por selección.");
       const uploaded: Subida[] = [];
       const uploadedNames: string[] = [];
       const failures: string[] = [];
       // Una selección puede contener 100 archivos; cada petición respeta el límite de 20.
-      for (let offset = 0; offset < files.length; offset += 20) {
-        const batch = files.slice(offset, offset + 20);
+      let done = 0;
+      for (const [index, batch] of splitUploadBatches(files).entries()) {
         const form = new FormData();
         batch.forEach((file) => form.append("files", file));
         form.append("folder", folder);
@@ -89,7 +89,7 @@ export function UploadButton({
           error?: string;
         };
         if (!res.ok) {
-          failures.push(`Lote ${Math.floor(offset / 20) + 1}: ${motivo(body.error, labels.failed)}`);
+          failures.push(`Lote ${index + 1}: ${motivo(body.error, labels.failed)}`);
         } else {
           for (const image of body.images ?? []) {
             uploaded.push(image);
@@ -101,7 +101,8 @@ export function UploadButton({
             uploadedNames.push(batch[0]?.name ?? body.url);
           }
         }
-        setProgress({ done: Math.min(offset + batch.length, files.length), total: files.length });
+        done += batch.length;
+        setProgress({ done, total: files.length });
       }
       if (uploaded.length === 0) throw new Error(failures.join("; ") || labels.failed);
       if (onUploaded) onUploaded(uploaded.map((image) => image.url));
