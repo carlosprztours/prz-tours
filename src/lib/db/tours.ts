@@ -211,6 +211,19 @@ export async function listActiveCategories(
 export async function listTourNavItems(
   locale: Locale,
 ): Promise<{ slug: string; title: string }[]> {
-  return (await listPublishedTours(locale)).slice(0, 5)
-    .map((tour) => ({ slug: tour.slug, title: tour.translation.title }));
+  const rows = await query<{ slug: string; title: string }>(
+    `WITH localized AS (
+       SELECT t.slug, t.sort_order, t.id,
+              COALESCE(NULLIF(trim(tr.title), ''),
+                       CASE WHEN ? = 'en' THEN NULLIF(trim(json_extract(e.english, '$[0]')), '') END) AS title
+       FROM tours t
+       LEFT JOIN tour_translations tr ON tr.tour_id = t.id AND tr.locale = ?
+       LEFT JOIN tour_editorial_translation e ON e.tour_id = t.id AND e.status = 'translated'
+       WHERE t.is_published = 1
+     )
+     SELECT slug, title FROM localized WHERE title IS NOT NULL
+     ORDER BY sort_order ASC, id ASC LIMIT 5`,
+    locale, locale,
+  );
+  return rows;
 }

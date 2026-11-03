@@ -35,7 +35,7 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
-          npx wrangler deploy --config wrangler.preview.jsonc
+          npx wrangler deploy --config wrangler.preview.jsonc --tag "$GITHUB_SHA"
 
       - name: Smoke test public preview pages (read-only)
         env:
