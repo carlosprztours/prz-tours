@@ -6,3 +6,16 @@ export function splitUploadBatches(files) {
   }
   return batches;
 }
+
+export async function uniqueUploadFiles(files) {
+  const hashes = new Set();
+  const unique = [];
+  for (const file of files) {
+    const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    const hash = Array.from(new Uint8Array(digest)).join(",");
+    if (hashes.has(hash)) continue;
+    hashes.add(hash);
+    unique.push(file);
+  }
+  return unique;
+}

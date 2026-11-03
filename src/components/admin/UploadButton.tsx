@@ -10,7 +10,7 @@
  */
 "use client";
 
-import { splitUploadBatches } from "@/lib/media/upload-batches.mjs";
+import { splitUploadBatches, uniqueUploadFiles } from "@/lib/media/upload-batches.mjs";
 import { useRef, useState } from "react";
 
 type Props = {
@@ -72,16 +72,25 @@ export function UploadButton({
     setProgress({ done: 0, total: files.length });
 
     try {
+      if (files.length > 100) throw new Error("Máximo 100 archivos por selección.");
+      const uniqueFiles = await uniqueUploadFiles(files);
+      setProgress({ done: 0, total: uniqueFiles.length });
       const uploaded: Subida[] = [];
       const uploadedNames: string[] = [];
       const failures: string[] = [];
       // Una selección puede contener 100 archivos; cada petición respeta el límite de 20.
       let done = 0;
-      for (const [index, batch] of splitUploadBatches(files).entries()) {
+      for (const [index, batch] of splitUploadBatches(uniqueFiles).entries()) {
         const form = new FormData();
         batch.forEach((file) => form.append("files", file));
         form.append("folder", folder);
-        const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+        const res = await fetch("/api/admin/upload", { method: "POST", body: form }).catch(() => null);
+        done += batch.length;
+        setProgress({ done, total: uniqueFiles.length });
+        if (!res) {
+          failures.push(`Lote ${index + 1}: ${labels.failed}`);
+          continue;
+        }
         const body = (await res.json().catch(() => ({}))) as {
           images?: (Subida & { originalName?: string; originalIndex?: number })[];
           url?: string;
@@ -101,8 +110,7 @@ export function UploadButton({
             uploadedNames.push(batch[0]?.name ?? body.url);
           }
         }
-        done += batch.length;
-        setProgress({ done, total: files.length });
+
       }
       if (uploaded.length === 0) throw new Error(failures.join("; ") || labels.failed);
       if (onUploaded) onUploaded(uploaded.map((image) => image.url));
