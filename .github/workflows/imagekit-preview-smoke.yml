@@ -31,6 +31,7 @@ jobs:
         env:
           IMAGEKIT_PRIVATE_KEY: ${{ secrets.IMAGEKIT_PRIVATE_KEY }}
           IMAGEKIT_URL_ENDPOINT: ${{ vars.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/PrzCV' }}
+          IMAGEKIT_VERIFY_FOLDER: /prz/preview-smoke-c4d7eac0-b7c6-48f7-97b8-75e392f6997a
       - name: Preserve cleanup manifest
         if: always()
         uses: actions/upload-artifact@v4

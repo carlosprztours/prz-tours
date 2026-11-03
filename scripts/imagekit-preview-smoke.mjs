@@ -12,10 +12,11 @@ assert.equal(expected.protocol, "https:");
 assert.equal(expected.hostname, "ik.imagekit.io");
 assert.match(expected.pathname, /^\/[\w-]+\/?$/);
 
+const verifyFolder = process.env.IMAGEKIT_VERIFY_FOLDER;
 const recovery = process.argv[2] === "--cleanup";
 const manifest = recovery
   ? JSON.parse(await readFile(manifestPath, "utf8"))
-  : { folder: "/prz/preview-smoke-" + crypto.randomUUID(), files: [] };
+  : { folder: verifyFolder || "/prz/preview-smoke-" + crypto.randomUUID(), files: [] };
 assert.match(manifest.folder, /^\/prz\/preview-smoke-[a-f0-9-]{36}$/);
 const nativeFetch = globalThis.fetch;
 const authorization = "Basic " + Buffer.from(privateKey + ":").toString("base64");
@@ -43,7 +44,8 @@ async function list() {
   assert(response.ok, "Could not list temporary folder");
   const files = await response.json();
   assert(Array.isArray(files) && files.length < 200, "Unexpected listing");
-  return files;
+  return files.filter(file => typeof file.filePath === "string" &&
+    file.filePath.startsWith(manifest.folder + "/"));
 }
 
 async function cleanup() {
@@ -73,7 +75,12 @@ async function cleanup() {
       item.cleanup = "pending";
     }
   }
-  const remaining = await list();
+  let remaining = await list();
+  for (let attempt = 0; remaining.length && attempt < 4; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 2000 * 2 ** attempt));
+    remaining = await list();
+  }
+  manifest.remaining = remaining.length;
   await save();
   assert(remaining.length === 0 && manifest.files.every(file => file.cleanup === "verified"),
     "Cleanup incomplete. Inspect the recovery manifest.");
@@ -138,7 +145,7 @@ async function run() {
 
 await save();
 try {
-  if (!recovery) await run();
+  if (!recovery && !verifyFolder) await run();
 } finally {
   globalThis.fetch = nativeFetch;
   await cleanup();
