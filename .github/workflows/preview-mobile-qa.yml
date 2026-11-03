@@ -44,6 +44,8 @@ jobs:
                 }
               });
               const page = await context.newPage();
+              const cdp = await context.newCDPSession(page);
+              await cdp.send("DOM.enable");
               let network = [];
               const media = url => /\.mp4(?:[?#]|$)/i.test(url);
               page.on('request', req => { if (media(req.url())) network.push({ event: 'request', host: new URL(req.url()).hostname }); });
@@ -68,15 +70,34 @@ jobs:
                     const video = page.locator('video').first();
                     await video.waitFor({ state: 'visible' });
                     await page.waitForFunction(() => document.querySelector('video')?.currentTime > 0.15);
-                    await video.tap({ position: { x: 18, y: (await video.boundingBox()).height - 18 } });
+                    await video.scrollIntoViewIfNeeded();
+                    const { root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true });
+                    function findControl(node) {
+                      const attrs = node.attributes ?? [];
+                      if (attrs.includes('-webkit-media-controls-play-button')) return node;
+                      for (const child of [...(node.children ?? []), ...(node.shadowRoots ?? [])]) {
+                        const found = findControl(child);
+                        if (found) return found;
+                      }
+                    }
+                    const control = findControl(root);
+                    if (!control) throw Error('Chromium native play/pause control not found');
+                    const { model } = await cdp.send('DOM.getBoxModel', { nodeId: control.nodeId });
+                    const quad = model.content;
+                    await page.touchscreen.tap((quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2);
                     await page.waitForFunction(() => document.querySelector('video')?.paused);
+                    const stable = await video.evaluate(async v => {
+                      const start = v.currentTime;
+                      for (let frame = 0; frame < 12; frame++) await new Promise(requestAnimationFrame);
+                      return v.paused && Math.abs(v.currentTime - start) < 0.01;
+                    });
                     const state = await video.evaluate(v => ({
                       time: v.currentTime, paused: v.paused, mediaError: v.error?.code ?? null,
                       hls: /\.m3u8(?:\?|$)/i.test(v.currentSrc),
                       width: document.documentElement.clientWidth,
                       scrollWidth: document.documentElement.scrollWidth
                     }));
-                    results.push({ name, ...state, pass: state.mediaError === null && state.scrollWidth <= state.width + 1 });
+                    results.push({ name, ...state, stable, pass: stable && state.mediaError === null && state.scrollWidth <= state.width + 1 });
                   } catch (error) {
                     results.push({ name, pass: false, error: String(error.message).split('\n')[0] });
                   }
