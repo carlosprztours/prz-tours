@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
         url: s.url,
         thumbnailUrl: s.thumbnailUrl,
         fileId: s.fileId,
+        originalName: s.originalName,
+        originalIndex: s.originalIndex,
       })),
       // Con una sola foto se manda también `url` para no romper a quien aún
       // espere la respuesta antigua.
