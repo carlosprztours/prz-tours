@@ -241,7 +241,7 @@ export async function uploadImageToImageKit(
   } catch {
     throw new UploadFailed("upload-failed", "invalid media URL");
   }
-  const expectedPath = expected.pathname.replace(/\\/+$/, "");
+  const expectedPath = expected.pathname.endsWith("/") ? expected.pathname.slice(0, -1) : expected.pathname;
   if (
     expected.protocol !== "https:" ||
     actual.protocol !== "https:" ||
