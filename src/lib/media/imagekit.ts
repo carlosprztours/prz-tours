@@ -231,10 +231,25 @@ export async function uploadImageToImageKit(
   // Guardamos la URL tal cual la devuelve ImageKit, pero comprobamos que
   // coincide con el endpoint configurado. Si el panel guardara una URL de otro
   // sitio por error, mejor enterarnos aquí que servir contenido raro después.
-  if (!url.startsWith(stripTrailingSlash(urlEndpoint))) {
-    console.error(
-      `[imagekit] la url no coincide con IMAGEKIT_URL_ENDPOINT (${urlEndpoint}).`,
-    );
+  // Never trust an unexpected URL returned by an upstream service.
+  // Compare origins and path boundaries, not string prefixes (which allow lookalike hosts).
+  let expected: URL;
+  let actual: URL;
+  try {
+    expected = new URL(urlEndpoint);
+    actual = new URL(url);
+  } catch {
+    throw new UploadFailed("upload-failed", "invalid media URL");
+  }
+  const expectedPath = expected.pathname.replace(/\\/+$/, "");
+  if (
+    expected.protocol !== "https:" ||
+    actual.protocol !== "https:" ||
+    expected.origin !== actual.origin ||
+    (expectedPath !== "" && actual.pathname !== expectedPath &&
+      !actual.pathname.startsWith(`${expectedPath}/`))
+  ) {
+    throw new UploadFailed("upload-failed", "unexpected media URL origin or path");
   }
 
   return {
@@ -269,8 +284,4 @@ function sanitizeFolder(folder: string): string {
     .slice(0, 2)
     .join("/");
   return `prz/${clean || "misc"}`;
-}
-
-function stripTrailingSlash(value: string): string {
-  return value.replace(/\/+$/, "");
 }
