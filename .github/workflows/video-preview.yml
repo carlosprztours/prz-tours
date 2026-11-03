@@ -36,3 +36,22 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
           npx wrangler deploy --config wrangler.preview.jsonc
+
+      - name: Smoke test public preview pages (read-only)
+        env:
+          PREVIEW_URL: https://prz-tours-video-preview.carlosprz-tours.workers.dev
+        run: |
+          set -euo pipefail
+          for path in /es /es/gallery /es/tours /es/transfers; do
+            echo "Checking preview page: $path"
+            code=$(curl --location --silent --show-error --output /tmp/preview-page.html --write-out '%{http_code}' --max-time 25 "$PREVIEW_URL$path")
+            if [ "$code" != "200" ]; then
+              echo "::error::Preview page $path returned HTTP $code"
+              exit 1
+            fi
+            if grep -Eiq '<title>[^<]*(500|internal server error)' /tmp/preview-page.html; then
+              echo "::error::Preview page $path returned error HTML"
+              exit 1
+            fi
+            echo "OK: HTTP 200"
+          done
