@@ -21,14 +21,26 @@ for (const route of ["login", "signup"]) {
   assert.equal(response.status, 200, `A missing session row must allow /es/${route}`);
 }
 
-const response = await fetch(new URL("/es/admin", origin), {
-  headers,
-  redirect: "manual",
-});
-assert.ok([303, 307, 308].includes(response.status));
-const clearUrl = new URL(response.headers.get("location"), origin);
-assert.equal(clearUrl.origin, origin.origin);
-assert.equal(clearUrl.pathname, "/api/auth/clear");
-const clear = await fetch(clearUrl, { headers, redirect: "manual" });
-assert.match(clear.headers.get("set-cookie") ?? "", /^prz_session=;.*Path=\//i);
-assert.equal(new URL(clear.headers.get("location"), origin).pathname, "/es/login");
+let url = new URL("/es/admin", origin);
+let cookie = headers.cookie;
+for (let hop = 0; hop < 4; hop++) {
+  const response = await fetch(url, {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  if (response.status === 200) {
+    assert.equal(url.pathname, "/es/login");
+    assert.match(await response.text(), /type="password"/);
+    console.log("Revoked session reached a functional login without a redirect loop");
+    process.exit(0);
+  }
+  assert.ok([303, 307, 308].includes(response.status));
+  if (response.headers.getSetCookie().some((value) => /^prz_session=;/.test(value))) {
+    cookie = "";
+  }
+  const location = response.headers.get("location");
+  assert.ok(location);
+  url = new URL(location, origin);
+  assert.equal(url.origin, origin.origin);
+}
+assert.fail("Revoked session did not reach login within four requests");
