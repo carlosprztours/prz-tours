@@ -33,6 +33,7 @@ type Labels = {
 type Props = {
   locale: Locale;
   bookingId: number;
+  whatsappEnabled: boolean;
   status: BookingStatus;
   payment: PaymentStatus;
   customer: {
@@ -49,6 +50,7 @@ type Props = {
 export function BookingActions({
   locale,
   bookingId,
+  whatsappEnabled,
   status,
   payment,
   customer,
@@ -75,6 +77,7 @@ export function BookingActions({
    * guardado y se avisa para abrirlo manual.
    */
   const runWithWhatsapp = (to: "confirmed" | "cancelled") => {
+    if (!whatsappEnabled) return;
     const win = window.open("about:blank", "_blank");
     setMessage(null);
     startTransition(async () => {
@@ -112,7 +115,7 @@ export function BookingActions({
 
   return (
     <div className="grid gap-3">
-      {status === "pending" && (
+      {whatsappEnabled && status === "pending" && (
         <div className="grid gap-2 border-b border-sand-100 pb-3">
           <button
             disabled={pending || !customer.phone}
