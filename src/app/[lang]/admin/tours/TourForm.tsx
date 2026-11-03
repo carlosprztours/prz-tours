@@ -284,17 +284,26 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
                 onClick={() => setTab(l)}
                 className={`rounded-full px-4 py-1 text-sm font-bold transition ${tab === l ? "bg-white shadow" : "text-ink-500"}`}
               >
-                {l.toUpperCase()}
+                {l === "es" ? "Español" : "Inglés (opcional)"}
               </button>
             ))}
           </div>
         </div>
 
+        <p className="mt-2 text-sm text-ink-600">
+          Traducción inglesa: {({
+            pending: "pendiente",
+            translated: "traducida",
+            outdated: "desactualizada",
+            error: "error de traducción",
+            manual: "edición manual protegida",
+          })[initial?.englishStatus ?? "pending"]}.
+        </p>
         {(["es", "en"] as const).map((l) => (
           <div key={l} className={`mt-4 grid gap-3 ${tab === l ? "" : "hidden"}`}>
             <label className={labelClass}>
               {labels.title} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <input name={`title_${l}`} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
+              <input name={`title_${l}`} required={l === "es"} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
             </label>
             <label className={labelClass}>
               {labels.summary} <span className="whitespace-nowrap">({l.toUpperCase()})</span>

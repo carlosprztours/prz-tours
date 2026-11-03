@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { warmEditorialEnglish } from "./content-translation";
 import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 import type { GalleryImage, GalleryVideo, HeroSlide, Locale, Testimonial } from "@/types";
@@ -184,6 +185,7 @@ export async function createGalleryImage(
       publicado,
       siguiente,
     );
+    await warmEditorialEnglish([altDeEsta, ""], [caption || grupo, ""]);
   }
 
   const ultimoVideo = await queryOne<{ n: number }>(
@@ -229,6 +231,7 @@ export async function updateGalleryImage(
     id,
   );
 
+  await warmEditorialEnglish([String(formData.get("alt") ?? "").trim(), ""], [String(formData.get("caption") ?? "").trim(), ""]);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
@@ -307,6 +310,7 @@ export async function createGalleryVideo(
       ? Math.round(Number(formData.get("sort_order")))
       : (ultimo?.n ?? 0) + 1,
   );
+  await warmEditorialEnglish([String(formData.get("title") ?? "").trim(), ""], [String(formData.get("caption") ?? "").trim(), ""]);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
@@ -342,6 +346,7 @@ export async function updateGalleryVideo(
     Math.round(Number(formData.get("sort_order")) || 0),
     id,
   );
+  await warmEditorialEnglish([String(formData.get("title") ?? "").trim(), ""], [String(formData.get("caption") ?? "").trim(), ""]);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);

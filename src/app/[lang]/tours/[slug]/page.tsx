@@ -66,8 +66,8 @@ export default async function TourDetailPage({ params }: Props) {
     getDictionary(locale),
     listRelatedTours(tour.id, tour.category, locale),
     getBookingDefaults(),
-    listPublishedTestimonials(6, slug),
-    listPublishedTourVideos(slug),
+    listPublishedTestimonials(locale, 6, slug),
+    listPublishedTourVideos(locale, slug),
   ]);
   const session = await getCurrentUser().catch(() => null);
 

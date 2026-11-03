@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { warmEditorialEnglish } from "./content-translation";
 import { requireEditor } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 
@@ -101,7 +102,6 @@ async function writeArticle(
       base.sort_order,
       id,
     );
-    await execute(`DELETE FROM article_translations WHERE article_id = ?`, id);
   }
 
   for (const loc of ["es", "en"] as const) {
@@ -110,7 +110,10 @@ async function writeArticle(
     await execute(
       `INSERT INTO article_translations
          (article_id, locale, title, excerpt, body, seo_title, seo_description)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(article_id, locale) DO UPDATE SET title = excluded.title,
+         excerpt = excluded.excerpt, body = excluded.body,
+         seo_title = excluded.seo_title, seo_description = excluded.seo_description`,
       id,
       loc,
       title,
@@ -119,6 +122,10 @@ async function writeArticle(
       String(formData.get(`seo_title_${loc}`) ?? "").trim() || null,
       String(formData.get(`seo_description_${loc}`) ?? "").trim() || null,
     );
+  }
+  if (!String(formData.get("title_en") ?? "").trim()) {
+    await warmEditorialEnglish(...["title", "excerpt", "body", "seo_title", "seo_description"]
+      .map((key): [string, string] => [String(formData.get(`${key}_es`) ?? "").trim(), ""]));
   }
   return id;
 }
@@ -131,13 +138,14 @@ export async function createArticle(
   const locale = await requireStaff(rawLocale);
   const base = parse(formData);
   if (!base.slug) return { ok: false, error: "bad-slug" };
+  if (!String(formData.get("title_es") ?? "").trim()) return { ok: false, error: "required" };
   const exists = await queryOne<{ id: number }>(
     `SELECT id FROM articles WHERE slug = ?`,
     base.slug,
   );
   if (exists) return { ok: false, error: "slug-taken" };
   await writeArticle(null, base, formData);
-  revalidatePath(`/${locale}/blog`);
+  revalidatePath("/[lang]/blog", "layout");
   redirect(`/${locale}/admin/blog`);
 }
 
@@ -150,6 +158,7 @@ export async function updateArticle(
   const locale = await requireStaff(rawLocale);
   const base = parse(formData);
   if (!base.slug) return { ok: false, error: "bad-slug" };
+  if (!String(formData.get("title_es") ?? "").trim()) return { ok: false, error: "required" };
   const clash = await queryOne<{ id: number }>(
     `SELECT id FROM articles WHERE slug = ? AND id != ?`,
     base.slug,
@@ -157,7 +166,7 @@ export async function updateArticle(
   );
   if (clash) return { ok: false, error: "slug-taken" };
   await writeArticle(id, base, formData);
-  revalidatePath(`/${locale}/blog`);
+  revalidatePath("/[lang]/blog", "layout");
   revalidatePath(`/${locale}/admin/blog`);
   return { ok: true };
 }
@@ -168,7 +177,7 @@ export async function deleteArticle(
 ): Promise<ArticlesResult> {
   const locale = await requireStaff(rawLocale);
   await execute(`DELETE FROM articles WHERE id = ?`, id);
-  revalidatePath(`/${locale}/blog`);
+  revalidatePath("/[lang]/blog", "layout");
   revalidatePath(`/${locale}/admin/blog`);
   return { ok: true };
 }

@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { warmEditorialEnglish } from "./content-translation";
 import { requireEditor } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 
@@ -68,7 +69,8 @@ export async function createRoute(
     r.sort_order,
     r.is_published,
   );
-  revalidatePath(`/${locale}/transfers`);
+  await warmEditorialEnglish([r.price_note ?? "", ""]);
+  revalidatePath("/[lang]/transfers", "page");
   redirect(`/${locale}/admin/transfers`);
 }
 
@@ -97,7 +99,8 @@ export async function updateRoute(
     r.is_published,
     id,
   );
-  revalidatePath(`/${locale}/transfers`);
+  await warmEditorialEnglish([r.price_note ?? "", ""]);
+  revalidatePath("/[lang]/transfers", "page");
   revalidatePath(`/${locale}/admin/transfers`);
   return { ok: true };
 }

@@ -57,11 +57,11 @@ export default async function HomePage({ params }: Props) {
   const [dict, all, testimonials, gallery, phoneDisplay, galleryTotal, videos] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
-    listPublishedTestimonials(6),
-    listPublishedGalleryImages(8),
+    listPublishedTestimonials(locale, 6),
+    listPublishedGalleryImages(locale, 8),
     getSetting("phone_display", DEFAULT_PHONE_DISPLAY),
     countPublishedGalleryImages(),
-    listPublishedGalleryVideos(),
+    listPublishedGalleryVideos(locale),
   ]);
 
   const orgJsonLd = {

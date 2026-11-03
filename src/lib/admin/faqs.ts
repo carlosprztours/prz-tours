@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { warmEditorialEnglish } from "./content-translation";
 import { requireEditor } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 
@@ -60,7 +61,8 @@ export async function createFaq(
     f.sort_order,
     f.is_published,
   );
-  revalidatePath(`/${locale}/contact`);
+  await warmEditorialEnglish([f.question_es, f.question_en], [f.answer_es, f.answer_en]);
+  revalidatePath("/[lang]/contact", "page");
   redirect(`/${locale}/admin/faq`);
 }
 
@@ -74,8 +76,8 @@ export async function updateFaq(
   const f = parse(formData);
   if (!f.question_es || !f.answer_es) return { ok: false, error: "required" };
   await execute(
-    `UPDATE faqs SET question_es = ?, answer_es = ?, question_en = ?,
-       answer_en = ?, sort_order = ?, is_published = ? WHERE id = ?`,
+    `UPDATE faqs SET question_es = ?, answer_es = ?, question_en = COALESCE(NULLIF(?, ''), question_en),
+       answer_en = COALESCE(NULLIF(?, ''), answer_en), sort_order = ?, is_published = ? WHERE id = ?`,
     f.question_es,
     f.answer_es,
     f.question_en,
@@ -84,7 +86,8 @@ export async function updateFaq(
     f.is_published,
     id,
   );
-  revalidatePath(`/${locale}/contact`);
+  await warmEditorialEnglish([f.question_es, f.question_en], [f.answer_es, f.answer_en]);
+  revalidatePath("/[lang]/contact", "page");
   revalidatePath(`/${locale}/admin/faq`);
   return { ok: true };
 }
