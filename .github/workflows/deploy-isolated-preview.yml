@@ -1,0 +1,60 @@
+name: Deploy isolated preview
+
+on:
+  push:
+    branches:
+      - fix/preview-imagekit-video-playback
+    paths:
+      - '.github/workflows/deploy-isolated-preview.yml'
+      - 'wrangler.preview.jsonc'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-preview-perez-tours
+  cancel-in-progress: false
+
+jobs:
+  deploy-preview:
+    if: github.ref == 'refs/heads/fix/preview-imagekit-video-playback' && github.repository == 'carlosprztours/prz-tours'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Verify isolated target and credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          node - <<'NODE'
+          const fs = require('fs');
+          const text = fs.readFileSync('wrangler.preview.jsonc', 'utf8');
+          const clean = text.replace(/\/\/.*$/gm, '');
+          const cfg = JSON.parse(clean);
+          if (cfg.name !== 'prz-tours-video-preview' ||
+              cfg.routes?.length ||
+              cfg.d1_databases?.length !== 1 ||
+              cfg.d1_databases[0].database_id !== '6c3b5f55-8c63-4127-8e6b-6e1f4beee747' ||
+              cfg.services?.[0]?.service !== cfg.name) {
+            throw new Error('Unsafe preview target configuration');
+          }
+          NODE
+      - name: Build and deploy preview only (no D1 migrations)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx opennextjs-cloudflare build
+          npx opennextjs-cloudflare deploy --config wrangler.preview.jsonc
