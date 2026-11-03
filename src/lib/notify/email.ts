@@ -39,6 +39,7 @@ export type EmailPayload = {
 export type SendResult = { sent: boolean; id?: string; skipped?: string };
 
 export async function sendEmail(payload: EmailPayload): Promise<SendResult> {
+  if ((await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) === "true") return { sent: false, skipped: "preview-isolation" };
   const [apiKey, from, notifyEmail] = await Promise.all([
     getEnvVar("RESEND_API_TOKEN"),
     getEnvVar("RESEND_FROM"),

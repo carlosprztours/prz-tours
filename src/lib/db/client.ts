@@ -39,6 +39,7 @@ export async function getMediaBucket(): Promise<R2Bucket | null> {
 
 /** Variables de entorno de tipo texto (secretos incluidos). */
 export type StringEnvKey =
+  | "DISABLE_EXTERNAL_BOOKING_EFFECTS"
   | "AUTH_SECRET"
   | "RESEND_API_TOKEN"
   | "RESEND_FROM"

@@ -12,6 +12,7 @@
  */
 "use server";
 
+import { getEnvVar } from "@/lib/db/client";
 import { headers } from "next/headers";
 
 import { createBooking, markBookingNotified } from "@/lib/db/bookings";
@@ -253,7 +254,7 @@ async function createBookingDirect(
     },
   );
   const experience = booking.tour_title || booking.transfer_label || "";
-  const whatsappUrl = whatsappLink(
+  const whatsappUrl = (await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) === "true" ? "" : whatsappLink(
     businessWhatsapp,
     bookingConfirmationMessage(
       {

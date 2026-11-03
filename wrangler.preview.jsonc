@@ -20,6 +20,7 @@
   // `workers_dev` se deja activo como red de seguridad: si el dominio propio
   // o el SSL fallan, el sitio sigue accesible por *.workers.dev.
   "workers_dev": true,
+  "vars": { "DISABLE_EXTERNAL_BOOKING_EFFECTS": "true" },
   "d1_databases": [
     {
       "binding": "DB",

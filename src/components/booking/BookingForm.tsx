@@ -302,7 +302,7 @@ export function BookingForm({
             paid: t.paymentChoicePaid,
           }}
         />
-        <a
+        {state.whatsappUrl && <a
           href={state.whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -310,7 +310,7 @@ export function BookingForm({
           style={{ animationDelay: "0.65s" }}
         >
           {t.successWhatsapp}
-        </a>
+        </a>}
         <p className="anim-fade-up mt-3 text-xs text-ink-500" style={{ animationDelay: "0.75s" }}>{t.successEmail}</p>
       </div>
     );
