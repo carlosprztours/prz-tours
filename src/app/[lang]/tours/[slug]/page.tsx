@@ -4,6 +4,7 @@
  * Incluye JSON-LD `TouristTrip` + `Offer` para SEO y `generateStaticParams`
  * con todos los slugs (las páginas se generan bajo demanda y se cachean).
  */
+import { getEnvVar } from "@/lib/db/client";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -171,6 +172,7 @@ export default async function TourDetailPage({ params }: Props) {
                 </h2>
                 <p className="mb-4 mt-1 text-xs text-ink-500">{dict.booking.subtitle}</p>
                 <BookingForm
+                  externalEffectsDisabled={(await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) === "true"}
                   locale={locale}
                   booking={dict.booking}
                   optionalLabel={dict.common.optional}

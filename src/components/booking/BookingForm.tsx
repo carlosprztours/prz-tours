@@ -35,6 +35,7 @@ export type BookingOption = {
 };
 
 type Props = {
+  externalEffectsDisabled: boolean;
   locale: Locale;
   booking: Dictionary["booking"];
   optionalLabel: string;
@@ -157,6 +158,7 @@ function clearDraft(): void {
 }
 
 export function BookingForm({
+  externalEffectsDisabled,
   locale,
   booking: t,
   optionalLabel,
@@ -311,7 +313,7 @@ export function BookingForm({
         >
           {t.successWhatsapp}
         </a>}
-        <p className="anim-fade-up mt-3 text-xs text-ink-500" style={{ animationDelay: "0.75s" }}>{t.successEmail}</p>
+        {!externalEffectsDisabled && <p className="anim-fade-up mt-3 text-xs text-ink-500" style={{ animationDelay: "0.75s" }}>{t.successEmail}</p>}
       </div>
     );
   }
@@ -821,7 +823,7 @@ export function BookingForm({
           {t.paymentMethodRequired}
         </p>
       )}
-      {pending && <p className="text-center text-xs text-ink-500">{t.submittingHint}</p>}
+      {pending && <p className="text-center text-xs text-ink-500">{externalEffectsDisabled ? t.submittingIsolatedHint : t.submittingHint}</p>}
 
       {paypalOrder && (
         <PayPalCheckout
