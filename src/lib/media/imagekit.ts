@@ -50,6 +50,8 @@ export type UploadResult = {
   fileId: string | null;
   /** Dónde se guardó, para poder auditarlo. */
   path: string | null;
+  originalName?: string;
+  originalIndex?: number;
 };
 
 /** Motivo por el que se puede rechazar una subida, ya traducido. */
@@ -119,9 +121,9 @@ export async function uploadImagesToImageKit(
   for (let i = 0; i < VALIDOS.length; i += PARALELISMO) {
     const tanda = VALIDOS.slice(i, i + PARALELISMO);
     const resultados = await Promise.all(
-      tanda.map(async (file) => {
+      tanda.map(async (file, batchIndex) => {
         try {
-          return { file, resultado: await uploadImageToImageKit(file, folder) };
+          return { file, resultado: { ...(await uploadImageToImageKit(file, folder)), originalName: file.name, originalIndex: i + batchIndex } };
         } catch (err) {
           const motivo =
             err instanceof UploadFailed ? err.reason : ("upload-failed" as UploadError);
