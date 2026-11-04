@@ -16,12 +16,13 @@ const RETRY_DELAY_MS = 60_000;
  * reviewed translations must stay outside this pipeline.
  * A new source hash invalidates the cached English without deleting old text.
  */
-export async function translateEditorialText(source: string): Promise<TranslationResult> {
+export async function translateEditorialText(source: string, previewTour = false): Promise<TranslationResult> {
   const text = source.trim();
   if (!text) return { status: "translated", text: "" };
 
   const endpoint = await getEnvVar("EDITORIAL_TRANSLATION_URL");
   const workersAi = await getEnvVar("EDITORIAL_TRANSLATION_WORKERS_AI") === "true";
+  if (workersAi && !previewTour) return { status: "pending" };
   if (!endpoint && !workersAi) return { status: "pending" };
 
   const hash = await editorialHash(text, workersAi);
@@ -32,7 +33,7 @@ export async function translateEditorialText(source: string): Promise<Translatio
     `UPDATE content_translation_cache
      SET status = 'pending', attempts = attempts + 1, retry_after = ?
      WHERE source_hash = ? AND status != 'translated' AND attempts < ? AND retry_after <= ?`,
-    now + RETRY_DELAY_MS, hash, MAX_ATTEMPTS, now,
+    now + RETRY_DELAY_MS, hash, workersAi ? 1 : MAX_ATTEMPTS, now,
   );
   if (!claim.meta.changes) {
     const cached = await queryOne<{ status: "pending" | "translated" | "error"; translated_text: string | null }>(
@@ -50,10 +51,24 @@ export async function translateEditorialText(source: string): Promise<Translatio
       const { env } = await getCloudflareContext({ async: true });
       const binding = (env as unknown as { AI?: Ai }).AI;
       if (!binding) throw new Error("Workers AI binding missing");
-      const result = await binding.run("@cf/meta/m2m100-1.2b", {
+      const budget = await execute(
+        `UPDATE preview_translation_budget SET calls = calls + 1, chars = chars + ?, busy = 1
+         WHERE id = 1 AND busy = 0 AND halted = 0 AND expires_at > unixepoch()
+           AND calls < 10 AND chars + ? <= 3000`,
+        text.length, text.length,
+      );
+      if (!budget.meta.changes) throw new Error("Preview translation budget unavailable");
+      try {
+        const result = await binding.run("@cf/meta/m2m100-1.2b", {
         text, source_lang: "spanish", target_lang: "english",
       });
-      translated = "translated_text" in result ? result.translated_text?.trim() ?? "" : "";
+        translated = "translated_text" in result ? result.translated_text?.trim() ?? "" : "";
+        if (!translated) throw new Error("Empty translation");
+        await execute("UPDATE preview_translation_budget SET busy = 0 WHERE id = 1");
+      } catch (error) {
+        await execute("UPDATE preview_translation_budget SET halted = 1, busy = 0 WHERE id = 1");
+        throw error;
+      }
     } else {
       const url = new URL(endpoint!);
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Invalid translation endpoint");

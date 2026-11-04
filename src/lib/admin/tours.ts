@@ -197,7 +197,7 @@ export async function createTour(
   if (exists) return { ok: false, error: "slug-taken" };
 
   const id = await writeTour(null, base, formData);
-  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData));
+  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData), base.slug === "qa-ai-fase4-c405637");
   revalidatePath(`/${locale}/tours`);
   redirect(`/${locale}/admin/tours`);
 }
@@ -222,7 +222,7 @@ export async function updateTour(
   if (clash) return { ok: false, error: "slug-taken" };
 
   await writeTour(id, base, formData);
-  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData));
+  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData), base.slug === "qa-ai-fase4-c405637");
   revalidatePath(`/${locale}/tours`);
   revalidatePath(`/${locale}/admin/tours`);
   return { ok: true };
