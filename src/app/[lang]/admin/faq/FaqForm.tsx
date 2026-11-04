@@ -43,18 +43,12 @@ export function FaqForm({
           {es ? "Pregunta (ES)" : "Question (ES)"}
           <input name="question_es" required defaultValue={initial?.question_es ?? ""} className={inputClass} />
         </label>
-        <label className={labelClass}>
-          {es ? "Pregunta (EN)" : "Question (EN)"}
-          <input name="question_en" defaultValue={initial?.question_en ?? ""} className={inputClass} />
-        </label>
+
         <label className={labelClass}>
           {es ? "Respuesta (ES)" : "Answer (ES)"}
           <textarea name="answer_es" rows={4} required defaultValue={initial?.answer_es ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
         </label>
-        <label className={labelClass}>
-          {es ? "Respuesta (EN)" : "Answer (EN)"}
-          <textarea name="answer_en" rows={4} defaultValue={initial?.answer_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
-        </label>
+
         <label className={labelClass}>
           {es ? "Orden" : "Order"}
           <input name="sort_order" type="number" defaultValue={initial?.sort_order ?? 0} className={inputClass} />
@@ -64,6 +58,19 @@ export function FaqForm({
           {es ? "Publicado" : "Published"}
         </label>
       </div>
+      <details className="mt-1 rounded-xl border border-sand-200 p-3">
+        <summary className="cursor-pointer text-sm font-semibold">{locale === "es" ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+        <div className="mt-3 grid gap-3">
+          <label className={labelClass}>
+            {es ? "Pregunta (EN)" : "Question (EN)"}
+            <input name="question_en" defaultValue={initial?.question_en ?? ""} className={inputClass} />
+          </label>
+          <label className={labelClass}>
+            {es ? "Respuesta (EN)" : "Answer (EN)"}
+            <textarea name="answer_en" rows={4} defaultValue={initial?.answer_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
+          </label>
+        </div>
+      </details>
       {!state.ok && state.error && (
         <p className="text-sm font-semibold text-red-600" role="alert">{state.error}</p>
       )}

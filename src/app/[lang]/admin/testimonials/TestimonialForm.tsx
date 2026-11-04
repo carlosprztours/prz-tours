@@ -59,10 +59,7 @@ export function TestimonialForm({
           {es ? "Texto (español)" : "Text (Spanish)"}
           <textarea name="text_es" rows={4} required defaultValue={initial?.text_es ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
         </label>
-        <label className={labelClass}>
-          {es ? "Texto (inglés)" : "Text (English)"}
-          <textarea name="text_en" rows={4} defaultValue={initial?.text_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
-        </label>
+
         <label className={labelClass}>
           {es ? "Orden" : "Order"}
           <input name="sort_order" type="number" defaultValue={initial?.sort_order ?? 0} className={inputClass} />
@@ -72,6 +69,15 @@ export function TestimonialForm({
           {es ? "Publicado" : "Published"}
         </label>
       </div>
+      <details className="mt-1 rounded-xl border border-sand-200 p-3">
+        <summary className="cursor-pointer text-sm font-semibold">{locale === "es" ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+        <div className="mt-3 grid gap-3">
+          <label className={labelClass}>
+            {es ? "Texto (inglés)" : "Text (English)"}
+            <textarea name="text_en" rows={4} defaultValue={initial?.text_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
+          </label>
+        </div>
+      </details>
       {!state.ok && state.error && (
         <p className="text-sm font-semibold text-red-600" role="alert">{state.error}</p>
       )}

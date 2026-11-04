@@ -30,8 +30,8 @@ export function tourFormLabels(locale: Locale) {
     title: es ? "Título" : "Title",
     summary: es ? "Resumen" : "Summary",
     description: es ? "Descripción (párrafos separados por línea en blanco)" : "Description (paragraphs separated by blank lines)",
-    seoTitle: "SEO title",
-    seoDescription: "SEO description",
+    seoTitle: es ? "Título SEO" : "SEO title",
+    seoDescription: es ? "Descripción SEO" : "SEO description",
     images: es ? "Imágenes" : "Images",
     imagesHint: es
       ? "Una por línea con formato: url | texto alternativo"

@@ -149,7 +149,6 @@ function ImageGallery({
 }
 
 export function TourForm({ locale, initial, labels, categories, manageCategories }: Props) {
-  const [tab, setTab] = useState<"es" | "en">("es");
   const action = useMemo(
     () =>
       initial
@@ -164,6 +163,53 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
   const t = initial?.tour;
 
   const tr = (loc: "es" | "en") => initial?.translations[loc];
+
+  function renderLists(l: "es" | "en") {
+    return (
+      <div>
+        {(["included", "excluded", "bring"] as const).map((section) => (
+          <label key={section} className={`mt-3 ${labelClass}`}>
+            {section === "included" ? labels.included : section === "excluded" ? labels.excluded : labels.bring} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+            <textarea
+              name={`${section}_${l}`}
+              rows={4}
+              defaultValue={(initial?.lists[l][section] ?? []).join("\n")}
+              className={areaClass}
+            />
+          </label>
+        ))}
+      </div>
+    );
+  }
+
+  function renderTexts(l: "es" | "en") {
+    return (
+      <div className="mt-4 grid gap-3">
+        <label className={labelClass}>
+          {labels.title} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+          <input name={`title_${l}`} required={l === "es"} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
+        </label>
+        <label className={labelClass}>
+          {labels.summary} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+          <input name={`summary_${l}`} defaultValue={tr(l)?.summary ?? ""} className={inputClass} />
+        </label>
+        <label className={labelClass}>
+          {labels.description} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+          <textarea name={`description_${l}`} rows={8} defaultValue={tr(l)?.description ?? ""} className={areaClass} />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={labelClass}>
+            {labels.seoTitle}
+            <input name={`seo_title_${l}`} defaultValue={tr(l)?.seo_title ?? ""} className={inputClass} />
+          </label>
+          <label className={labelClass}>
+            {labels.seoDescription}
+            <input name={`seo_description_${l}`} defaultValue={tr(l)?.seo_description ?? ""} className={inputClass} />
+          </label>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -274,22 +320,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
 
       {/* ── Textos ES/EN ── */}
       <section className="rounded-2xl border border-sand-200 bg-white p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-ink-900">{labels.texts}</h2>
-          <div className="flex gap-1 rounded-full bg-sand-100 p-1">
-            {(["es", "en"] as const).map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setTab(l)}
-                className={`rounded-full px-4 py-1 text-sm font-bold transition ${tab === l ? "bg-white shadow" : "text-ink-500"}`}
-              >
-                {l === "es" ? "Español" : "Inglés (opcional)"}
-              </button>
-            ))}
-          </div>
-        </div>
-
+        <h2 className="font-display text-lg font-bold text-ink-900">{labels.texts}</h2>
         <p className="mt-2 text-sm text-ink-600">
           Traducción inglesa: {({
             pending: "pendiente",
@@ -299,32 +330,12 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
             manual: "edición manual protegida",
           })[initial?.englishStatus ?? "pending"]}.
         </p>
-        {(["es", "en"] as const).map((l) => (
-          <div key={l} className={`mt-4 grid gap-3 ${tab === l ? "" : "hidden"}`}>
-            <label className={labelClass}>
-              {labels.title} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <input name={`title_${l}`} required={l === "es"} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              {labels.summary} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <input name={`summary_${l}`} defaultValue={tr(l)?.summary ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              {labels.description} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <textarea name={`description_${l}`} rows={8} defaultValue={tr(l)?.description ?? ""} className={areaClass} />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className={labelClass}>
-                {labels.seoTitle}
-                <input name={`seo_title_${l}`} defaultValue={tr(l)?.seo_title ?? ""} className={inputClass} />
-              </label>
-              <label className={labelClass}>
-                {labels.seoDescription}
-                <input name={`seo_description_${l}`} defaultValue={tr(l)?.seo_description ?? ""} className={inputClass} />
-              </label>
-            </div>
-          </div>
-        ))}
+        {renderTexts("es")}
+        <details className="mt-4 rounded-xl border border-sand-200 p-3">
+          <summary className="cursor-pointer text-sm font-semibold">{locale === "es" ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+          {renderTexts("en")}
+          {renderLists("en")}
+        </details>
       </section>
 
       {/* ── Imágenes y listas ── */}
@@ -395,21 +406,7 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
         </div>
         <div className="rounded-2xl border border-sand-200 bg-white p-5">
           <h2 className="font-display text-lg font-bold text-ink-900">{labels.lists}</h2>
-          {(["included", "excluded", "bring"] as const).map((section) => (
-            <div key={section} className="mt-3 grid gap-2 sm:grid-cols-2">
-              {(["es", "en"] as const).map((l) => (
-                <label key={l} className={labelClass}>
-                  {section === "included" ? labels.included : section === "excluded" ? labels.excluded : labels.bring} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-                  <textarea
-                    name={`${section}_${l}`}
-                    rows={4}
-                    defaultValue={(initial?.lists[l][section] ?? []).join("\n")}
-                    className={areaClass}
-                  />
-                </label>
-              ))}
-            </div>
-          ))}
+          {renderLists("es")}
         </div>
       </section>
 

@@ -41,10 +41,7 @@ export function CategoryForm({ locale, labels }: Props) {
         {labels.name}
         <input name="label_es" required minLength={2} placeholder={labels.name} className={inputClass} />
       </label>
-      <label className={labelClass}>
-        {labels.nameEn}
-        <input name="label_en" placeholder={labels.nameEn} className={inputClass} />
-      </label>
+
       <label className={labelClass}>
         {labels.slug}
         <input name="slug" placeholder={labels.slug} className={inputClass} />
@@ -55,6 +52,15 @@ export function CategoryForm({ locale, labels }: Props) {
         <input name="icon" defaultValue="✨" maxLength={4} placeholder="✨" className={inputClass} />
       </label>
 
+      <details className="sm:col-span-2 rounded-xl border border-sand-200 p-3">
+        <summary className="cursor-pointer text-sm font-semibold">{locale === "es" ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+        <div className="mt-3 grid gap-3">
+          <label className={labelClass}>
+            {labels.nameEn}
+            <input name="label_en" placeholder={labels.nameEn} className={inputClass} />
+          </label>
+        </div>
+      </details>
       {!state.ok && state.error && (
         <p role="alert" className="sm:col-span-2 text-sm font-bold text-red-600">
           {labels.errors[state.error] ?? state.error}
