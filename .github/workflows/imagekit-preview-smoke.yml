@@ -1,0 +1,155 @@
+name: PR 6 authenticated ImageKit QA
+on:
+  push:
+    branches: [qa/pr6-imagekit-authenticated]
+permissions:
+  contents: read
+jobs:
+  mixed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 279362e6a6f3f88602d4db77563b4421d212e9dd
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx opennextjs-cloudflare build
+      - run: npx playwright-core install --with-deps chromium
+      - name: Prepare disposable local D1 and fixtures
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {randomBytes,pbkdf2Sync} from 'node:crypto';
+          const config=JSON.parse(fs.readFileSync('wrangler.jsonc','utf8').split('\n').filter(l=>!l.trimStart().startsWith('//')).join('\n'));
+          for(const k of ['routes','triggers','services','ai','images']) delete config[k];
+          config.name='pr6-imagekit-local-qa';
+          config.main='.open-next/worker.js';
+          config.d1_databases=[{binding:'DB',database_name:'pr6-qa',database_id:'00000000-0000-4000-8000-000000000006',migrations_dir:'migrations'}];
+          config.vars={DISABLE_EXTERNAL_BOOKING_EFFECTS:'true',EDITORIAL_TRANSLATION_WORKERS_AI:'false'};
+          fs.writeFileSync('wrangler.qa.json',JSON.stringify(config));
+          fs.writeFileSync('.dev.vars.qa','');
+          const password=randomBytes(24).toString('hex');
+          console.log('::add-mask::'+password);
+          fs.appendFileSync(process.env.GITHUB_ENV,'QA_PASSWORD='+password+'\n');
+          const salt=randomBytes(16);
+          const hash=['pbkdf2-sha256',100000,salt.toString('base64'),pbkdf2Sync(password,salt,100000,32,'sha256').toString('base64')].join('$');
+          fs.writeFileSync('qa-user.sql',"INSERT INTO users (email,name,password_hash,role,is_active) VALUES ('qa-pr6@example.test','QA','"+hash+"','admin',1);");
+          NODE
+          npx wrangler d1 migrations apply DB --local --config wrangler.qa.json --persist-to .qa-d1
+          npx wrangler d1 execute DB --local --config wrangler.qa.json --persist-to .qa-d1 --file qa-user.sql
+          ffmpeg -loglevel error -f lavfi -i color=c=black:s=32x32:d=1 -c:v libx264 -pix_fmt yuv420p qa-video.mp4
+      - name: Run authenticated upload and cleanup
+        env:
+          IMAGEKIT_PRIVATE_KEY: ${{ secrets.IMAGEKIT_PRIVATE_KEY }}
+          IMAGEKIT_URL_ENDPOINT: ${{ vars.IMAGEKIT_URL_ENDPOINT || 'https://ik.imagekit.io/PrzCV' }}
+        run: |
+          set -euo pipefail
+          test -n "$IMAGEKIT_PRIVATE_KEY" || { echo 'Authorized GitHub Actions secret is absent'; exit 1; }
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {randomBytes} from 'node:crypto';
+          fs.writeFileSync('.dev.vars', ['AUTH_SECRET='+randomBytes(32).toString('hex'),'IMAGEKIT_PRIVATE_KEY='+process.env.IMAGEKIT_PRIVATE_KEY,'IMAGEKIT_URL_ENDPOINT='+process.env.IMAGEKIT_URL_ENDPOINT].join('\n'),{mode:0o600});
+          NODE
+          npx wrangler dev --local --config wrangler.qa.json --persist-to .qa-d1 --port 8787 >qa-worker.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true; unlink .dev.vars' EXIT
+          for i in $(seq 1 45); do
+            if curl -fsS http://localhost:8787/es/login >/dev/null 2>&1; then break; fi
+            sleep 1
+          done
+          cat > qa-imagekit.mjs <<'NODE'
+          import assert from 'node:assert/strict';
+          import {chromium} from 'playwright-core';
+          import {execFileSync} from 'node:child_process';
+          const folder='pr6-qa-'+process.env.GITHUB_RUN_ID+'-'+process.env.GITHUB_RUN_ATTEMPT;
+          const prefix='/prz/'+folder+'/';
+          const headers={Authorization:'Basic '+Buffer.from(process.env.IMAGEKIT_PRIVATE_KEY+':').toString('base64')};
+          async function manage(path,method='GET') {
+            for(let i=0;i<3;i++){
+              const r=await fetch('https://api.imagekit.io'+path,{method,headers,redirect:'error',signal:AbortSignal.timeout(15000)}).catch(()=>null);
+              if(r&&r.status!==429&&r.status<500)return r;
+            }
+            throw Error('ImageKit management unavailable');
+          }
+          async function list(){
+            const r=await manage('/v1/files?'+new URLSearchParams({path:prefix.slice(0,-1),type:'file',limit:'20'}));
+            assert(r.ok,'ImageKit test key cannot list files: HTTP '+r.status);
+            return (await r.json()).filter(x=>x.filePath?.startsWith(prefix));
+          }
+          function sql(command){
+           const out=execFileSync('node_modules/.bin/wrangler',['d1','execute','DB','--local','--config','wrangler.qa.json','--persist-to','.qa-d1','--json','--command',command],{encoding:'utf8'});
+           return JSON.parse(out)[0].results;
+          }
+          const browser=await chromium.launch();
+          const urls=[];
+          try {
+           assert.equal((await list()).length,0,'QA folder must start empty');
+           const page=await browser.newPage();
+           const root='http://localhost:8787';
+           await page.goto(root+'/es/login');
+           await page.locator('#email').fill('qa-pr6@example.test');
+           await page.locator('#password').fill(process.env.QA_PASSWORD);
+           await page.locator('form').filter({has:page.locator('#password')}).locator('button[type=submit]').click();
+           await page.waitForURL('**/es/admin',{timeout:30000});
+           await page.goto(root+'/es/admin/gallery');
+           const form=page.locator('form').filter({has:page.locator('#gallery-url')});
+           const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAAF0lEQVR42u3OMQEAAAgDoC251a3gLwSgcrfTBgQCgUAgEAgEAoFAIBAIBAKBQCAQCAQOgAB1YkZ2QAAAABJRU5ErkJggg==','base64');
+           const {readFile}=await import('node:fs/promises');
+           const video=await readFile('qa-video.mp4');
+           let observed=0;
+           await page.route('**/api/admin/upload',async route=>{
+             const multipart=await new Response(route.request().postDataBuffer(),{headers:{'content-type':route.request().headers()['content-type']}}).formData();
+             observed=multipart.getAll('files').length;
+             multipart.set('folder',folder);
+             const result=await route.fetch({multipart});
+             await route.fulfill({response:result});
+           });
+           const response=page.waitForResponse(r=>r.url().endsWith('/api/admin/upload')&&r.request().method()==='POST');
+           await form.locator('input[type=file]').setInputFiles([
+             {name:'qa.png',mimeType:'image/png',buffer:png},
+             {name:'duplicate.png',mimeType:'image/png',buffer:png},
+             {name:'qa.mp4',mimeType:'video/mp4',buffer:video},
+             {name:'invalid.txt',mimeType:'text/plain',buffer:Buffer.from('invalid qa input')},
+           ]);
+           await form.getByRole('button',{name:/Subiendo/}).waitFor({timeout:8000});
+           const r=await response;
+           const body=await r.json();
+           assert.equal(r.status(),200,'Authenticated upload failed: '+r.status());
+           assert.equal(observed,3);
+           assert.equal(body.images.length,2);
+           assert.equal(body.failed.length,1);
+           assert.equal(body.failed[0].motivo,'bad-type');
+           urls.push(...body.images.map(x=>x.url));
+           await form.getByText(/1 foto.s. y 1 v.deo.s. listos/).waitFor();
+           await form.getByText(/1 errores/).waitFor();
+           assert.equal((await list()).length,2);
+           function count(t){return sql('SELECT count(*) AS n FROM '+t)[0].n;}
+           const totals=[count('gallery_images'),count('gallery_videos')];
+           const add=form.getByRole('button',{name:'Agregar',exact:true});
+           await add.click();
+           await form.getByText('2 elemento(s) agregado(s).',{exact:true}).waitFor();
+           assert.deepEqual([count('gallery_images'),count('gallery_videos')],totals.map(n=>n+1));
+           await add.click();
+           await form.getByText(/ya exist/i).waitFor();
+           assert.deepEqual([count('gallery_images'),count('gallery_videos')],totals.map(n=>n+1));
+           console.log('PASS: authenticated mixed upload, progress, partial error, deduplication, local D1 and idempotent replay');
+          } finally {
+           await browser.close();
+           for(const f of await list()){
+             assert.match(f.fileId,/^[a-zA-Z0-9_-]+$/);
+             assert(f.filePath.startsWith(prefix));
+             assert((await manage('/v1/files/'+f.fileId,'DELETE')).ok,'ImageKit cleanup failed');
+           }
+           assert.equal((await list()).length,0,'ImageKit cleanup not verified');
+           for(const table of ['gallery_images','gallery_videos']){
+             for(const url of urls) sql('DELETE FROM '+table+' WHERE url='+ "'"+url.replaceAll("'","''")+"'");
+           }
+           console.log('PASS: isolated ImageKit folder empty; local test database is discarded by the runner');
+          }
+          NODE
+          node qa-imagekit.mjs
