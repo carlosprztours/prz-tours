@@ -1,7 +1,8 @@
 // Preview aislado: SIN dominio personalizado y SIN D1 de producción.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  "main": "preview-worker.ts",
+  "triggers": { "crons": ["* * * * *"] },
   "name": "prz-tours-video-preview",
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -21,7 +22,7 @@
   // o el SSL fallan, el sitio sigue accesible por *.workers.dev.
   "workers_dev": true,
   "ai": { "binding": "AI" },
-  "vars": { "DISABLE_EXTERNAL_BOOKING_EFFECTS": "true", "EDITORIAL_TRANSLATION_WORKERS_AI": "false" },
+  "vars": { "DISABLE_EXTERNAL_BOOKING_EFFECTS": "true", "EDITORIAL_TRANSLATION_WORKERS_AI": "true" },
   "d1_databases": [
     {
       "binding": "DB",
