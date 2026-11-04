@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "tools:check": "node scripts/sync-tools.mjs --check",
+    "tools:sync": "node scripts/sync-tools.mjs",
     "release:check": "node scripts/release.mjs check",
     "release:generate": "node scripts/release.mjs generate",
     "release:suggest": "node scripts/release.mjs suggest",

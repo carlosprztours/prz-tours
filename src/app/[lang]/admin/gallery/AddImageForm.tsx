@@ -20,6 +20,8 @@ const ERRORES: Record<string, { es: string; en: string }> = {
     es: "Sube al menos una foto o pega una URL.",
     en: "Upload at least one photo or paste a URL.",
   },
+  tooMany: { es: "Máximo 100 archivos por selección.", en: "Maximum 100 files per selection." },
+  invalidUrl: { es: "Una URL no es válida.", en: "One URL is invalid." },
 };
 
 export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
@@ -31,12 +33,12 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
   /** Vídeos subidos junto con las fotos; van a su apartado. */
   const [subidasVideo, setSubidasVideo] = useState<string[]>([]);
 
-  const esVideo = (u: string) => /\.(mp4|webm|mov)(\?|$)/i.test(u);
+  const esVideo = (u: string) => /\.(mp4|webm|mov|m3u8)([?#]|$)/i.test(u);
   const subirTodo = (urls: string[]) => {
     const imagenes = urls.filter((u) => !esVideo(u));
     const videos = urls.filter((u) => esVideo(u));
-    setSubidas(imagenes);
-    setSubidasVideo(videos);
+    setSubidas(previous => [...new Set([...previous, ...imagenes])]);
+    setSubidasVideo(previous => [...new Set([...previous, ...videos])]);
   };
 
   const input =
@@ -95,6 +97,11 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 text-xs font-bold text-ink-500 sm:col-span-2">
+          {es ? "Excursión o nombre del grupo" : "Excursion or group name"}
+          <input name="group_name" maxLength={120} placeholder={es ? "Ej.: Excursión Cayo Arena" : "E.g. Cayo Arena excursion"} className={input} />
+          <span className="text-[11px] font-normal text-ink-400">{es ? "Se aplicará como leyenda y base del texto alternativo a todas las fotos del lote, salvo donde escribas una descripción propia." : "Applied as caption and alt-text basis to every image in the batch unless you provide a custom description."}</span>
+        </label>
+        <label className="grid gap-1 text-xs font-bold text-ink-500 sm:col-span-2">
           {subidas.length > 0
             ? es
               ? `URL de ${subidas.length} foto(s) — no hace falta tocarla`
@@ -152,13 +159,9 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
       )}
       {state.ok && (
         <p className="text-sm font-semibold text-emerald-600" role="status">
-          {state.count && state.count > 1
-            ? es
-              ? `${state.count} fotos agregadas. Actualiza para verlas.`
-              : `${state.count} photos added. Refresh to see them.`
-            : es
-              ? "Agregada. Actualiza para verla."
-              : "Added. Refresh to see it."}
+          {state.count === 0
+            ? (es ? "El contenido ya estaba en la galería." : "The media was already in the gallery.")
+            : (es ? `${state.count ?? 1} elemento(s) agregado(s).` : `${state.count ?? 1} media item(s) added.`)}
         </p>
       )}
 

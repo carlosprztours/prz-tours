@@ -8,7 +8,8 @@ import { redirect } from "next/navigation";
 
 import { warmEditorialEnglish } from "./content-translation";
 import { requireEditor, requireStaffRoles } from "./access";
-import { execute, query, queryOne } from "@/lib/db/client";
+import { MAX_UPLOAD_SELECTION } from "@/lib/media/upload-batches.mjs";
+import { batch, execute, query, queryOne } from "@/lib/db/client";
 import type { GalleryImage, GalleryVideo, HeroSlide, Locale, Testimonial } from "@/types";
 
 /** `count` lo usan las acciones que crean varias filas de una vez (galería). */
@@ -144,15 +145,12 @@ export async function createGalleryImage(
     .map((v) => String(v).trim())
     .filter(Boolean);
   const sueltas = [String(formData.get("url") ?? "").trim()].filter(Boolean);
-  const urls = [...pegadas, ...sueltas];
+  const urls = [...new Set([...pegadas, ...sueltas])];
   // A mismo formulario puede llegar también vídeo (`video_urls`): va a la
   // tabla de vídeos como galería pública sin título.
-  const videos = formData
-    .getAll("video_urls")
-    .map((v) => String(v).trim())
-    .filter(Boolean);
+  const videos = [...new Set(formData.getAll("video_urls").map((v) => String(v).trim()).filter(Boolean))];
   if (urls.length === 0 && videos.length === 0) return { ok: false, error: "required" };
-  if (urls.length + videos.length > 20) return { ok: false, error: "tooMany" };
+  if (urls.length + videos.length > MAX_UPLOAD_SELECTION) return { ok: false, error: "tooMany" };
   if ([...urls, ...videos].some((url) => !(url.startsWith("/") && !url.startsWith("//")) && !/^https:\/\//i.test(url))) return { ok: false, error: "invalidUrl" };
 
   const alt = String(formData.get("alt") ?? "").trim();
@@ -170,43 +168,35 @@ export async function createGalleryImage(
   );
   let siguiente = ordenPedido === "" ? (ultimo?.n ?? 0) : Math.round(Number(ordenPedido) || 0);
 
-  for (const [indice, url] of urls.entries()) {
-    siguiente += 1;
-    // Con varias fotos, un único texto alternativo no describe bien todas: se
-    // aplica solo a la primera y el fotógrafo escribe el de cada una en su
-    // ficha. Con una sola foto, el texto va a esa.
-    const altDeEsta = indice === 0 && alt ? alt : grupo ? `${grupo} — fotografía ${indice + 1}` : `Fotografía de galería ${indice + 1}`;
-    await execute(
-      `INSERT INTO gallery_images (url, alt, caption, is_published, sort_order)
-       VALUES (?, ?, ?, ?, ?)`,
-      url,
-      altDeEsta,
-      caption || grupo || null,
-      publicado,
-      siguiente,
-    );
-    if (urls.length + videos.length === 1) {
-      await warmEditorialEnglish([altDeEsta, ""], [caption || grupo, ""]);
-    }
-  }
-
-  const ultimoVideo = await queryOne<{ n: number }>(
+  const images = urls.map((url, index) => ({
+    url,
+    alt: index === 0 && alt ? alt : grupo ? `${grupo} — fotografía ${index + 1}` : `Fotografía de galería ${index + 1}`,
+    order: ++siguiente,
+  }));
+  const ultimoVideo = videos.length ? await queryOne<{ n: number }>(
     `SELECT COALESCE(MAX(sort_order), 0) AS n FROM gallery_videos`,
-  );
-  for (const [indice, video] of videos.entries()) {
-    await execute(
-      `INSERT INTO gallery_videos (url, title, placement, is_published, sort_order)
-       VALUES (?, '', 'gallery', ?, ?)`,
-      video,
-      publicado,
-      (ultimoVideo?.n ?? 0) + indice + 1,
-    );
+  ) : null;
+  const writes = await batch([
+    ...images.map(image => ({
+      sql: `INSERT INTO gallery_images (url, alt, caption, is_published, sort_order)
+            SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM gallery_images WHERE url = ?)`,
+      params: [image.url, image.alt, caption || grupo || null, publicado, image.order, image.url],
+    })),
+    ...videos.map((url, index) => ({
+      sql: `INSERT INTO gallery_videos (url, title, placement, is_published, sort_order)
+            SELECT ?, '', 'gallery', ?, ? WHERE NOT EXISTS
+            (SELECT 1 FROM gallery_videos WHERE url = ? AND placement = 'gallery')`,
+      params: [url, publicado, (ultimoVideo?.n ?? 0) + index + 1, url],
+    })),
+  ]);
+  if (images.length === 1 && videos.length === 0) {
+    await warmEditorialEnglish([images[0].alt, ""], [caption || grupo, ""]);
   }
 
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
-  return { ok: true, count: urls.length + videos.length };
+  return { ok: true, count: writes.reduce((count, result) => count + result.meta.changes, 0) };
 }
 
 export async function updateGalleryImage(

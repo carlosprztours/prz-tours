@@ -88,7 +88,7 @@ export default async function HomePage({ params }: Props) {
       <HomeTours locale={locale} dict={dict} tours={all} />
       <Testimonials locale={locale} dict={dict} testimonials={testimonials} />
       <Gallery dict={dict} locale={locale} images={gallery} total={galleryTotal} />
-      <GalleryVideos videos={videos} />
+      <GalleryVideos videos={videos} locale={locale} />
       <CtaBanner locale={locale} dict={dict} />
     </>
   );

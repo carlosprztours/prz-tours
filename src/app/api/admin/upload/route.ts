@@ -14,6 +14,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server";
 
+import { MAX_UPLOAD_BATCH_BYTES } from "@/lib/media/upload-batches.mjs";
 import { requireStaffRoles } from "@/lib/admin/access";
 import {
   MAX_FILES_PER_UPLOAD,
@@ -41,6 +42,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
+  // Limit multipart overhead separately from the sum of media bytes.
+  if (Number(request.headers.get("content-length")) > MAX_UPLOAD_BATCH_BYTES + 1024 * 1024) {
+    return NextResponse.json({ error: "bad-size" }, { status: 413 });
+  }
   const form = await request.formData().catch(() => null);
   // `files` para varias, `file` para una sola (se acepta por compatibilidad).
   const archivos: File[] = form
@@ -59,6 +64,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (archivos.reduce((total, file) => total + file.size, 0) > MAX_UPLOAD_BATCH_BYTES) {
+    return NextResponse.json({ error: "bad-size" }, { status: 413 });
+  }
   const folder = String(form?.get("folder") ?? "misc");
 
   try {
@@ -77,6 +85,8 @@ export async function POST(request: NextRequest) {
         url: s.url,
         thumbnailUrl: s.thumbnailUrl,
         fileId: s.fileId,
+        originalName: s.originalName,
+        originalIndex: s.originalIndex,
       })),
       // Con una sola foto se manda también `url` para no romper a quien aún
       // espere la respuesta antigua.

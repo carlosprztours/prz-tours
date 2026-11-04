@@ -67,7 +67,7 @@ export default async function GalleryPage({ params }: Props) {
           </>
         )}
 
-        <GalleryVideos videos={videos} />
+        <GalleryVideos videos={videos} locale={locale} />
 
         <div className="mt-12 flex justify-center">
           <Link

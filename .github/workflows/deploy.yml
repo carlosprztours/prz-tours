@@ -49,7 +49,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - run: npm run release:check && npm run test:versioning
+      - run: npm run tools:check && npm run release:check && npm run test:versioning && node --test scripts/test-upload-batches.mjs
+
+      - run: npm audit --audit-level=high
 
       - name: Typecheck
         run: npx tsc --noEmit
