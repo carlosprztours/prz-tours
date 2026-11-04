@@ -57,7 +57,7 @@ export async function translateEditorialText(source: string): Promise<Translatio
              chars = CASE WHEN expires_at <= unixepoch() THEN ? ELSE chars + ? END,
              expires_at = (unixepoch() / 86400 + 1) * 86400,
              busy = 1
-         WHERE id = 1 AND busy = 0 AND halted = 0
+         WHERE id = 1 AND busy = 0 AND halted != 1 AND halted <= unixepoch()
            AND (expires_at <= unixepoch() OR (calls < 24 AND chars + ? <= 6000))`,
         text.length, text.length, text.length,
       );
@@ -77,7 +77,15 @@ export async function translateEditorialText(source: string): Promise<Translatio
         if (!translated) throw new Error("Empty translation");
         await execute("UPDATE preview_translation_budget SET busy = 0 WHERE id = 1");
       } catch (error) {
-        await execute("UPDATE preview_translation_budget SET halted = 1, busy = 0 WHERE id = 1");
+        const details = typeof error === "object" && error !== null ? error as { code?: unknown; message?: unknown } : {};
+        const quota = String(details.code) === "3036" || /\b3036\b/.test(String(details.message));
+        await execute(
+          `UPDATE preview_translation_budget SET busy = 0,
+             halted = CASE WHEN halted = 1 THEN 1 WHEN ? = 1 THEN (unixepoch() / 86400 + 1) * 86400
+                           ELSE unixepoch() + 60 END WHERE id = 1`,
+          quota ? 1 : 0,
+        );
+        if (quota) return { status: "pending" };
         throw error;
       }
     } else {

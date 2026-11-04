@@ -8,6 +8,7 @@ import { getAdminTour } from "@/lib/admin/tours";
 import { requireSection } from "@/lib/admin/access";
 import { listTourCategories } from "@/lib/admin/categories";
 import { tourFormLabels } from "@/lib/admin/tour-labels";
+import { getEnvVar, queryOne } from "@/lib/db/client";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { TourForm } from "../TourForm";
@@ -32,6 +33,14 @@ export default async function EditTourPage({ params, searchParams }: Props) {
 
   const rows = await listTourCategories(locale);
 
+  const budget = await queryOne<{ calls: number; chars: number; halted: number }>(
+    `SELECT CASE WHEN expires_at <= unixepoch() THEN 0 ELSE calls END AS calls,
+            CASE WHEN expires_at <= unixepoch() THEN 0 ELSE chars END AS chars,
+            CASE WHEN halted = 1 OR halted > unixepoch() THEN 1 ELSE 0 END AS halted
+     FROM preview_translation_budget WHERE id = 1`,
+  ).catch(() => null);
+  const enabled = await getEnvVar("EDITORIAL_TRANSLATION_WORKERS_AI") === "true";
+
   return (
     <div className="grid gap-5">
       <div className="flex items-center gap-3">
@@ -46,6 +55,12 @@ export default async function EditTourPage({ params, searchParams }: Props) {
         <a href="?">Volver a la edición en español</a>
       ) : (
         <a href="?traduccion=en">Mantenimiento de traducción inglesa</a>
+      )}
+      {budget && (
+        <p className="text-sm text-ink-600">
+          Traducción automática: {enabled && !budget.halted ? "disponible" : "en pausa"}.
+          {" "}{Math.max(0, 24 - budget.calls)} inferencias y {Math.max(0, 6000 - budget.chars)} caracteres restantes hoy (UTC).
+        </p>
       )}
       <TourForm englishReview={englishReview}
         locale={locale}
