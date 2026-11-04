@@ -1,0 +1,48 @@
+name: Preview aislado - candidato PR 6
+on:
+  push:
+    branches: [qa/pr6-isolated-preview-279362e]
+permissions:
+  contents: read
+concurrency:
+  group: prz-tours-video-preview
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 279362e6a6f3f88602d4db77563b4421d212e9dd
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx opennextjs-cloudflare build
+      - name: Deploy isolated candidate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "279362e6a6f3f88602d4db77563b4421d212e9dd"
+          test "$CLOUDFLARE_ACCOUNT_ID" = "69ccaed4dcc4abdc37c071d438a81a9b"
+          node --input-type=commonjs <<'NODE'
+          const fs = require('node:fs');
+          const config = JSON.parse(fs.readFileSync('wrangler.jsonc', 'utf8').split('\n').filter(line => !line.trimStart().startsWith('//')).join('\n'));
+          const name = 'prz-tours-video-preview';
+          const db = {binding: 'DB', database_name: 'prz-tours-new', database_id: '6c3b5f55-8c63-4127-8e6b-6e1f4beee747'};
+          const preview = {
+            name, main: config.main, compatibility_date: config.compatibility_date,
+            compatibility_flags: config.compatibility_flags, assets: config.assets,
+            workers_dev: true, services: [{binding: 'WORKER_SELF_REFERENCE', service: name}],
+            d1_databases: [db], images: config.images, ai: config.ai,
+            triggers: config.triggers, observability: config.observability,
+            vars: {DISABLE_EXTERNAL_BOOKING_EFFECTS: 'true', EDITORIAL_TRANSLATION_WORKERS_AI: 'true'}
+          };
+          fs.writeFileSync('wrangler.qa-preview.json', JSON.stringify(preview));
+          NODE
+          npx wrangler deploy --config wrangler.qa-preview.json --tag "279362e6a6f3f88602d4db77563b4421d212e9dd" --keep-vars
