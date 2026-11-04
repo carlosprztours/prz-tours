@@ -18,11 +18,12 @@ const inputClass =
   "h-10 w-full rounded-xl border border-sand-200 bg-white px-3 text-sm text-ink-900 outline-none focus:border-ocean-500";
 const labelClass = "grid gap-1 text-xs font-bold text-ink-500";
 
-export function FaqForm({
+export function FaqForm({ englishReview = false,
   locale,
   initial,
   es,
 }: {
+  englishReview?: boolean;
   locale: string;
   initial: Faq | null;
   es: boolean;
@@ -43,18 +44,12 @@ export function FaqForm({
           {es ? "Pregunta (ES)" : "Question (ES)"}
           <input name="question_es" required defaultValue={initial?.question_es ?? ""} className={inputClass} />
         </label>
-        <label className={labelClass}>
-          {es ? "Pregunta (EN)" : "Question (EN)"}
-          <input name="question_en" defaultValue={initial?.question_en ?? ""} className={inputClass} />
-        </label>
+
         <label className={labelClass}>
           {es ? "Respuesta (ES)" : "Answer (ES)"}
           <textarea name="answer_es" rows={4} required defaultValue={initial?.answer_es ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
         </label>
-        <label className={labelClass}>
-          {es ? "Respuesta (EN)" : "Answer (EN)"}
-          <textarea name="answer_en" rows={4} defaultValue={initial?.answer_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
-        </label>
+
         <label className={labelClass}>
           {es ? "Orden" : "Order"}
           <input name="sort_order" type="number" defaultValue={initial?.sort_order ?? 0} className={inputClass} />
@@ -64,6 +59,20 @@ export function FaqForm({
           {es ? "Publicado" : "Published"}
         </label>
       </div>
+      {englishReview && (
+          <section aria-label="Traducción inglesa">
+        <div className="mt-3 grid gap-3">
+          <label className={labelClass}>
+            {es ? "Pregunta (EN)" : "Question (EN)"}
+            <input name="question_en" defaultValue={initial?.question_en ?? ""} className={inputClass} />
+          </label>
+          <label className={labelClass}>
+            {es ? "Respuesta (EN)" : "Answer (EN)"}
+            <textarea name="answer_en" rows={4} defaultValue={initial?.answer_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
+          </label>
+        </div>
+          </section>
+        )}
       {!state.ok && state.error && (
         <p className="text-sm font-semibold text-red-600" role="alert">{state.error}</p>
       )}

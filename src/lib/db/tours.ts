@@ -1,13 +1,7 @@
-/**
- * Consultas públicas de tours.
- *
- * Todas reciben el `locale` y devuelven el tour con su traducción. Si un tour
- * no tiene traducción en el idioma pedido, se usa la del otro idioma y se
- * marca `fallbackTranslation` para que la UI pueda avisarlo (mejor mostrar
- * algo que un 404).
- */
 import "server-only";
 
+import { readEditorialEnglishBatch } from "./editorial-cache";
+import { editorialSnapshot, existingPickupNote, publishReviewedTourEnglish } from "@/lib/tour-editorial-review";
 import { query, queryOne } from "./client";
 import type {
   Locale,
@@ -19,7 +13,6 @@ import type {
   TourWithContent,
 } from "@/types";
 
-const OTHER_LOCALE: Record<Locale, Locale> = { es: "en", en: "es" };
 
 /** Columnas base de `tours` (para no repetir el SELECT). */
 const TOUR_COLUMNS = `
@@ -37,7 +30,7 @@ async function withContents(
   const ids = rows.map((t) => t.id);
   const placeholders = ids.map(() => "?").join(",");
 
-  const [translations, images, items] = await Promise.all([
+  const [translations, images, items, editorial] = await Promise.all([
     query<TourTranslation>(
       `SELECT id, tour_id, locale, title, summary, description,
               seo_title, seo_description
@@ -59,7 +52,12 @@ async function withContents(
        ORDER BY section ASC, sort_order ASC, id ASC`,
       ...ids,
     ),
+    locale === "en" ? query<{ tour_id: number; source: string; english: string; approvals: string }>(
+      `SELECT tour_id, source, english, approvals FROM tour_editorial_translation
+       WHERE status = 'translated' AND tour_id IN (${placeholders})`, ...ids,
+    ) : [],
   ]);
+  const generated = new Map(editorial.map((row) => [row.tour_id, row]));
 
   const byTour = new Map<number, { tr: TourTranslation[]; im: TourImage[]; it: TourListItem[] }>();
   for (const t of rows) byTour.set(t.id, { tr: [], im: [], it: [] });
@@ -71,29 +69,34 @@ async function withContents(
   for (const tour of rows) {
     const parts = byTour.get(tour.id);
     if (!parts) continue;
-    const own = parts.tr.find((t) => t.locale === locale) ?? null;
-    let active = own;
-    let fallback: TourTranslation | null = null;
-    if (!active) {
-      fallback = parts.tr.find((t) => t.locale === OTHER_LOCALE[locale]) ?? null;
-      active = fallback;
-    }
-    if (!active) continue;
-
-    const lists: Record<TourListSection, TourListItem[]> = {
-      included: [],
-      excluded: [],
-      bring: [],
-    };
+    let active = parts.tr.find((translation) => translation.locale === locale);
+    const stored = generated.get(tour.id);
+    let pickupNote = existingPickupNote(locale, locale === "en" && Boolean(active), tour.pickup_note);
+    const lists: Record<TourListSection, TourListItem[]> = { included: [], excluded: [], bring: [] };
     for (const item of parts.it) {
-      if (item.locale === active.locale) lists[item.section].push(item);
+      if (item.locale === locale) lists[item.section].push(item);
     }
+    if (!active && stored) {
+      const [title, summary, description, seoTitle, seoDescription, included, excluded, bring, pickup] =
+        publishReviewedTourEnglish(
+          editorialSnapshot(stored.source), editorialSnapshot(stored.english), editorialSnapshot(stored.approvals),
+        );
+      active = { id: tour.id, tour_id: tour.id, locale, title, summary, description,
+        seo_title: seoTitle || null, seo_description: seoDescription || null };
+      pickupNote = pickup || null;
+      for (const [section, value] of Object.entries({ included, excluded, bring }) as [TourListSection, string][]) {
+        lists[section] = value ? value.split("\n").map((label, index) => ({
+          id: index, tour_id: tour.id, locale, section, label, sort_order: index,
+        })) : [];
+      }
+    }
+    if (!active?.title.trim()) continue;
 
     out.push({
       ...tour,
       translation: active,
-      fallbackTranslation: own ? null : fallback,
-      images: parts.im,
+      pickup_note: pickupNote,
+      images: locale === "en" ? parts.im.map((image) => ({ ...image, alt: "" })) : parts.im,
       lists,
     });
   }
@@ -195,11 +198,14 @@ export async function listActiveCategories(
      WHERE is_active = 1
      ORDER BY sort_order ASC, label_es ASC`,
   );
-  return rows.map((r) => ({
-    slug: r.slug,
-    label: (locale === "es" ? r.label_es : r.label_en) || r.label_es,
-    icon: r.icon,
+  const english = locale === "en" ? await readEditorialEnglishBatch(rows.filter((row) => !row.label_en.trim()).map((row) => row.label_es)) : null;
+  const categories = rows.map((row) => ({
+    slug: row.slug,
+    label: locale === "es" ? row.label_es : (english?.(row.label_es, row.label_en) ?? ""),
+    icon: row.icon,
   }));
+  return categories.filter((category) => category.label.trim());
+
 }
 
 /**
@@ -209,19 +215,19 @@ export async function listActiveCategories(
 export async function listTourNavItems(
   locale: Locale,
 ): Promise<{ slug: string; title: string }[]> {
-  const rows = await query<{ slug: string; title: string | null }>(
-    `SELECT t.slug AS slug,
-            COALESCE(
-              MAX(CASE WHEN tr.locale = ? THEN tr.title END),
-              MAX(tr.title)
-            ) AS title
-     FROM tours t
-     LEFT JOIN tour_translations tr ON tr.tour_id = t.id
-     WHERE t.is_published = 1
-     GROUP BY t.id
-     ORDER BY t.sort_order ASC, t.id ASC
-     LIMIT 5`,
-    locale,
+  const rows = await query<{ slug: string; title: string }>(
+    `WITH localized AS (
+       SELECT t.slug, t.sort_order, t.id,
+              COALESCE(NULLIF(trim(tr.title), ''),
+                       CASE WHEN ? = 'en' THEN NULLIF(trim(json_extract(e.english, '$[0]')), '') END) AS title
+       FROM tours t
+       LEFT JOIN tour_translations tr ON tr.tour_id = t.id AND tr.locale = ?
+       LEFT JOIN tour_editorial_translation e ON e.tour_id = t.id AND e.status = 'translated'
+       WHERE t.is_published = 1
+     )
+     SELECT slug, title FROM localized WHERE title IS NOT NULL
+     ORDER BY sort_order ASC, id ASC LIMIT 5`,
+    locale, locale,
   );
-  return rows.map((r) => ({ slug: r.slug, title: r.title ?? r.slug }));
+  return rows;
 }

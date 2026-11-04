@@ -3,6 +3,8 @@
  */
 import "server-only";
 
+import { cache } from "react";
+import { readEditorialEnglishBatch } from "./editorial-cache";
 import { query, queryOne } from "./client";
 import type {
   ArticleTranslation,
@@ -15,24 +17,28 @@ async function withContent(
   locale: Locale,
 ): Promise<ArticleWithContent | null> {
   const translation = await queryOne<ArticleTranslation>(
-    `SELECT id, article_id, locale, title, excerpt, body,
+    `SELECT id, article_id, locale, title, excerpt, body: "",
             seo_title, seo_description
      FROM article_translations
      WHERE article_id = ? AND locale = ?`,
     article.id,
     locale,
   );
-  const active =
-    translation ??
-    (await queryOne<ArticleTranslation>(
-      `SELECT id, article_id, locale, title, excerpt, body,
-              seo_title, seo_description
-       FROM article_translations
-       WHERE article_id = ? LIMIT 1`,
-      article.id,
-    ));
-  if (!active) return null;
-  return { ...article, translation: active };
+  if (translation?.title.trim()) return { ...article, translation };
+  if (locale !== "en") return null;
+  const source = await queryOne<ArticleTranslation>(
+    "SELECT * FROM article_translations WHERE article_id = ? AND locale = 'es'", article.id,
+  );
+  if (!source) return null;
+  if (source.body.trim()) return null; // Long-form content may contain operational or commercial conditions.
+  const values = [source.title, source.excerpt, source.seo_title ?? "", source.seo_description ?? ""];
+  const english = await readEditorialEnglishBatch(values);
+  const [title, excerpt, seoTitle, seoDescription] = values.map((value) => english(value));
+  if (!title || (source.excerpt && !excerpt)) return null;
+  return { ...article, translation: {
+    ...source, locale, title, excerpt, body: "",
+    seo_title: seoTitle || null, seo_description: seoDescription || null,
+  } };
 }
 
 export async function listPublishedArticles(
@@ -52,7 +58,7 @@ export async function listPublishedArticles(
   return out;
 }
 
-export async function getArticleBySlug(
+export const getArticleBySlug = cache(async function getArticleBySlug(
   slug: string,
   locale: Locale,
 ): Promise<ArticleWithContent | null> {
@@ -63,7 +69,7 @@ export async function getArticleBySlug(
   );
   if (!row) return null;
   return withContent(row, locale);
-}
+});
 
 export async function listPublishedArticleSlugs(): Promise<string[]> {
   const rows = await query<{ slug: string }>(

@@ -40,7 +40,7 @@ async function readToken(): Promise<SessionPayload | null> {
   return verifyToken(store.get(SESSION_COOKIE)?.value);
 }
 
-async function loadVerifiedSession(): Promise<VerifiedSession | null> {
+const loadVerifiedSession = cache(async (): Promise<VerifiedSession | null> => {
   const token = await readToken();
   if (!token) return null;
 
@@ -59,7 +59,7 @@ async function loadVerifiedSession(): Promise<VerifiedSession | null> {
     return { user, token: { ...token, role: user.role } };
   }
   return { user, token };
-}
+});
 
 /** ¿Es personal con acceso al panel? (admin/editor/fotógrafo). */
 function isStaff(role: string): boolean {

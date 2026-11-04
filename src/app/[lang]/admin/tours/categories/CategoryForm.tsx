@@ -41,10 +41,7 @@ export function CategoryForm({ locale, labels }: Props) {
         {labels.name}
         <input name="label_es" required minLength={2} placeholder={labels.name} className={inputClass} />
       </label>
-      <label className={labelClass}>
-        {labels.nameEn}
-        <input name="label_en" placeholder={labels.nameEn} className={inputClass} />
-      </label>
+
       <label className={labelClass}>
         {labels.slug}
         <input name="slug" placeholder={labels.slug} className={inputClass} />

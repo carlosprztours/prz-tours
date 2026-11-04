@@ -48,7 +48,7 @@ export default async function BookPage({ params, searchParams }: Props) {
   const [dict, tours, routes, defaults] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
-    listPublishedTransferRoutes(),
+    listPublishedTransferRoutes(locale),
     getBookingDefaults(),
   ]);
   const session = await getCurrentUser().catch(() => null);
