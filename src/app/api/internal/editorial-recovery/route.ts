@@ -20,15 +20,15 @@ export async function POST(request: Request) {
   }
 
   const minute = Math.floor(scheduledTime / 60_000);
-  const module = minute % 6;
+  const slot = minute % 6;
   const turn = Math.floor(minute / 6);
-  if (module !== 0) {
+  if (slot !== 0) {
     const budget = await queryOne<{ id: number }>(
       `SELECT id FROM preview_translation_budget WHERE id = 1 AND busy = 0
        AND halted != 1 AND halted <= unixepoch()
        AND (expires_at <= unixepoch() OR (calls < 24 AND chars < 6000))`,
     );
-    if (budget) await recoverEditorialField(module - 1, turn);
+    if (budget) await recoverEditorialField(slot - 1, turn);
     return new Response(null, { status: 204 });
   }
 
