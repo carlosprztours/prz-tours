@@ -55,4 +55,6 @@ export default nextConfig;
 
 // Habilita los bindings de Cloudflare (D1, R2) también en `next dev`.
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-initOpenNextCloudflareForDev({ remoteBindings: false });
+if (process.env.NODE_ENV === "development") {
+  initOpenNextCloudflareForDev({ remoteBindings: false });
+}
