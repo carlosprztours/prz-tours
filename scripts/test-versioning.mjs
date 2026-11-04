@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { bumpVersion, changelogEntry, classify, git, preparation, readPlan, validateManifest } from "./lib/versioning.mjs";
-import { publishRelease } from "./lib/release-publication.mjs";
+import { assertReleaseTooling, publishRelease } from "./lib/release-publication.mjs";
 
 const plan = readPlan();
 const file = name => [{ file: name, change: "added" }];
@@ -43,6 +43,13 @@ test("prepares untagged and tagged histories, including idempotency and collisio
     assert.throws(() => preparation({ ...plan, baseline: base }), /otro SHA/);
     assert.equal(preparation({ ...plan, baseline: base, type: "patch", version: "0.1.1" }).previous, "v0.1.0");
     assert.throws(() => preparation({ ...plan, baseline: base, type: "patch", version: "0.2.0" }), /incremento/);
+    assert.throws(() => assertReleaseTooling(base, git("rev-parse", "HEAD")), /cambios ajenos/);
+    const beforeTooling = git("rev-parse", "HEAD");
+    mkdirSync("scripts");
+    writeFileSync("scripts/publish-release.mjs", "// tooling-only fixture");
+    git("add", ".");
+    git("commit", "-qm", "fix: release tooling");
+    assert.doesNotThrow(() => assertReleaseTooling(beforeTooling, git("rev-parse", "HEAD")));
   } finally {
     process.chdir(original);
     rmSync(dir, { recursive: true });
@@ -75,6 +82,7 @@ test("blocks failed deployment and retries after a failed upload without duplica
   let release;
   let deployments = false;
   let tagWrites = 0, releaseWrites = 0, uploads = 0;
+  let hidden = false;
   const remote = {
     main: () => input.candidate.sha,
     deployed: () => deployments,
@@ -83,9 +91,14 @@ test("blocks failed deployment and retries after a failed upload without duplica
     release: () => release,
     createDraft: (tag_name, body) => (release = { id: ++releaseWrites, tag_name, body, draft: true, assets: [] }),
     publish: () => { release.draft = false; release.published_at = "2026-11-04T12:00:00Z"; },
+    assets: () => {
+      if (hidden) { hidden = false; return []; }
+      return release.assets;
+    },
     upload: (_tag, payload) => {
       if (++uploads === 1) throw new Error("Simulated upload failure");
-      release.assets.push({ name: "agencyos-update.json", digest: `sha256:${createHash("sha256").update(payload).digest("hex")}` });
+      hidden = true;
+      release.assets.push({ name: "agencyos-update.json", state: "uploaded", digest: `sha256:${createHash("sha256").update(payload).digest("hex")}` });
     },
   };
   await assert.rejects(publishRelease(remote, input, "Notes", 42), /Sin evidencia/);
@@ -97,4 +110,26 @@ test("blocks failed deployment and retries after a failed upload without duplica
   assert.deepEqual([tagWrites, releaseWrites, uploads], [1, 1, 2]);
   tag = "b".repeat(40);
   await assert.rejects(publishRelease(remote, input, "Notes", 42), /otro SHA/);
+});
+
+test("resumes the original tag and verifies exact bytes when GitHub omits digest", async () => {
+  const input = candidate();
+  const sha = input.candidate.sha;
+  const toolingSha = "b".repeat(40);
+  const draft = { id: 1, tag_name: input.candidate.tag, body: `<!-- prz-release-sha:${sha} -->`, draft: true };
+  const payload = JSON.stringify({ ...input, approval: "approved",
+    deployment: { state: "verified", environment: "production", runId: 42 } }, null, 2) + "\n";
+  let bytes = Buffer.from("wrong");
+  const remote = {
+    main: () => toolingSha, deployed: (target, run) => target === sha && run === 42,
+    tag: () => sha, release: () => draft,
+    assets: () => [{ id: 2, name: "agencyos-update.json", state: "uploaded", digest: null }],
+    download: () => bytes,
+    publish: () => { draft.draft = false; draft.published_at = "2026-11-04T12:00:00Z"; },
+  };
+  await assert.rejects(publishRelease(remote, input, "Notes", 42, toolingSha), /SHA-256/);
+  assert.equal(draft.draft, true);
+  bytes = Buffer.from(payload);
+  assert.equal((await publishRelease(remote, input, "Notes", 42, toolingSha)).candidate.sha, sha);
+  await assert.rejects(publishRelease({ ...remote, tag: () => undefined }, input, "Notes", 42, toolingSha), /etiqueta existente/);
 });

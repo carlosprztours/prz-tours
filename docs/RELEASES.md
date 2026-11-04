@@ -82,3 +82,27 @@ son candidatos a traslado. Adaptar identificador, repo, marca, dominio,
 configuración, variables y servicios de despliegue. Revisar cada migración
 y sus dependencias en el destino. Mantener separados D1, credenciales,
 integraciones, reservas, datos de clientes y contenido editorial.
+
+### Recuperar la publicación inicial interrumpida
+
+Si un intento ya creó el tag y el borrador, conservar ambos. El publicador
+verifica el estado del archivo en el endpoint de activos de la release,
+espera brevemente a que aparezca y compara el SHA-256. Si falta el digest,
+descarga el archivo existente y calcula su SHA-256 sobre los bytes.
+Un archivo diferente detiene la publicación sin reemplazarlo.
+
+Un arreglo exclusivo a las herramientas de release puede estar en main
+sin cambiar el SHA de la aplicación. El workflow omite el despliegue
+automático para esos cambios. La recuperación exige que el tag y la release
+originales existan, que el SHA sea ancestro de main y que el diff esté
+limitado a los archivos de herramientas permitidos. Mantiene la
+verificación del despliegue original y comprueba que main no avance durante
+la publicación.
+
+Tras aprobar y fusionar el arreglo, verificar que Cloudflare sigue sirviendo
+el SHA original `33fbe47dc4d5f31209b972de5a0043b11b92150c`. Iniciar una
+ejecución nueva de **Deploy a Cloudflare → Run workflow → main** con
+`operation=release`, `approved_sha=33fbe47dc4d5f31209b972de5a0043b11b92150c`
+y `deploy_run_id=41885231343`. No reejecutar #228, que usa el publicador
+anterior. Comprobar la fecha de publicación y que el manifiesto publicado
+conserva el SHA y el ID de despliegue originales.
