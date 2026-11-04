@@ -428,9 +428,7 @@ export function TourForm({ englishReview = false, locale, initial, labels, categ
         disabled={pending}
         className="h-12 justify-self-start rounded-full bg-ocean-700 px-8 font-display text-base font-bold text-white transition hover:bg-ocean-800 disabled:opacity-60"
       >
-        {pending ? labels.saving : initial?.englishStatus === "error" && !englishReview
-          ? (locale === "es" ? "Guardar y reintentar traducción" : "Save and retry translation")
-          : labels.save}
+        {pending ? labels.saving : labels.save}
       </button>
     </form>
   );

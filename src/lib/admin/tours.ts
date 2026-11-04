@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireEditor } from "./access";
-import { refreshTourEnglish, tourEditorialSource } from "./tour-editorial-translation";
+import { refreshTourEnglish, retryStoredTourEnglish, tourEditorialSource } from "./tour-editorial-translation";
 import { batch, execute, query, queryOne } from "@/lib/db/client";
 
 import type {
@@ -347,6 +347,13 @@ async function writeTour(
 
   if (statements.length) await batch(statements);
   return id;
+}
+
+export async function retryTourTranslation(rawLocale: string, id: number): Promise<void> {
+  const locale = await requireStaff(rawLocale);
+  await retryStoredTourEnglish(id);
+  revalidatePath(`/${locale}/admin/tours/${id}`);
+  revalidatePath("/en/tours", "layout");
 }
 
 export async function deleteTour(

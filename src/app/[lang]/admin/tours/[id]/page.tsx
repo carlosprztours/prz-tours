@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getAdminTour } from "@/lib/admin/tours";
+import { getAdminTour, retryTourTranslation } from "@/lib/admin/tours";
 import { requireSection } from "@/lib/admin/access";
 import { listTourCategories } from "@/lib/admin/categories";
 import { tourFormLabels } from "@/lib/admin/tour-labels";
@@ -61,6 +61,13 @@ export default async function EditTourPage({ params, searchParams }: Props) {
           Traducción automática: {enabled && !budget.halted ? "disponible" : "en pausa"}.
           {" "}{Math.max(0, 24 - budget.calls)} inferencias y {Math.max(0, 6000 - budget.chars)} caracteres restantes hoy (UTC).
         </p>
+      )}
+      {!englishReview && enabled && ["pending", "outdated", "error"].includes(full.englishStatus) && (
+        <form action={retryTourTranslation.bind(null, locale, numericId)}>
+          <button type="submit" className="text-sm font-bold text-ocean-700 hover:underline">
+            {locale === "es" ? "Reintentar traducción guardada" : "Retry saved translation"}
+          </button>
+        </form>
       )}
       <TourForm englishReview={englishReview}
         locale={locale}
