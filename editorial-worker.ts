@@ -16,7 +16,7 @@ export default {
     const timestamp = String(event.scheduledTime);
     const signature = createHmac("sha256", env.AUTH_SECRET).update(`editorial-recovery:${timestamp}`).digest("hex");
     const response = await handler.fetch(new Request(
-      "https://perez-tours.com/api/internal/editorial-recovery",
+      "https://www.perez-tours.com/api/internal/editorial-recovery",
       {
         method: "POST",
         headers: {
