@@ -50,6 +50,8 @@ export type UploadResult = {
   fileId: string | null;
   /** Dónde se guardó, para poder auditarlo. */
   path: string | null;
+  originalName?: string;
+  originalIndex?: number;
 };
 
 /** Motivo por el que se puede rechazar una subida, ya traducido. */
@@ -106,32 +108,32 @@ export class UploadFailed extends Error {
 export async function uploadImagesToImageKit(
   files: File[],
   folder: string,
-): Promise<{ subidas: UploadResult[]; fallidas: { nombre: string; motivo: UploadError }[] }> {
+): Promise<{ subidas: UploadResult[]; fallidas: { nombre: string; motivo: UploadError; index: number }[] }> {
   const subidas: UploadResult[] = [];
-  const fallidas: { nombre: string; motivo: UploadError }[] = [];
+  const fallidas: { nombre: string; motivo: UploadError; index: number }[] = [];
 
   const VALIDOS = files.slice(0, MAX_FILES_PER_UPLOAD);
   // Si vienen de más, se avisa en vez de ignorarlas en silencio.
-  for (const sobra of files.slice(MAX_FILES_PER_UPLOAD)) {
-    fallidas.push({ nombre: sobra.name, motivo: "too-many" });
+  for (const [index, sobra] of files.slice(MAX_FILES_PER_UPLOAD).entries()) {
+    fallidas.push({ nombre: sobra.name, motivo: "too-many", index: MAX_FILES_PER_UPLOAD + index });
   }
 
   for (let i = 0; i < VALIDOS.length; i += PARALELISMO) {
     const tanda = VALIDOS.slice(i, i + PARALELISMO);
     const resultados = await Promise.all(
-      tanda.map(async (file) => {
+      tanda.map(async (file, batchIndex) => {
         try {
-          return { file, resultado: await uploadImageToImageKit(file, folder) };
+          return { file, resultado: { ...(await uploadImageToImageKit(file, folder)), originalName: file.name, originalIndex: i + batchIndex } };
         } catch (err) {
           const motivo =
             err instanceof UploadFailed ? err.reason : ("upload-failed" as UploadError);
-          return { file, error: motivo };
+          return { file, error: motivo, index: i + batchIndex };
         }
       }),
     );
     for (const r of resultados) {
       if ("resultado" in r && r.resultado) subidas.push(r.resultado);
-      else fallidas.push({ nombre: r.file.name, motivo: r.error });
+      else fallidas.push({ nombre: r.file.name, motivo: r.error, index: r.index });
     }
   }
 
@@ -192,8 +194,8 @@ export async function uploadImageToImageKit(
   if (!res.ok) {
     // El cuerpo puede traer el motivo (límite de tamaño, quota, tipo…), pero
     // no lo pasamos al cliente: lo dejamos en el log del servidor.
-    console.error("[imagekit] subida rechazada:", res.status, raw.slice(0, 400));
-    throw new UploadFailed("upload-failed", `${res.status} ${raw.slice(0, 200)}`);
+    console.error("[imagekit] subida rechazada:", res.status);
+    throw new UploadFailed("upload-failed", `HTTP ${res.status}`);
   }
 
   // ImageKit tiene dos formas de responder y conviven según el endpoint:
@@ -204,7 +206,7 @@ export async function uploadImageToImageKit(
   try {
     body = JSON.parse(raw) as ImageKitResponse;
   } catch {
-    console.error("[imagekit] respuesta ilegible:", raw.slice(0, 200));
+    console.error("[imagekit] respuesta ilegible:");
     throw new UploadFailed("upload-failed", "respuesta ilegible");
   }
 
@@ -222,17 +224,33 @@ export async function uploadImageToImageKit(
 
   // `success` solo existe en la forma antigua; si viene a `false` es un fallo.
   if (body.success === false || !url) {
-    console.error("[imagekit] subida sin url:", raw.slice(0, 300));
-    throw new UploadFailed("upload-failed", body.message ?? "sin url");
+    console.error("[imagekit] subida sin url:");
+    throw new UploadFailed("upload-failed", "sin url");
   }
 
   // Guardamos la URL tal cual la devuelve ImageKit, pero comprobamos que
   // coincide con el endpoint configurado. Si el panel guardara una URL de otro
   // sitio por error, mejor enterarnos aquí que servir contenido raro después.
-  if (!url.startsWith(stripTrailingSlash(urlEndpoint))) {
-    console.error(
-      `[imagekit] la url no coincide con IMAGEKIT_URL_ENDPOINT (${urlEndpoint}).`,
-    );
+  // Never trust an unexpected URL returned by an upstream service.
+  // Compare origins and path boundaries, not string prefixes (which allow lookalike hosts).
+  let expected: URL;
+  let actual: URL;
+  try {
+    expected = new URL(urlEndpoint);
+    actual = new URL(url);
+  } catch {
+    throw new UploadFailed("upload-failed", "invalid media URL");
+  }
+  const expectedPath = expected.pathname.endsWith("/") ? expected.pathname.slice(0, -1) : expected.pathname;
+  if (
+    expected.protocol !== "https:" ||
+    actual.protocol !== "https:" ||
+    expected.origin !== actual.origin ||
+    actual.username || actual.password ||
+    (expectedPath !== "" && actual.pathname !== expectedPath &&
+      !actual.pathname.startsWith(`${expectedPath}/`))
+  ) {
+    throw new UploadFailed("upload-failed", "unexpected media URL origin or path");
   }
 
   return {
@@ -267,8 +285,4 @@ function sanitizeFolder(folder: string): string {
     .slice(0, 2)
     .join("/");
   return `prz/${clean || "misc"}`;
-}
-
-function stripTrailingSlash(value: string): string {
-  return value.replace(/\/+$/, "");
 }
