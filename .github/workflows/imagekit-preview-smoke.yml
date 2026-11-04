@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: pr6-authenticated-imagekit-qa
+  group: pr6-authenticated-imagekit-qa-shell
   cancel-in-progress: false
 jobs:
   mixed:
@@ -22,7 +22,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx opennextjs-cloudflare build
-      - run: npx playwright-core install --with-deps chromium
+      - run: npx playwright-core install --only-shell chromium
       - name: Prepare disposable local D1 and fixtures
         run: |
           node --input-type=module <<'NODE'
