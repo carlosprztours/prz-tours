@@ -5,6 +5,7 @@
  * firma + BD + usuario activo). El proxy ya hizo la comprobación optimista.
  */
 import Link from "next/link";
+import { version } from "../../../../package.json";
 
 import { logout } from "@/lib/actions/auth";
 import { requireSection, SECTION_ROLES } from "@/lib/admin/access";
@@ -55,6 +56,12 @@ export default async function AdminLayout({ children, params }: Props) {
           <div className="flex shrink-0 items-center gap-2 text-xs sm:gap-3 sm:text-sm">
             <span className="hidden text-white/70 sm:block">
               {session.user.name} · {session.user.role}
+            </span>
+            <span className="hidden text-white/70 md:inline" title={process.env.PRZ_BUILD_SHA || undefined}>
+              v{version} · {process.env.PRZ_BUILD_SHA?.slice(0, 8) || "—"} ·{" "}
+              {process.env.PRZ_BUILD_ENV === "production"
+                ? (locale === "es" ? "Producción activa" : "Production running")
+                : (locale === "es" ? "Build local" : "Local build")}
             </span>
             <Link
               href={`/${locale}`}

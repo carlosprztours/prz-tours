@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[\\w.-]+\\/[\\w.-]+$"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "repository"
+      ],
+      "additionalProperties": false
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "initial",
+        "patch",
+        "minor",
+        "major"
+      ]
+    },
+    "decision": {
+      "type": "string",
+      "minLength": 10
+    },
+    "changes": {
+      "type": "object",
+      "properties": {
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "fixes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "security": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "performance": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "breaking": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "migrations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "features",
+        "fixes",
+        "security",
+        "performance",
+        "breaking",
+        "migrations",
+        "operations"
+      ],
+      "additionalProperties": false
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "node",
+        "runtime",
+        "schema"
+      ],
+      "additionalProperties": false
+    },
+    "environmentVariables": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z][A-Z0-9_]*$"
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "deploymentRequirements": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "recovery": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "current": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "version",
+        "sha",
+        "tag"
+      ],
+      "additionalProperties": false
+    },
+    "candidate": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"
+        },
+        "sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "tag": {
+          "type": "string",
+          "pattern": "^v\\d+\\.\\d+\\.\\d+$"
+        }
+      },
+      "required": [
+        "version",
+        "sha",
+        "tag"
+      ],
+      "additionalProperties": false
+    },
+    "publishedAt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "publicationSource": {
+      "type": "string",
+      "format": "uri"
+    },
+    "migrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "type": "string",
+            "pattern": "^migrations\\/[^/]+\\.sql$"
+          },
+          "change": {
+            "type": "string",
+            "enum": [
+              "added",
+              "modified",
+              "removed"
+            ]
+          }
+        },
+        "required": [
+          "file",
+          "change"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "approval": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved"
+      ]
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "environment": {
+          "type": "string",
+          "const": "production"
+        },
+        "runId": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "environment",
+        "runId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "project",
+    "type",
+    "decision",
+    "changes",
+    "compatibility",
+    "environmentVariables",
+    "checks",
+    "deploymentRequirements",
+    "risks",
+    "recovery",
+    "schemaVersion",
+    "current",
+    "candidate",
+    "publishedAt",
+    "publicationSource",
+    "migrations",
+    "dependencies",
+    "approval",
+    "deployment"
+  ],
+  "additionalProperties": false
+}

@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  env: {
+    PRZ_BUILD_SHA: /^[a-f0-9]{40}$/.test(process.env.PRZ_BUILD_SHA ?? "") ? process.env.PRZ_BUILD_SHA : "",
+    PRZ_BUILD_ENV: process.env.PRZ_BUILD_ENV === "production" ? "production" : "local",
+  },
   // Rutas con prefijo de idioma (/es, /en). El proxy.ts se encarga de redirigir
   // las peticiones sin locale hacia /es.
   images: {
