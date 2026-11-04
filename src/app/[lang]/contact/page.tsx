@@ -44,7 +44,7 @@ export default async function ContactPage({ params }: Props) {
     getSetting("address", "Puerto Plata, República Dominicana"),
     getSetting(`hours_${locale}`, locale === "es" ? "Lun – Sáb · 7:00 AM – 8:00 PM" : "Mon – Sat · 7:00 AM – 8:00 PM"),
     getSetting("whatsapp", DEFAULT_WHATSAPP),
-    listPublishedFaqs(),
+    listPublishedFaqs(locale),
   ]);
 
   const cards = [

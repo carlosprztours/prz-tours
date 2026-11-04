@@ -8,9 +8,11 @@
  */
 import "server-only";
 
+import { readEditorialEnglishBatch } from "./editorial-cache";
 import { query, queryOne } from "./client";
 import type {
   GalleryImage,
+  Locale,
   GalleryVideo,
   Testimonial,
   TransferRoute,
@@ -18,19 +20,26 @@ import type {
 
 // ───────────────────────────── Traslados ─────────────────────────────
 
-export async function listPublishedTransferRoutes(): Promise<TransferRoute[]> {
-  return query<TransferRoute>(
+export async function listPublishedTransferRoutes(locale: Locale): Promise<TransferRoute[]> {
+  const routes = await query<TransferRoute>(
     `SELECT id, origin_key, origin_label, origin_airport, destination,
             price_1_5, price_6_11, price_note, sort_order, is_published
      FROM transfer_routes
      WHERE is_published = 1
      ORDER BY sort_order ASC, id ASC`,
   );
+  if (locale === "es") return routes;
+  const english = await readEditorialEnglishBatch(routes.flatMap((row) => [row.price_note]));
+  return routes.map((route) => ({
+    ...route,
+    price_note: english(route.price_note ?? "", "") || null,
+  }));
 }
 
 // ───────────────────────────── Testimonios ─────────────────────────────
 
 export async function listPublishedTestimonials(
+  locale: Locale,
   limit = 12,
   tourSlug?: string,
 ): Promise<Testimonial[]> {
@@ -40,9 +49,11 @@ export async function listPublishedTestimonials(
               tour_slug, avatar_url, is_published, sort_order, created_at
        FROM testimonials
        WHERE is_published = 1 AND tour_slug = ?
+         AND trim(CASE WHEN ? = 'en' THEN text_en ELSE text_es END) <> ''
        ORDER BY sort_order ASC, id ASC
        LIMIT ?`,
       tourSlug,
+      locale,
       limit,
     );
   }
@@ -50,9 +61,10 @@ export async function listPublishedTestimonials(
     `SELECT id, author_name, author_origin, rating, text_es, text_en,
             tour_slug, avatar_url, is_published, sort_order, created_at
      FROM testimonials
-     WHERE is_published = 1
+     WHERE is_published = 1 AND trim(CASE WHEN ? = 'en' THEN text_en ELSE text_es END) <> ''
      ORDER BY sort_order ASC, id ASC
      LIMIT ?`,
+    locale,
     limit,
   );
 }
@@ -60,9 +72,10 @@ export async function listPublishedTestimonials(
 // ───────────────────────────── Galería ─────────────────────────────
 
 export async function listPublishedGalleryImages(
+  locale: Locale,
   limit = 24,
 ): Promise<GalleryImage[]> {
-  return query<GalleryImage>(
+  const rows = await query<GalleryImage>(
     `SELECT id, url, alt, caption, is_published, sort_order, created_at
      FROM gallery_images
      WHERE is_published = 1
@@ -70,6 +83,13 @@ export async function listPublishedGalleryImages(
      LIMIT ?`,
     limit,
   );
+  if (locale === "es") return rows;
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.alt, row.caption]));
+  return rows.map((row) => ({
+    ...row,
+    alt: english(row.alt ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 /**
@@ -80,9 +100,10 @@ export async function listPublishedGalleryImages(
  * reviente la respuesta del Worker.
  */
 export async function listAllPublishedGalleryImages(
+  locale: Locale,
   limit = 200,
 ): Promise<GalleryImage[]> {
-  return query<GalleryImage>(
+  const rows = await query<GalleryImage>(
     `SELECT id, url, alt, caption, is_published, sort_order, created_at
      FROM gallery_images
      WHERE is_published = 1
@@ -90,6 +111,13 @@ export async function listAllPublishedGalleryImages(
      LIMIT ?`,
     limit,
   );
+  if (locale === "es") return rows;
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.alt, row.caption]));
+  return rows.map((row) => ({
+    ...row,
+    alt: english(row.alt ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 /** Cuántas fotos publicadas hay en total, para saber si la home está recortando. */
@@ -104,27 +132,43 @@ export async function countPublishedGalleryImages(): Promise<number> {
 
 /** Vídeos publicados de la galería (placement = 'gallery'). */
 export async function listPublishedGalleryVideos(
+  locale: Locale,
   limit = 60,
 ): Promise<GalleryVideo[]> {
-  return query<GalleryVideo>(
+  const rows = await query<GalleryVideo>(
     `SELECT * FROM gallery_videos
      WHERE is_published = 1 AND placement = 'gallery'
      ORDER BY sort_order ASC, id ASC
      LIMIT ?`,
     limit,
   );
+  if (locale === "es") return rows;
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.title, row.caption]));
+  return rows.map((row) => ({
+    ...row,
+    title: english(row.title ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 /** Vídeos publicados asignados a una ruta concreta (placement = 'tour'). */
 export async function listPublishedTourVideos(
+  locale: Locale,
   tourSlug: string,
 ): Promise<GalleryVideo[]> {
-  return query<GalleryVideo>(
+  const rows = await query<GalleryVideo>(
     `SELECT * FROM gallery_videos
      WHERE is_published = 1 AND placement = 'tour' AND tour_slug = ?
      ORDER BY sort_order ASC, id ASC`,
     tourSlug,
   );
+  if (locale === "es") return rows;
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.title, row.caption]));
+  return rows.map((row) => ({
+    ...row,
+    title: english(row.title ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 // ───────────────────────────── Ajustes ─────────────────────────────

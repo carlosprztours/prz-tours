@@ -36,7 +36,7 @@ export default async function TransfersPage({ params }: Props) {
 
   const [dict, routes] = await Promise.all([
     getDictionary(locale),
-    listPublishedTransferRoutes(),
+    listPublishedTransferRoutes(locale),
   ]);
 
   return (
