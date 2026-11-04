@@ -3,7 +3,8 @@
  */
 import "server-only";
 
-import { readEditorialEnglish } from "./editorial-cache";
+import { cache } from "react";
+import { readEditorialEnglishBatch } from "./editorial-cache";
 import { query, queryOne } from "./client";
 import type {
   ArticleTranslation,
@@ -30,8 +31,8 @@ async function withContent(
   );
   if (!source) return null;
   const values = [source.title, source.excerpt, source.body, source.seo_title ?? "", source.seo_description ?? ""];
-  const [title, excerpt, body, seoTitle, seoDescription] =
-    await Promise.all(values.map((value) => readEditorialEnglish(value, "")));
+  const english = await readEditorialEnglishBatch(values);
+  const [title, excerpt, body, seoTitle, seoDescription] = values.map((value) => english(value));
   if (!title || (source.excerpt && !excerpt) || (source.body && !body)) return null;
   return { ...article, translation: {
     ...source, locale, title, excerpt, body,
@@ -56,7 +57,7 @@ export async function listPublishedArticles(
   return out;
 }
 
-export async function getArticleBySlug(
+export const getArticleBySlug = cache(async function getArticleBySlug(
   slug: string,
   locale: Locale,
 ): Promise<ArticleWithContent | null> {
@@ -67,7 +68,7 @@ export async function getArticleBySlug(
   );
   if (!row) return null;
   return withContent(row, locale);
-}
+});
 
 export async function listPublishedArticleSlugs(): Promise<string[]> {
   const rows = await query<{ slug: string }>(

@@ -32,9 +32,9 @@ export default async function AdminGalleryPage({
   await requireSection(locale, "gallery");
   const es = locale === "es";
 
-  const images = await listAdminGallery(locale);
-  const videos = await listAdminGalleryVideos(locale);
-  const tours = await listTourSlugsForPicker(locale);
+  const [images, videos, tours] = await Promise.all([
+    listAdminGallery(locale), listAdminGalleryVideos(locale), listTourSlugsForPicker(locale),
+  ]);
   const sinAlt = images.filter((i) => !i.alt?.trim()).length;
 
   return (

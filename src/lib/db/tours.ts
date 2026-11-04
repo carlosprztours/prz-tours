@@ -1,6 +1,6 @@
 import "server-only";
 
-import { readEditorialEnglish } from "./editorial-cache";
+import { readEditorialEnglishBatch } from "./editorial-cache";
 import { query, queryOne } from "./client";
 import type {
   Locale,
@@ -195,11 +195,12 @@ export async function listActiveCategories(
      WHERE is_active = 1
      ORDER BY sort_order ASC, label_es ASC`,
   );
-  const categories = await Promise.all(rows.map(async (row) => ({
+  const english = locale === "en" ? await readEditorialEnglishBatch(rows.filter((row) => !row.label_en.trim()).map((row) => row.label_es)) : null;
+  const categories = rows.map((row) => ({
     slug: row.slug,
-    label: locale === "es" ? row.label_es : await readEditorialEnglish(row.label_es, row.label_en),
+    label: locale === "es" ? row.label_es : (english?.(row.label_es, row.label_en) ?? ""),
     icon: row.icon,
-  })));
+  }));
   return categories.filter((category) => category.label.trim());
 
 }

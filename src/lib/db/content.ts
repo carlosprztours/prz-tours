@@ -8,7 +8,7 @@
  */
 import "server-only";
 
-import { readEditorialEnglish } from "./editorial-cache";
+import { readEditorialEnglishBatch } from "./editorial-cache";
 import { query, queryOne } from "./client";
 import type {
   GalleryImage,
@@ -29,10 +29,11 @@ export async function listPublishedTransferRoutes(locale: Locale): Promise<Trans
      ORDER BY sort_order ASC, id ASC`,
   );
   if (locale === "es") return routes;
-  return Promise.all(routes.map(async (route) => ({
+  const english = await readEditorialEnglishBatch(routes.flatMap((row) => [row.price_note]));
+  return routes.map((route) => ({
     ...route,
-    price_note: await readEditorialEnglish(route.price_note ?? "", "") || null,
-  })));
+    price_note: english(route.price_note ?? "", "") || null,
+  }));
 }
 
 // ───────────────────────────── Testimonios ─────────────────────────────
@@ -83,11 +84,12 @@ export async function listPublishedGalleryImages(
     limit,
   );
   if (locale === "es") return rows;
-  return Promise.all(rows.map(async (row) => ({
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.alt, row.caption]));
+  return rows.map((row) => ({
     ...row,
-    alt: await readEditorialEnglish(row.alt ?? "", ""),
-    caption: await readEditorialEnglish(row.caption ?? "", "") || null,
-  })));
+    alt: english(row.alt ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 /**
@@ -110,11 +112,12 @@ export async function listAllPublishedGalleryImages(
     limit,
   );
   if (locale === "es") return rows;
-  return Promise.all(rows.map(async (row) => ({
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.alt, row.caption]));
+  return rows.map((row) => ({
     ...row,
-    alt: await readEditorialEnglish(row.alt ?? "", ""),
-    caption: await readEditorialEnglish(row.caption ?? "", "") || null,
-  })));
+    alt: english(row.alt ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 /** Cuántas fotos publicadas hay en total, para saber si la home está recortando. */
@@ -140,11 +143,12 @@ export async function listPublishedGalleryVideos(
     limit,
   );
   if (locale === "es") return rows;
-  return Promise.all(rows.map(async (row) => ({
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.title, row.caption]));
+  return rows.map((row) => ({
     ...row,
-    title: await readEditorialEnglish(row.title ?? "", ""),
-    caption: await readEditorialEnglish(row.caption ?? "", "") || null,
-  })));
+    title: english(row.title ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 /** Vídeos publicados asignados a una ruta concreta (placement = 'tour'). */
@@ -159,11 +163,12 @@ export async function listPublishedTourVideos(
     tourSlug,
   );
   if (locale === "es") return rows;
-  return Promise.all(rows.map(async (row) => ({
+  const english = await readEditorialEnglishBatch(rows.flatMap((row) => [row.title, row.caption]));
+  return rows.map((row) => ({
     ...row,
-    title: await readEditorialEnglish(row.title ?? "", ""),
-    caption: await readEditorialEnglish(row.caption ?? "", "") || null,
-  })));
+    title: english(row.title ?? "", ""),
+    caption: english(row.caption ?? "", "") || null,
+  }));
 }
 
 // ───────────────────────────── Ajustes ─────────────────────────────
