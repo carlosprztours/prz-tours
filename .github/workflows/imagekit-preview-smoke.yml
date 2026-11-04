@@ -84,6 +84,13 @@ jobs:
             assert(r.ok,'ImageKit test key cannot list files: HTTP '+r.status);
             return (await r.json()).filter(x=>x.filePath?.startsWith(target));
           }
+          async function waitEmpty(target=prefix){
+            for(let attempt=0;attempt<15;attempt++){
+              if((await list(target)).length===0)return;
+              await new Promise(resolve=>setTimeout(resolve,3000));
+            }
+            assert.equal((await list(target)).length,0,'ImageKit folder index still contains entries');
+          }
           function sql(command){
            const out=execFileSync('node_modules/.bin/wrangler',['d1','execute','DB','--local','--config','wrangler.qa.json','--persist-to','.qa-d1','--json','--command',command],{encoding:'utf8'});
            return JSON.parse(out)[0].results;
@@ -96,10 +103,14 @@ jobs:
            for(const f of await list(prior)){
              assert.match(f.fileId,/^[a-zA-Z0-9_-]+$/);
              assert(f.filePath.startsWith(prior));
-             assert((await manage('/v1/files/'+f.fileId,'DELETE')).ok);
+             const path='/v1/files/'+f.fileId;
+             const existing=await manage(path+'/details');
+             if(existing.status===404) continue;
+             assert(existing.ok && (await existing.json()).filePath.startsWith(prior));
+             assert((await manage(path,'DELETE')).ok);
              assert.equal((await manage('/v1/files/'+f.fileId+'/details')).status,404);
            }
-           assert.equal((await list(prior)).length,0,'Previous QA folder must be empty');
+           await waitEmpty(prior);
            console.log('PASS: previous QA folder empty');
            assert.equal((await list()).length,0,'QA folder must start empty');
            const page=await browser.newPage();
@@ -174,7 +185,7 @@ jobs:
              assert((await manage(path,'DELETE')).ok,'ImageKit cleanup failed');
              assert.equal((await manage(path+'/details')).status,404,'ImageKit cleanup not verified by ID');
            }
-           assert.equal((await list()).length,0,'ImageKit cleanup not verified');
+           await waitEmpty();
            for(const table of ['gallery_images','gallery_videos']){
              for(const url of urls) {
                const predicate=" WHERE url='"+url.replaceAll("'","''")+"'";
