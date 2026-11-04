@@ -7,7 +7,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { warmEditorialEnglish } from "./content-translation";
-import { requireEditor } from "./access";
+import { readEditorialEnglishBatch } from "@/lib/db/editorial-cache";
+import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 
 import type { Locale, TransferRoute } from "@/types";
@@ -86,7 +87,8 @@ export async function updateRoute(
 
   await execute(
     `UPDATE transfer_routes SET origin_key = ?, origin_label = ?, origin_airport = ?,
-       destination = ?, price_1_5 = ?, price_6_11 = ?, price_note = ?,
+       destination = ?, price_1_5 = ?, price_6_11 = ?,
+       approved_price_note_en = CASE WHEN price_note IS ? THEN approved_price_note_en END, price_note = ?,
        sort_order = ?, is_published = ? WHERE id = ?`,
     r.origin_key,
     r.origin_label,
@@ -94,6 +96,7 @@ export async function updateRoute(
     r.destination,
     r.price_1_5,
     r.price_6_11,
+    r.price_note,
     r.price_note,
     r.sort_order,
     r.is_published,
@@ -114,4 +117,31 @@ export async function deleteRoute(
   revalidatePath(`/${locale}/transfers`);
   revalidatePath(`/${locale}/admin/transfers`);
   return { ok: true };
+}
+
+
+export async function getTransferNoteReview(rawLocale: string, id: number) {
+  await requireStaffRoles(rawLocale, "admin");
+  const row = await queryOne<{ price_note: string | null; approved_price_note_en: string | null }>(
+    "SELECT price_note, approved_price_note_en FROM transfer_routes WHERE id = ?", id,
+  );
+  if (!row?.price_note || row.approved_price_note_en) return null;
+  const english = (await readEditorialEnglishBatch([row.price_note]))(row.price_note);
+  return english ? { source: row.price_note, english } : null;
+}
+
+export async function approveTransferNote(rawLocale: string, id: number, form: FormData) {
+  const { locale } = await requireStaffRoles(rawLocale, "admin");
+  const review = await getTransferNoteReview(locale, id);
+  if (!review || review.source !== form.get("source") || review.english !== form.get("english")) {
+    throw new Error("La traducción cambió. Vuelve a revisarla.");
+  }
+  const result = await execute(
+    "UPDATE transfer_routes SET approved_price_note_en = ? WHERE id = ? AND price_note = ? AND approved_price_note_en IS NULL",
+    review.english, id, review.source,
+  );
+  if (!result.meta.changes) throw new Error("La nota cambió. Vuelve a revisarla.");
+  revalidatePath("/en/transfers");
+  revalidatePath("/en/book");
+  revalidatePath(`/${locale}/admin/transfers/${id}`);
 }

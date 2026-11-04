@@ -1,6 +1,7 @@
 import "server-only";
 
 import { readEditorialEnglishBatch } from "./editorial-cache";
+import { editorialSnapshot, existingPickupNote, publishReviewedTourEnglish } from "@/lib/tour-editorial-review";
 import { query, queryOne } from "./client";
 import type {
   Locale,
@@ -51,12 +52,12 @@ async function withContents(
        ORDER BY section ASC, sort_order ASC, id ASC`,
       ...ids,
     ),
-    locale === "en" ? query<{ tour_id: number; english: string }>(
-      `SELECT tour_id, english FROM tour_editorial_translation
+    locale === "en" ? query<{ tour_id: number; source: string; english: string; approvals: string }>(
+      `SELECT tour_id, source, english, approvals FROM tour_editorial_translation
        WHERE status = 'translated' AND tour_id IN (${placeholders})`, ...ids,
     ) : [],
   ]);
-  const generated = new Map(editorial.map((row) => [row.tour_id, row.english]));
+  const generated = new Map(editorial.map((row) => [row.tour_id, row]));
 
   const byTour = new Map<number, { tr: TourTranslation[]; im: TourImage[]; it: TourListItem[] }>();
   for (const t of rows) byTour.set(t.id, { tr: [], im: [], it: [] });
@@ -70,14 +71,16 @@ async function withContents(
     if (!parts) continue;
     let active = parts.tr.find((translation) => translation.locale === locale);
     const stored = generated.get(tour.id);
-    let pickupNote = locale === "es" ? tour.pickup_note : null;
+    let pickupNote = existingPickupNote(locale, locale === "en" && Boolean(active), tour.pickup_note);
     const lists: Record<TourListSection, TourListItem[]> = { included: [], excluded: [], bring: [] };
     for (const item of parts.it) {
       if (item.locale === locale) lists[item.section].push(item);
     }
     if (!active && stored) {
       const [title, summary, description, seoTitle, seoDescription, included, excluded, bring, pickup] =
-        JSON.parse(stored) as string[];
+        publishReviewedTourEnglish(
+          editorialSnapshot(stored.source), editorialSnapshot(stored.english), editorialSnapshot(stored.approvals),
+        );
       active = { id: tour.id, tour_id: tour.id, locale, title, summary, description,
         seo_title: seoTitle || null, seo_description: seoDescription || null };
       pickupNote = pickup || null;

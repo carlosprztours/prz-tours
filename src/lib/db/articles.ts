@@ -17,7 +17,7 @@ async function withContent(
   locale: Locale,
 ): Promise<ArticleWithContent | null> {
   const translation = await queryOne<ArticleTranslation>(
-    `SELECT id, article_id, locale, title, excerpt, body,
+    `SELECT id, article_id, locale, title, excerpt, body: "",
             seo_title, seo_description
      FROM article_translations
      WHERE article_id = ? AND locale = ?`,
@@ -30,12 +30,13 @@ async function withContent(
     "SELECT * FROM article_translations WHERE article_id = ? AND locale = 'es'", article.id,
   );
   if (!source) return null;
-  const values = [source.title, source.excerpt, source.body, source.seo_title ?? "", source.seo_description ?? ""];
+  if (source.body.trim()) return null; // Long-form content may contain operational or commercial conditions.
+  const values = [source.title, source.excerpt, source.seo_title ?? "", source.seo_description ?? ""];
   const english = await readEditorialEnglishBatch(values);
-  const [title, excerpt, body, seoTitle, seoDescription] = values.map((value) => english(value));
-  if (!title || (source.excerpt && !excerpt) || (source.body && !body)) return null;
+  const [title, excerpt, seoTitle, seoDescription] = values.map((value) => english(value));
+  if (!title || (source.excerpt && !excerpt)) return null;
   return { ...article, translation: {
-    ...source, locale, title, excerpt, body,
+    ...source, locale, title, excerpt, body: "",
     seo_title: seoTitle || null, seo_description: seoDescription || null,
   } };
 }

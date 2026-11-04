@@ -21,18 +21,16 @@ import type {
 // ───────────────────────────── Traslados ─────────────────────────────
 
 export async function listPublishedTransferRoutes(locale: Locale): Promise<TransferRoute[]> {
-  const routes = await query<TransferRoute>(
+  const routes = await query<TransferRoute & { approved_price_note_en: string | null }>(
     `SELECT id, origin_key, origin_label, origin_airport, destination,
-            price_1_5, price_6_11, price_note, sort_order, is_published
+            price_1_5, price_6_11, price_note, approved_price_note_en, sort_order, is_published
      FROM transfer_routes
      WHERE is_published = 1
      ORDER BY sort_order ASC, id ASC`,
   );
-  if (locale === "es") return routes;
-  const english = await readEditorialEnglishBatch(routes.flatMap((row) => [row.price_note]));
-  return routes.map((route) => ({
+  return routes.map(({ approved_price_note_en, ...route }) => ({
     ...route,
-    price_note: english(route.price_note ?? "", "") || null,
+    price_note: locale === "en" ? approved_price_note_en ?? route.price_note : route.price_note,
   }));
 }
 

@@ -10,7 +10,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { requireEditor } from "./access";
+import { editorialSnapshot, reviewFields, reviewToken } from "@/lib/tour-editorial-review";
+import { requireEditor, requireStaffRoles } from "./access";
 import { refreshTourEnglish, retryStoredTourEnglish, tourEditorialSource } from "./tour-editorial-translation";
 import { batch, execute, query, queryOne } from "@/lib/db/client";
 
@@ -294,6 +295,12 @@ async function writeTour(
             ON CONFLICT(tour_id) DO UPDATE SET
               status = CASE WHEN source = excluded.source THEN status
                             WHEN english IS NULL THEN 'pending' ELSE 'outdated' END,
+              approvals = CASE WHEN source = excluded.source THEN approvals ELSE (
+                SELECT json_group_array(CASE
+                  WHEN json_extract(tour_editorial_translation.source, '$[' || key || ']')
+                     = json_extract(excluded.source, '$[' || key || ']') THEN value ELSE '' END)
+                FROM json_each(tour_editorial_translation.approvals)
+              ) END,
               source = excluded.source`,
       params: [id, JSON.stringify(tourEditorialSource(formData))] },
   ];
@@ -365,4 +372,43 @@ export async function deleteTour(
   revalidatePath(`/${locale}/tours`);
   revalidatePath(`/${locale}/admin/tours`);
   return { ok: true };
+}
+
+export async function getTourEnglishReview(rawLocale: string, id: number) {
+  await requireStaffRoles(rawLocale, "admin");
+  const row = await queryOne<{ source: string; english: string; approvals: string }>(
+    `SELECT source, english, approvals FROM tour_editorial_translation
+     WHERE tour_id = ? AND status = 'translated'
+       AND NOT EXISTS (SELECT 1 FROM tour_translations WHERE tour_id = ? AND locale = 'en')`,
+    id, id,
+  );
+  if (!row) return [];
+  const source = editorialSnapshot(row.source);
+  const english = editorialSnapshot(row.english);
+  const approvals = editorialSnapshot(row.approvals);
+  return reviewFields.flatMap(({ index, label }) => {
+    const token = reviewToken(source, english, index);
+    return token ? [{ index, label, source: source[index], english: english[index], token, approved: approvals[index] === token }] : [];
+  });
+}
+
+export async function approveTourEnglish(rawLocale: string, id: number, index: number, form: FormData) {
+  const { locale } = await requireStaffRoles(rawLocale, "admin");
+  const review = (await getTourEnglishReview(locale, id)).find((field) => field.index === index);
+  if (!review || review.token !== form.get("review")) throw new Error("La traducción cambió. Vuelve a revisarla.");
+  const path = '$[' + index + ']';
+  const result = await execute(
+    `UPDATE tour_editorial_translation
+     SET approvals = json_set(
+       CASE WHEN json_array_length(approvals) < 9
+            THEN '["","","","","","","","",""]' ELSE approvals END, ?, ?
+     )
+     WHERE tour_id = ? AND status = 'translated'
+       AND json_extract(source, ?) = ? AND json_extract(english, ?) = ?
+       AND NOT EXISTS (SELECT 1 FROM tour_translations WHERE tour_id = ? AND locale = 'en')`,
+    path, review.token, id, path, review.source, path, review.english, id,
+  );
+  if (!result.meta.changes) throw new Error("La traducción cambió. Vuelve a revisarla.");
+  revalidatePath("/en/tours/[slug]", "page");
+  revalidatePath(`/${locale}/admin/tours/${id}`);
 }

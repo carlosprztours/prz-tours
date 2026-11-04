@@ -1,7 +1,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  "main": "editorial-worker.ts",
   "name": "prz-tours",
+  "ai": { "binding": "AI" },
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": { "EDITORIAL_TRANSLATION_WORKERS_AI": "false" },
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {

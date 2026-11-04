@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getAdminTour, retryTourTranslation } from "@/lib/admin/tours";
+import { approveTourEnglish, getAdminTour, getTourEnglishReview, retryTourTranslation } from "@/lib/admin/tours";
 import { requireSection } from "@/lib/admin/access";
 import { listTourCategories } from "@/lib/admin/categories";
 import { tourFormLabels } from "@/lib/admin/tour-labels";
@@ -23,7 +23,7 @@ export default async function EditTourPage({ params, searchParams }: Props) {
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
-  await requireSection(locale, "tours");
+  const session = await requireSection(locale, "tours");
 
   const numericId = Number(id);
   if (!Number.isInteger(numericId) || numericId <= 0) notFound();
@@ -32,6 +32,8 @@ export default async function EditTourPage({ params, searchParams }: Props) {
   if (!full) notFound();
 
   const rows = await listTourCategories(locale);
+  const review = englishReview && session.user.role === "admin"
+    ? await getTourEnglishReview(locale, numericId) : [];
 
   const budget = await queryOne<{ calls: number; chars: number; halted: number }>(
     `SELECT CASE WHEN expires_at <= unixepoch() THEN 0 ELSE calls END AS calls,
@@ -69,6 +71,18 @@ export default async function EditTourPage({ params, searchParams }: Props) {
           </button>
         </form>
       )}
+      {review.map((field) => (
+        <form key={field.index} action={approveTourEnglish.bind(null, locale, numericId, field.index)}
+          className="grid gap-2 rounded-xl border p-4">
+          <h2 className="font-bold">{field.label}</h2>
+          <p lang="es" className="whitespace-pre-wrap">{field.source}</p>
+          <p lang="en" className="whitespace-pre-wrap">{field.english}</p>
+          <input type="hidden" name="review" value={field.token} />
+          {field.approved ? <p>Traducción aprobada</p> : (
+            <button type="submit" className="text-left font-bold text-ocean-700">Aprobar y publicar este campo</button>
+          )}
+        </form>
+      ))}
       <TourForm englishReview={englishReview}
         locale={locale}
         initial={full}

@@ -52,3 +52,20 @@ escrituras legítimas posteriores al bookmark. No copiar datos de preview.
 Para otra web basada en la plantilla, conservar el aislamiento de bindings,
 verificar el lector de cada campo traducido y ensayar el rollback antes de
 habilitar inferencias. El versionado oficial queda para el Bloque 4.1.
+
+## Corrección del candidato
+
+- La nota de recogida original sigue visible en los tours con inglés manual.
+- El panel de mantenimiento muestra originales y borradores de tours. Solo
+  administradores pueden publicar descripciones, listas o notas de recogida
+  automáticas. La aprobación depende del par exacto ES/EN y se elimina para
+  el campo modificado, sin modificar el inglés manual existente.
+- Las notas de tarifa mantienen su texto original hasta aprobación por un
+  administrador. Un cambio de origen invalida el inglés aprobado. En blog
+  y FAQ, los borradores de cuerpo y respuesta se revisan y guardan mediante
+  el mantenimiento inglés existente.
+- La migración 0018 añade el estado de aprobación y crea un presupuesto
+  independiente en la D1 enlazada. El binding y el cron de un minuto se
+  preparan en el wrapper de OpenNext. Tanto la variable como el presupuesto
+  arrancan desactivados. Renovar el bookmark y comprobar el plan y saldo de
+  cuenta antes de cualquier activación. El despliegue sigue usando Actions.
