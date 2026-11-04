@@ -17,7 +17,7 @@ async function withContent(
   locale: Locale,
 ): Promise<ArticleWithContent | null> {
   const translation = await queryOne<ArticleTranslation>(
-    `SELECT id, article_id, locale, title, excerpt, body: "",
+    `SELECT id, article_id, locale, title, excerpt, body,
             seo_title, seo_description
      FROM article_translations
      WHERE article_id = ? AND locale = ?`,
