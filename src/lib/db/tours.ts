@@ -70,11 +70,14 @@ async function withContents(
     const parts = byTour.get(tour.id);
     if (!parts) continue;
     let active = parts.tr.find((translation) => translation.locale === locale);
+    // Legacy records can have a manual English row only. Keep the Spanish URL
+    // and its original content accessible until Spanish is authored.
+    if (!active && locale === "es") active = parts.tr.find((translation) => translation.locale === "en");
     const stored = generated.get(tour.id);
     let pickupNote = existingPickupNote(locale, locale === "en" && Boolean(active), tour.pickup_note);
     const lists: Record<TourListSection, TourListItem[]> = { included: [], excluded: [], bring: [] };
     for (const item of parts.it) {
-      if (item.locale === locale) lists[item.section].push(item);
+      if (item.locale === (active?.locale ?? locale)) lists[item.section].push(item);
     }
     if (!active && stored) {
       const [title, summary, description, seoTitle, seoDescription, included, excluded, bring, pickup] =
