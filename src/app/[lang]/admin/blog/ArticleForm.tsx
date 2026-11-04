@@ -3,7 +3,7 @@
  */
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo } from "react";
 
 import {
   createArticle,
@@ -20,16 +20,16 @@ const labelClass = "grid gap-1 text-xs font-bold text-ink-500";
 const areaClass =
   "w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-ocean-500";
 
-export function ArticleForm({
+export function ArticleForm({ englishReview = false,
   locale,
   initial,
   es,
 }: {
+  englishReview?: boolean;
   locale: string;
   initial: AdminArticleFull | null;
   es: boolean;
 }) {
-  const [tab, setTab] = useState<"es" | "en">("es");
   const action = useMemo(
     () =>
       initial
@@ -40,6 +40,35 @@ export function ArticleForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const a = initial?.article;
   const tr = (loc: "es" | "en") => initial?.translations[loc];
+
+  function renderTexts(l: "es" | "en") {
+    return (
+      <div className="mt-4 grid gap-3">
+        <label className={labelClass}>
+          {es ? "Título" : "Title"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+          <input name={`title_${l}`} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
+        </label>
+        <label className={labelClass}>
+          {es ? "Resumen" : "Excerpt"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+          <input name={`excerpt_${l}`} defaultValue={tr(l)?.excerpt ?? ""} className={inputClass} />
+        </label>
+        <label className={labelClass}>
+          {es ? "Contenido (párrafos separados por línea en blanco)" : "Body (paragraphs separated by blank lines)"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
+          <textarea name={`body_${l}`} rows={10} defaultValue={tr(l)?.body ?? ""} className={areaClass} />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={labelClass}>
+            {es ? "Título SEO" : "SEO title"}
+            <input name={`seo_title_${l}`} defaultValue={tr(l)?.seo_title ?? ""} className={inputClass} />
+          </label>
+          <label className={labelClass}>
+            {es ? "Descripción SEO" : "SEO description"}
+            <input name={`seo_description_${l}`} defaultValue={tr(l)?.seo_description ?? ""} className={inputClass} />
+          </label>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form action={formAction} className="grid gap-5">
@@ -65,50 +94,13 @@ export function ArticleForm({
       </section>
 
       <section className="rounded-2xl border border-sand-200 bg-white p-5">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-ink-900">
-            {es ? "Textos" : "Texts"}
-          </h2>
-          <div className="flex gap-1 rounded-full bg-sand-100 p-1">
-            {(["es", "en"] as const).map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setTab(l)}
-                className={`rounded-full px-4 py-1 text-sm font-bold transition ${tab === l ? "bg-white shadow" : "text-ink-500"}`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {(["es", "en"] as const).map((l) => (
-          <div key={l} className={`mt-4 grid gap-3 ${tab === l ? "" : "hidden"}`}>
-            <label className={labelClass}>
-              {es ? "Título" : "Title"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <input name={`title_${l}`} defaultValue={tr(l)?.title ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              {es ? "Resumen" : "Excerpt"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <input name={`excerpt_${l}`} defaultValue={tr(l)?.excerpt ?? ""} className={inputClass} />
-            </label>
-            <label className={labelClass}>
-              {es ? "Contenido (párrafos separados por línea en blanco)" : "Body (paragraphs separated by blank lines)"} <span className="whitespace-nowrap">({l.toUpperCase()})</span>
-              <textarea name={`body_${l}`} rows={10} defaultValue={tr(l)?.body ?? ""} className={areaClass} />
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className={labelClass}>
-                SEO title
-                <input name={`seo_title_${l}`} defaultValue={tr(l)?.seo_title ?? ""} className={inputClass} />
-              </label>
-              <label className={labelClass}>
-                SEO description
-                <input name={`seo_description_${l}`} defaultValue={tr(l)?.seo_description ?? ""} className={inputClass} />
-              </label>
-            </div>
-          </div>
-        ))}
+        <h2 className="font-display text-lg font-bold text-ink-900">{es ? "Textos" : "Texts"}</h2>
+        {renderTexts("es")}
+        {englishReview && (
+          <section aria-label="Traducción inglesa">
+          {renderTexts("en")}
+          </section>
+        )}
       </section>
 
       {!state.ok && state.error && (

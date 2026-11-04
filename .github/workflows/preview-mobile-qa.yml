@@ -1,0 +1,129 @@
+name: Preview mobile QA
+on:
+  push:
+    branches: [fix/preview-imagekit-video-playback]
+    paths: [.github/workflows/preview-mobile-qa.yml]
+permissions:
+  contents: read
+jobs:
+  mobile:
+    if: github.repository == 'carlosprztours/prz-tours'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npx --no-install playwright-core install chromium
+      - name: Mobile playback and layout
+        run: |
+          mkdir -p mobile-evidence
+          node --input-type=module <<'JS'
+          import { chromium, devices } from 'playwright-core';
+          import { writeFile } from 'node:fs/promises';
+          const origin = 'https://prz-tours-video-preview.carlosprz-tours.workers.dev';
+          const browser = await chromium.launch();
+          const results = [];
+          try {
+            for (const device of ['Pixel 7', 'iPhone 13']) {
+              const context = await browser.newContext({ ...devices[device], defaultBrowserType: 'chromium' });
+              await context.tracing.start({ screenshots: true, snapshots: true });
+              await context.addInitScript(() => {
+                window.mediaQA = [];
+                for (const type of ['loadedmetadata', 'canplay', 'playing', 'waiting', 'stalled', 'error', 'pause', 'pointerdown']) {
+                  document.addEventListener(type, event => {
+                    const el = event.target;
+                    if (type === 'pointerdown') {
+                      window.mediaQA.push({ type, tag: el.tagName, label: el.closest?.('button')?.getAttribute('aria-label') });
+                    } else if (el instanceof HTMLVideoElement) {
+                      window.mediaQA.push({ type, readyState: el.readyState, networkState: el.networkState, paused: el.paused, currentTime: el.currentTime, videoWidth: el.videoWidth, error: el.error?.code });
+                    }
+                  }, true);
+                }
+              });
+              const page = await context.newPage();
+              const cdp = await context.newCDPSession(page);
+              await cdp.send("DOM.enable");
+              let network = [];
+              const media = url => /\.mp4(?:[?#]|$)/i.test(url);
+              page.on('request', req => { if (media(req.url())) network.push({ event: 'request', host: new URL(req.url()).hostname }); });
+              page.on('response', res => { if (media(res.url())) network.push({ event: 'response', status: res.status() }); });
+              page.on('requestfailed', req => { if (media(req.url())) network.push({ event: 'failed', error: req.failure()?.errorText }); });
+              page.setDefaultTimeout(8000);
+              for (const locale of ['es', 'en']) {
+                for (const suffix of ['', '/gallery']) {
+                  const name = [device, locale, suffix ? 'gallery' : 'home'].join('-').replaceAll(' ', '-');
+                  network = [];
+                  let banner = null;
+                  try {
+                    const response = await page.goto(origin + '/' + locale + suffix, { waitUntil: 'domcontentloaded' });
+                    if (!response?.ok()) throw Error('HTTP ' + response?.status());
+                    await page.waitForLoadState('load');
+                    const notice = page.getByRole('dialog', { name: /Aviso de cookies|Cookie notice/i });
+                    banner = await notice.isVisible() ? await notice.boundingBox() : null;
+                    if (banner) await notice.getByRole('button', { name: /Rechazar|Reject/i }).tap();
+                    const play = page.getByRole('button', { name: /^(Reproducir|Play).*ImageKit/i });
+                    await play.tap({ trial: true });
+                    await play.tap();
+                    const video = page.locator('video').first();
+                    await video.waitFor({ state: 'visible' });
+                    await page.waitForFunction(() => document.querySelector('video')?.currentTime > 0.15);
+                    await video.scrollIntoViewIfNeeded();
+                    const { root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true });
+                    function findControl(node) {
+                      const attrs = node.attributes ?? [];
+                      if (attrs.includes('-webkit-media-controls-play-button')) return node;
+                      for (const child of [...(node.children ?? []), ...(node.shadowRoots ?? [])]) {
+                        const found = findControl(child);
+                        if (found) return found;
+                      }
+                    }
+                    const control = findControl(root);
+                    if (!control) throw Error('Chromium native play/pause control not found');
+                    const { model } = await cdp.send('DOM.getBoxModel', { nodeId: control.nodeId });
+                    const quad = model.content;
+                    await page.touchscreen.tap((quad[0] + quad[4]) / 2, (quad[1] + quad[5]) / 2);
+                    await page.waitForFunction(() => document.querySelector('video')?.paused);
+                    const stable = await video.evaluate(async v => {
+                      const start = v.currentTime;
+                      for (let frame = 0; frame < 12; frame++) await new Promise(requestAnimationFrame);
+                      return v.paused && Math.abs(v.currentTime - start) < 0.01;
+                    });
+                    const state = await video.evaluate(v => ({
+                      time: v.currentTime, paused: v.paused, mediaError: v.error?.code ?? null,
+                      hls: /\.m3u8(?:\?|$)/i.test(v.currentSrc),
+                      width: document.documentElement.clientWidth,
+                      scrollWidth: document.documentElement.scrollWidth
+                    }));
+                    results.push({ name, ...state, stable, pass: stable && state.mediaError === null && state.scrollWidth <= state.width + 1 });
+                  } catch (error) {
+                    results.push({ name, pass: false, error: String(error.message).split('\n')[0] });
+                  }
+                  Object.assign(results.at(-1), {
+                    banner, network,
+                    diagnostics: await page.evaluate(() => {
+                      const v = document.querySelector('video');
+                      return { events: window.mediaQA, video: v && { visible: !!v.getClientRects().length, readyState: v.readyState, networkState: v.networkState, paused: v.paused, currentTime: v.currentTime, videoWidth: v.videoWidth, error: v.error?.code } };
+                    })
+                  });
+                  await page.screenshot({ path: 'mobile-evidence/' + name + '.png' });
+                }
+              }
+              await context.tracing.stop({ path: 'mobile-evidence/' + device.replaceAll(' ', '-') + '.zip' });
+              await context.close();
+            }
+          } finally {
+            await browser.close();
+            await writeFile('mobile-evidence/results.json', JSON.stringify(results, null, 2));
+            console.log(JSON.stringify(results));
+          }
+          if (results.some(r => !r.pass)) process.exitCode = 1;
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: preview-mobile-evidence
+          path: mobile-evidence
+          retention-days: 2

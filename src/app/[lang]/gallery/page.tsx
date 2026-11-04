@@ -44,8 +44,8 @@ export default async function GalleryPage({ params }: Props) {
 
   const [dict, images, videos] = await Promise.all([
     getDictionary(locale),
-    listAllPublishedGalleryImages(),
-    listPublishedGalleryVideos(),
+    listAllPublishedGalleryImages(locale),
+    listPublishedGalleryVideos(locale),
   ]);
 
   return (

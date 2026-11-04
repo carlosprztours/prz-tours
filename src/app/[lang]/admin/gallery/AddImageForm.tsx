@@ -20,6 +20,8 @@ const ERRORES: Record<string, { es: string; en: string }> = {
     es: "Sube al menos una foto o pega una URL.",
     en: "Upload at least one photo or paste a URL.",
   },
+  tooMany: { es: "Máximo 20 archivos por lote.", en: "Maximum 20 files per batch." },
+  invalidUrl: { es: "Una URL no es válida.", en: "One URL is invalid." },
 };
 
 export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
@@ -94,6 +96,11 @@ export function AddImageForm({ locale, es }: { locale: string; es: boolean }) {
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
+        <label className="grid gap-1 text-xs font-bold text-ink-500 sm:col-span-2">
+          {es ? "Excursión o nombre del grupo" : "Excursion or group name"}
+          <input name="group_name" maxLength={120} placeholder={es ? "Ej.: Excursión Cayo Arena" : "E.g. Cayo Arena excursion"} className={input} />
+          <span className="text-[11px] font-normal text-ink-400">{es ? "Se aplicará como leyenda y base del texto alternativo a todas las fotos del lote, salvo donde escribas una descripción propia." : "Applied as caption and alt-text basis to every image in the batch unless you provide a custom description."}</span>
+        </label>
         <label className="grid gap-1 text-xs font-bold text-ink-500 sm:col-span-2">
           {subidas.length > 0
             ? es

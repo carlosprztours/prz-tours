@@ -8,12 +8,8 @@
  *    principal son turistas internacionales).
  * 2. Auth optimista: las rutas /:locale/admin/* requieren un JWT válido
  *    (solo se verifica la firma; la comprobación segura contra la BD la hace
- *    el DAL en cada página). /:locale/login redirige al panel si ya hay sesión.
+ *    el DAL en cada página).
  *
- * NOTA: aquí NO usamos getCloudflareContext (su versión asíncrona no está
- * garantizada dentro del proxy), sino `process.env.AUTH_SECRET`, que
- * OpenNext expone también en el runtime de Workers. Si el secreto falta,
- * fallamos en cerrado: todo /admin redirige al login.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify } from "jose";
@@ -25,7 +21,6 @@ import { defaultLocale, locales } from "@/lib/i18n/config";
 const ADMIN_PREFIX = "/admin";
 const ACCOUNT_PREFIX = "/account";
 const LOGIN_PATH = "/login";
-const SIGNUP_PATH = "/signup";
 
 function getLocaleFromHeader(request: NextRequest): "es" | "en" {
   const header = request.headers.get("accept-language") ?? "";
@@ -136,22 +131,14 @@ export async function proxy(request: NextRequest) {
 
   const isAdmin = rest === ADMIN_PREFIX || rest.startsWith(`${ADMIN_PREFIX}/`);
   const isAccount = rest === ACCOUNT_PREFIX || rest.startsWith(`${ACCOUNT_PREFIX}/`);
-  const isLogin = rest === LOGIN_PATH || rest.startsWith(`${LOGIN_PATH}/`);
-  const isSignup = rest === SIGNUP_PATH || rest.startsWith(`${SIGNUP_PATH}/`);
+  const session = isAdmin || isAccount ? await readTokenPayload(token) : null;
 
-  const session = await readTokenPayload(token);
-
-  // Panel: requiere staff. Un cliente con sesión válida va a su cuenta.
+  // El DAL comprueba el rol actual y la sesión en D1.
   if (isAdmin) {
     if (!session) {
       const url = request.nextUrl.clone();
       url.pathname = `/${locale}${LOGIN_PATH}`;
       url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
-    }
-    if (session.role === "customer") {
-      const url = request.nextUrl.clone();
-      url.pathname = `/${locale}${ACCOUNT_PREFIX}`;
       return NextResponse.redirect(url);
     }
   }
@@ -161,16 +148,6 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}${LOGIN_PATH}`;
     url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // Login/registro con sesión: al panel si es staff, a su cuenta si es cliente.
-  if ((isLogin || isSignup) && session) {
-    const url = request.nextUrl.clone();
-    url.pathname =
-      session.role === "customer"
-        ? `/${locale}${ACCOUNT_PREFIX}`
-        : `/${locale}${ADMIN_PREFIX}`;
     return NextResponse.redirect(url);
   }
 

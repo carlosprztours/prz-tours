@@ -12,9 +12,12 @@ import { TestimonialForm } from "../TestimonialForm";
 
 export default async function EditTestimonialPage({
   params,
+  searchParams,
 }: {
+  searchParams: Promise<{ traduccion?: string }>;
   params: Promise<{ lang: string; id: string }>;
 }) {
+  const englishReview = (await searchParams).traduccion === "en";
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
@@ -37,7 +40,12 @@ export default async function EditTestimonialPage({
           {item.author_name}
         </h1>
       </div>
-      <TestimonialForm locale={locale} initial={item} es={es} />
+      {englishReview ? (
+        <a href="?">Volver a la edición en español</a>
+      ) : (
+        <a href="?traduccion=en">Mantenimiento de traducción inglesa</a>
+      )}
+      <TestimonialForm englishReview={englishReview} locale={locale} initial={item} es={es} />
     </div>
   );
 }

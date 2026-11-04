@@ -5,6 +5,7 @@
  * - `/book?type=transfer` → reserva de traslado (selector de rutas).
  * - `/book?type=transfer&route=3` → traslado con ruta preseleccionada.
  */
+import { getEnvVar } from "@/lib/db/client";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -48,7 +49,7 @@ export default async function BookPage({ params, searchParams }: Props) {
   const [dict, tours, routes, defaults] = await Promise.all([
     getDictionary(locale),
     listPublishedTours(locale),
-    listPublishedTransferRoutes(),
+    listPublishedTransferRoutes(locale),
     getBookingDefaults(),
   ]);
   const session = await getCurrentUser().catch(() => null);
@@ -76,6 +77,7 @@ export default async function BookPage({ params, searchParams }: Props) {
         />
         <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-sand-200 bg-white p-6 shadow-lg sm:p-8">
           <BookingForm
+            externalEffectsDisabled={(await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) === "true"}
             locale={locale}
             booking={dict.booking}
             optionalLabel={dict.common.optional}

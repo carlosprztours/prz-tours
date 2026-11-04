@@ -2,6 +2,7 @@
  * Detalle de reserva: datos del cliente, experiencia, totales, historial y
  * acciones de estado/pago.
  */
+import { getEnvVar } from "@/lib/db/client";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -127,6 +128,7 @@ export default async function BookingDetailPage({ params }: Props) {
           <BookingActions
             locale={locale}
             bookingId={booking.id}
+            whatsappEnabled={(await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) !== "true"}
             status={booking.status}
             payment={booking.payment_status}
             customer={{

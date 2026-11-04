@@ -1,0 +1,68 @@
+name: Preview aislado - video ImageKit
+
+on:
+  push:
+    branches:
+      - fix/preview-imagekit-video-playback
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prz-tours-video-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npx opennextjs-cloudflare build
+      - name: Deploy solo Worker preview, sin migraciones ni rutas de produccion
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test -n "$CLOUDFLARE_ACCOUNT_ID"
+          node - <<'NODE'
+          const fs = require('fs');
+          const cfg = JSON.parse(fs.readFileSync('wrangler.preview.jsonc', 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+          if (cfg.name !== 'prz-tours-video-preview' ||
+              cfg.routes?.length ||
+              cfg.d1_databases?.length !== 1 ||
+              cfg.d1_databases[0].database_id !== '6c3b5f55-8c63-4127-8e6b-6e1f4beee747' ||
+              cfg.services?.[0]?.service !== cfg.name) {
+            throw new Error('Unsafe preview configuration');
+          }
+          NODE
+          npx wrangler deploy --config wrangler.preview.jsonc --tag "$GITHUB_SHA"
+
+      - name: Smoke test public preview pages (read-only)
+        env:
+          PREVIEW_URL: https://prz-tours-video-preview.carlosprz-tours.workers.dev
+        run: |
+          set -euo pipefail
+          for path in /es /es/gallery /es/tours /es/transfers; do
+            echo "Checking preview page: $path"
+            code=$(curl --location --silent --show-error --output /tmp/preview-page.html --write-out '%{http_code}' --max-time 25 "$PREVIEW_URL$path")
+            if [ "$code" != "200" ]; then
+              echo "::error::Preview page $path returned HTTP $code"
+              exit 1
+            fi
+            if grep -Eiq '<title>[^<]*(500|internal server error)' /tmp/preview-page.html; then
+              echo "::error::Preview page $path returned error HTML"
+              exit 1
+            fi
+            echo "OK: HTTP 200"
+          done

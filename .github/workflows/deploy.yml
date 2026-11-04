@@ -2,7 +2,7 @@ name: Deploy a Cloudflare
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/preview-imagekit-video-playback]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -30,6 +30,12 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Verificar versión centralizada
+        run: npm run version:check
+
+      - name: Verificar catálogo de herramientas
+        run: npm run tools:check
+
       - name: Typecheck
         run: npx tsc --noEmit
 
@@ -38,6 +44,26 @@ jobs:
 
       - name: Validar contenido (sin texto corrupto)
         run: node scripts/check-content.mjs
+
+  # ------------------------------------------------------------------
+  # Auditoría separada: no oculta el detalle ni despliega.
+  # ------------------------------------------------------------------
+  security:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verificar catálogo antes de auditar
+        run: npm run tools:check
+      - name: Auditoría de dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
+      - name: Auditoría completa de dependencias
+        if: always()
+        run: npm audit --audit-level=high
 
   # ------------------------------------------------------------------
   # Build del bundle de OpenNext (no despliega)
@@ -68,7 +94,7 @@ jobs:
   # ------------------------------------------------------------------
   deploy:
     name: Deploy a Cloudflare Workers
-    needs: build
+    needs: [build, security]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: production

@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.paypal.com https://www.sandbox.paypal.com https://www.google.com https://www.gstatic.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
+              // ImageKit sirve los vídeos desde un origen externo: sin media-src,
+              // default-src 'self' bloquea el elemento <video> en el navegador.
+              "media-src 'self' https://*.imagekit.io https://ik.imagekit.io blob:",
               "connect-src 'self' https://api-m.paypal.com https://api-m.sandbox.paypal.com https://www.paypal.com https://www.sandbox.paypal.com https://api.resend.com https://*.imagekit.io https://ik.imagekit.io https://auth.google.com https://oauth2.googleapis.com",
               "frame-src https://www.paypal.com https://www.sandbox.paypal.com https://www.google.com https://accounts.google.com",
               "frame-ancestors 'none'",

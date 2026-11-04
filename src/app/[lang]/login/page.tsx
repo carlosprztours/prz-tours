@@ -1,13 +1,11 @@
-/**
- * Login del staff. Si ya hay sesión, el proxy redirige al panel.
- */
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
+import { getCurrentUser } from "@/lib/auth/dal";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { LoginForm } from "./LoginForm";
 
@@ -29,6 +27,12 @@ export default async function LoginPage({ params, searchParams }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  // Un JWT firmado puede corresponder a una sesión revocada en D1.
+  const session = await getCurrentUser();
+  if (session) {
+    redirect(`/${locale}/${session.user.role === "customer" ? "account" : "admin"}`);
+  }
+
   const { next } = await searchParams;
   await getDictionary(locale);
 

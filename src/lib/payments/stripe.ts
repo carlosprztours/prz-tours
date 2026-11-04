@@ -20,6 +20,7 @@ import { getEnvVar } from "@/lib/db/client";
 let stripe: Stripe | null | undefined;
 
 export async function getStripe(): Promise<Stripe | null> {
+  if ((await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) === "true") return null;
   if (stripe !== undefined) return stripe;
   const key = await getEnvVar("STRIPE_SECRET_KEY");
   if (!key) {

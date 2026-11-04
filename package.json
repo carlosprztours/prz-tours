@@ -8,6 +8,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "version:sync": "node scripts/sync-version.mjs",
+    "version:check": "node scripts/sync-version.mjs --check",
+    "tools:sync": "node scripts/sync-tools.mjs",
+    "tools:check": "node scripts/sync-tools.mjs --check",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
@@ -33,20 +37,21 @@
     "test:pages": "node scripts/test-pages.mjs",
     "create-admin": "node scripts/create-admin.mjs",
     "secrets": "node scripts/with-secrets.mjs",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "tools:refresh": "npm run tools:sync && npm install --package-lock-only --ignore-scripts --no-audit && npm run tools:check"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.8",
     "@simplewebauthn/browser": "^14.0.0",
     "@simplewebauthn/server": "^14.0.3",
     "jose": "^6.2.12",
-    "next": "16.3.8",
+    "next": "16.4.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
     "stripe": "^23.0.0",
     "web-push": "^3.6.7",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261003.1",
@@ -56,7 +61,7 @@
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
     "eslint": "^9",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.4",
     "playwright-core": "^1.63.0",
     "tailwindcss": "^4",
     "typescript": "^5",
@@ -67,5 +72,9 @@
     "esbuild@0.28.1": true,
     "workerd@1.20261001.1": true,
     "unrs-resolver@1.12.2": true
+  },
+  "overrides": {
+    "glob": "^14.0.2",
+    "minimatch": "^11.0.1"
   }
 }

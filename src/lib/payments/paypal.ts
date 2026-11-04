@@ -8,6 +8,7 @@
  */
 import "server-only";
 
+import { getEnvVar } from "@/lib/db/client";
 import { getSetting } from "@/lib/db/content";
 
 export type PayPalConfig = {
@@ -17,6 +18,7 @@ export type PayPalConfig = {
 };
 
 export async function getPayPalConfig(): Promise<PayPalConfig | null> {
+  if ((await getEnvVar("DISABLE_EXTERNAL_BOOKING_EFFECTS")) === "true") return null;
   const [clientId, secret, mode] = await Promise.all([
     getSetting("paypal_client_id", ""),
     getSetting("paypal_secret", ""),

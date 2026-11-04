@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { warmEditorialEnglish } from "./content-translation";
 import { requireEditor, requireStaffRoles } from "./access";
 import { execute, query, queryOne } from "@/lib/db/client";
 import type { GalleryImage, GalleryVideo, HeroSlide, Locale, Testimonial } from "@/types";
@@ -87,13 +88,13 @@ export async function updateTestimonial(
 
   await execute(
     `UPDATE testimonials SET author_name = ?, author_origin = ?, rating = ?,
-       text_es = ?, text_en = ?, tour_slug = ?, avatar_url = ?,
+       text_es = ?, text_en = COALESCE(?, text_en), tour_slug = ?, avatar_url = ?,
        is_published = ?, sort_order = ? WHERE id = ?`,
     t.author_name,
     t.author_origin,
     t.rating,
     t.text_es,
-    t.text_en,
+    formData.has("text_en") ? t.text_en : null,
     t.tour_slug,
     t.avatar_url,
     t.is_published,
@@ -151,9 +152,12 @@ export async function createGalleryImage(
     .map((v) => String(v).trim())
     .filter(Boolean);
   if (urls.length === 0 && videos.length === 0) return { ok: false, error: "required" };
+  if (urls.length + videos.length > 20) return { ok: false, error: "tooMany" };
+  if ([...urls, ...videos].some((url) => !(url.startsWith("/") && !url.startsWith("//")) && !/^https:\/\//i.test(url))) return { ok: false, error: "invalidUrl" };
 
   const alt = String(formData.get("alt") ?? "").trim();
   const caption = String(formData.get("caption") ?? "").trim();
+  const grupo = String(formData.get("group_name") ?? "").trim().slice(0, 120);
   const publicado = formData.get("is_published") === "on" ? 1 : 0;
 
   // El campo «Orden» dice dónde coloca la(s) foto(s). El formulario pone 0 por
@@ -171,16 +175,19 @@ export async function createGalleryImage(
     // Con varias fotos, un único texto alternativo no describe bien todas: se
     // aplica solo a la primera y el fotógrafo escribe el de cada una en su
     // ficha. Con una sola foto, el texto va a esa.
-    const altDeEsta = indice === 0 ? alt : "";
+    const altDeEsta = indice === 0 && alt ? alt : grupo ? `${grupo} — fotografía ${indice + 1}` : `Fotografía de galería ${indice + 1}`;
     await execute(
       `INSERT INTO gallery_images (url, alt, caption, is_published, sort_order)
        VALUES (?, ?, ?, ?, ?)`,
       url,
       altDeEsta,
-      caption || null,
+      caption || grupo || null,
       publicado,
       siguiente,
     );
+    if (urls.length + videos.length === 1) {
+      await warmEditorialEnglish([altDeEsta, ""], [caption || grupo, ""]);
+    }
   }
 
   const ultimoVideo = await queryOne<{ n: number }>(
@@ -226,6 +233,7 @@ export async function updateGalleryImage(
     id,
   );
 
+  await warmEditorialEnglish([String(formData.get("alt") ?? "").trim(), ""], [String(formData.get("caption") ?? "").trim(), ""]);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
@@ -304,6 +312,7 @@ export async function createGalleryVideo(
       ? Math.round(Number(formData.get("sort_order")))
       : (ultimo?.n ?? 0) + 1,
   );
+  await warmEditorialEnglish([String(formData.get("title") ?? "").trim(), ""], [String(formData.get("caption") ?? "").trim(), ""]);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);
@@ -339,6 +348,7 @@ export async function updateGalleryVideo(
     Math.round(Number(formData.get("sort_order")) || 0),
     id,
   );
+  await warmEditorialEnglish([String(formData.get("title") ?? "").trim(), ""], [String(formData.get("caption") ?? "").trim(), ""]);
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/gallery`);
   revalidatePath(`/${locale}/admin/gallery`);

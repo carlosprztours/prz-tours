@@ -11,7 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireEditor } from "./access";
-import { autoTranslateTour } from "./translate";
+import { refreshTourEnglish, retryStoredTourEnglish, tourEditorialSource } from "./tour-editorial-translation";
 import { batch, execute, query, queryOne } from "@/lib/db/client";
 
 import type {
@@ -59,6 +59,7 @@ export async function listAdminTours(rawLocale: string): Promise<AdminTourListIt
 
 export type AdminTourFull = {
   tour: Tour;
+  englishStatus: "pending" | "translated" | "outdated" | "error" | "manual";
   translations: Record<Locale, TourTranslation | null>;
   images: TourImage[];
   lists: Record<Locale, Record<"included" | "excluded" | "bring", string[]>>;
@@ -95,8 +96,12 @@ export async function getAdminTour(
     lists[item.locale][item.section].push(item.label);
   }
 
+  const editorial = await queryOne<{ status: Exclude<AdminTourFull["englishStatus"], "manual"> }>(
+    "SELECT status FROM tour_editorial_translation WHERE tour_id = ?", id,
+  );
   return {
     tour,
+    englishStatus: translations.some((item) => item.locale === "en") ? "manual" : editorial?.status ?? "pending",
     translations: {
       es: translations.find((t) => t.locale === "es") ?? null,
       en: translations.find((t) => t.locale === "en") ?? null,
@@ -183,6 +188,7 @@ export async function createTour(
   const base = await parseBase(formData);
   const error = validateBase(base);
   if (error) return { ok: false, error };
+  if (!str(formData, "title_es")) return { ok: false, error: "title-es-required" };
 
   const exists = await queryOne<{ id: number }>(
     `SELECT id FROM tours WHERE slug = ?`,
@@ -190,8 +196,8 @@ export async function createTour(
   );
   if (exists) return { ok: false, error: "slug-taken" };
 
-  const translated = await autoTranslateTour(formData);
-  await writeTour(null, base, translated);
+  const id = await writeTour(null, base, formData);
+  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData));
   revalidatePath(`/${locale}/tours`);
   redirect(`/${locale}/admin/tours`);
 }
@@ -206,6 +212,7 @@ export async function updateTour(
   const base = await parseBase(formData);
   const error = validateBase(base);
   if (error) return { ok: false, error };
+  if (!str(formData, "title_es")) return { ok: false, error: "title-es-required" };
 
   const clash = await queryOne<{ id: number }>(
     `SELECT id FROM tours WHERE slug = ? AND id != ?`,
@@ -214,8 +221,11 @@ export async function updateTour(
   );
   if (clash) return { ok: false, error: "slug-taken" };
 
-  const translated = await autoTranslateTour(formData);
-  await writeTour(id, base, translated);
+  await writeTour(id, base, formData);
+  const manual = await queryOne<{ title: string }>(
+    "SELECT title FROM tour_translations WHERE tour_id = ? AND locale = 'en'", id,
+  ).catch(() => null);
+  if (!manual?.title) await refreshTourEnglish(id, tourEditorialSource(formData));
   revalidatePath(`/${locale}/tours`);
   revalidatePath(`/${locale}/admin/tours`);
   return { ok: true };
@@ -273,15 +283,23 @@ async function writeTour(
       base.sort_order,
       id,
     );
-    // Limpia contenido anterior para reescribirlo.
-    await batch([
-      { sql: `DELETE FROM tour_translations WHERE tour_id = ?`, params: [id] },
-      { sql: `DELETE FROM tour_images WHERE tour_id = ?`, params: [id] },
-      { sql: `DELETE FROM tour_list_items WHERE tour_id = ?`, params: [id] },
-    ]);
+
   }
 
-  const statements: { sql: string; params?: unknown[] }[] = [];
+  const statements: { sql: string; params?: unknown[] }[] = [
+    { sql: "DELETE FROM tour_images WHERE tour_id = ?", params: [id] },
+    { sql: "DELETE FROM tour_list_items WHERE tour_id = ? AND locale = 'es'", params: [id] },
+    { sql: `INSERT INTO tour_editorial_translation (tour_id, source, status)
+            VALUES (?, ?, 'pending')
+            ON CONFLICT(tour_id) DO UPDATE SET
+              status = CASE WHEN source = excluded.source THEN status
+                            WHEN english IS NULL THEN 'pending' ELSE 'outdated' END,
+              source = excluded.source`,
+      params: [id, JSON.stringify(tourEditorialSource(formData))] },
+  ];
+  if (str(formData, "title_en")) {
+    statements.push({ sql: "DELETE FROM tour_list_items WHERE tour_id = ? AND locale = 'en'", params: [id] });
+  }
 
   for (const loc of ["es", "en"] as const) {
     const title = str(formData, `title_${loc}`);
@@ -289,7 +307,10 @@ async function writeTour(
     statements.push({
       sql: `INSERT INTO tour_translations
               (tour_id, locale, title, summary, description, seo_title, seo_description)
-            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(tour_id, locale) DO UPDATE SET title = excluded.title,
+              summary = excluded.summary, description = excluded.description,
+              seo_title = excluded.seo_title, seo_description = excluded.seo_description`,
       params: [
         id,
         loc,
@@ -312,6 +333,7 @@ async function writeTour(
   });
 
   for (const loc of ["es", "en"] as const) {
+    if (loc === "en" && !str(formData, "title_en")) continue;
     for (const section of ["included", "excluded", "bring"] as const) {
       lines(str(formData, `${section}_${loc}`)).forEach((label, i) => {
         statements.push({
@@ -325,6 +347,13 @@ async function writeTour(
 
   if (statements.length) await batch(statements);
   return id;
+}
+
+export async function retryTourTranslation(rawLocale: string, id: number): Promise<void> {
+  const locale = await requireStaff(rawLocale);
+  await retryStoredTourEnglish(id);
+  revalidatePath(`/${locale}/admin/tours/${id}`);
+  revalidatePath("/en/tours", "layout");
 }
 
 export async function deleteTour(

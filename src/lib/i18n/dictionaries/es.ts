@@ -203,6 +203,7 @@ export const es = {
     notesPlaceholder: "Alergias, cumpleaños o cualquier cosa que necesitemos saber.",
     submit: "Solicitar reserva",
     submitting: "Enviando…",
+    submittingIsolatedHint: "Guardando tu solicitud…",
     submittingHint: "Guardando tu solicitud y abriendo WhatsApp…",
     authRequired: "Inicia sesión para reservar",
     authModalTitle: "Inicia sesión para reservar",

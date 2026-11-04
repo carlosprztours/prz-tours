@@ -208,6 +208,7 @@ export const en: typeof es = {
     notesPlaceholder: "Allergies, birthdays, or anything else we should know.",
     submit: "Request booking",
     submitting: "Sending…",
+    submittingIsolatedHint: "Saving your request…",
     submittingHint: "Saving your request and opening WhatsApp…",
     authRequired: "Please sign in to book",
     authModalTitle: "Sign in to book",
