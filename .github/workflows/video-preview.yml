@@ -35,6 +35,17 @@ jobs:
         run: |
           test -n "$CLOUDFLARE_API_TOKEN"
           test -n "$CLOUDFLARE_ACCOUNT_ID"
+          node - <<'NODE'
+          const fs = require('fs');
+          const cfg = JSON.parse(fs.readFileSync('wrangler.preview.jsonc', 'utf8').replace(/^\s*\/\/.*$/gm, ''));
+          if (cfg.name !== 'prz-tours-video-preview' ||
+              cfg.routes?.length ||
+              cfg.d1_databases?.length !== 1 ||
+              cfg.d1_databases[0].database_id !== '6c3b5f55-8c63-4127-8e6b-6e1f4beee747' ||
+              cfg.services?.[0]?.service !== cfg.name) {
+            throw new Error('Unsafe preview configuration');
+          }
+          NODE
           npx wrangler deploy --config wrangler.preview.jsonc --tag "$GITHUB_SHA"
 
       - name: Smoke test public preview pages (read-only)
