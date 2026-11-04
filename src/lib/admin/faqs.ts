@@ -86,7 +86,8 @@ export async function updateFaq(
     f.is_published,
     id,
   );
-  await warmEditorialEnglish([f.question_es, f.question_en], [f.answer_es, f.answer_en]);
+  const stored = await queryOne<Faq>("SELECT * FROM faqs WHERE id = ?", id).catch(() => null);
+  if (stored) await warmEditorialEnglish([stored.question_es, stored.question_en], [stored.answer_es, stored.answer_en]);
   revalidatePath("/[lang]/contact", "page");
   revalidatePath(`/${locale}/admin/faq`);
   return { ok: true };

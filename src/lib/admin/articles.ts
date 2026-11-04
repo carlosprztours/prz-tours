@@ -123,7 +123,10 @@ async function writeArticle(
       String(formData.get(`seo_description_${loc}`) ?? "").trim() || null,
     );
   }
-  if (!String(formData.get("title_en") ?? "").trim()) {
+  const manual = await queryOne<{ title: string }>(
+    "SELECT title FROM article_translations WHERE article_id = ? AND locale = 'en'", id,
+  ).catch(() => null);
+  if (!manual?.title) {
     await warmEditorialEnglish(...["title", "excerpt", "body", "seo_title", "seo_description"]
       .map((key): [string, string] => [String(formData.get(`${key}_es`) ?? "").trim(), ""]));
   }

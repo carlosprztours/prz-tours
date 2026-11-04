@@ -197,7 +197,7 @@ export async function createTour(
   if (exists) return { ok: false, error: "slug-taken" };
 
   const id = await writeTour(null, base, formData);
-  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData), base.slug === "qa-ai-fase4-c405637");
+  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData));
   revalidatePath(`/${locale}/tours`);
   redirect(`/${locale}/admin/tours`);
 }
@@ -224,8 +224,8 @@ export async function updateTour(
   await writeTour(id, base, formData);
   const manual = await queryOne<{ title: string }>(
     "SELECT title FROM tour_translations WHERE tour_id = ? AND locale = 'en'", id,
-  );
-  if (!manual?.title) await refreshTourEnglish(id, tourEditorialSource(formData), base.slug === "qa-ai-fase4-c405637");
+  ).catch(() => null);
+  if (!manual?.title) await refreshTourEnglish(id, tourEditorialSource(formData));
   revalidatePath(`/${locale}/tours`);
   revalidatePath(`/${locale}/admin/tours`);
   return { ok: true };

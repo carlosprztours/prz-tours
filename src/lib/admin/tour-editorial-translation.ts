@@ -14,7 +14,7 @@ export function tourEditorialSource(form: FormData) {
   );
 }
 
-export async function refreshTourEnglish(id: number, source: string[], previewTour: boolean) {
+export async function refreshTourEnglish(id: number, source: string[]) {
   const snapshot = JSON.stringify(source);
   try {
     const results = [];
@@ -22,7 +22,7 @@ export async function refreshTourEnglish(id: number, source: string[], previewTo
       const isList = ["included", "excluded", "bring"].includes(TOUR_EDITORIAL_FIELDS[index]);
       const parts = isList ? value.split("\n").map((line) => line.trim()).filter(Boolean) : [value];
       const translated = [];
-      for (const part of parts) translated.push(await translateEditorialText(part, previewTour));
+      for (const part of parts) translated.push(await translateEditorialText(part));
       const status = translated.some((part) => part.status === "error") ? "error"
         : translated.every((part) => part.status === "translated") ? "translated" : "pending";
       results.push({ status, text: translated.map((part) => part.status === "translated" ? part.text : "").join("\n") });

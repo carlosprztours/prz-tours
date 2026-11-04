@@ -185,7 +185,9 @@ export async function createGalleryImage(
       publicado,
       siguiente,
     );
-    await warmEditorialEnglish([altDeEsta, ""], [caption || grupo, ""]);
+    if (urls.length + videos.length === 1) {
+      await warmEditorialEnglish([altDeEsta, ""], [caption || grupo, ""]);
+    }
   }
 
   const ultimoVideo = await queryOne<{ n: number }>(

@@ -16,13 +16,13 @@ const RETRY_DELAY_MS = 60_000;
  * reviewed translations must stay outside this pipeline.
  * A new source hash invalidates the cached English without deleting old text.
  */
-export async function translateEditorialText(source: string, previewTour = false): Promise<TranslationResult> {
+export async function translateEditorialText(source: string): Promise<TranslationResult> {
   const text = source.trim();
   if (!text) return { status: "translated", text: "" };
 
   const endpoint = await getEnvVar("EDITORIAL_TRANSLATION_URL");
   const workersAi = await getEnvVar("EDITORIAL_TRANSLATION_WORKERS_AI") === "true";
-  if (workersAi && !previewTour) return { status: "pending" };
+  if (workersAi && text.length > 800) return { status: "pending" };
   if (!endpoint && !workersAi) return { status: "pending" };
 
   const hash = await editorialHash(text, workersAi);
@@ -33,7 +33,7 @@ export async function translateEditorialText(source: string, previewTour = false
     `UPDATE content_translation_cache
      SET status = 'pending', attempts = attempts + 1, retry_after = ?
      WHERE source_hash = ? AND status != 'translated' AND attempts < ? AND retry_after <= ?`,
-    now + RETRY_DELAY_MS, hash, workersAi ? 1 : MAX_ATTEMPTS, now,
+    now + RETRY_DELAY_MS, hash, MAX_ATTEMPTS, now,
   );
   if (!claim.meta.changes) {
     const cached = await queryOne<{ status: "pending" | "translated" | "error"; translated_text: string | null }>(
@@ -52,16 +52,27 @@ export async function translateEditorialText(source: string, previewTour = false
       const binding = (env as unknown as { AI?: Ai }).AI;
       if (!binding) throw new Error("Workers AI binding missing");
       const budget = await execute(
-        `UPDATE preview_translation_budget SET calls = calls + 1, chars = chars + ?, busy = 1
-         WHERE id = 1 AND busy = 0 AND halted = 0 AND expires_at > unixepoch()
-           AND calls < 10 AND chars + ? <= 3000`,
-        text.length, text.length,
+        `UPDATE preview_translation_budget
+         SET calls = CASE WHEN expires_at <= unixepoch() THEN 1 ELSE calls + 1 END,
+             chars = CASE WHEN expires_at <= unixepoch() THEN ? ELSE chars + ? END,
+             expires_at = (unixepoch() / 86400 + 1) * 86400,
+             busy = 1
+         WHERE id = 1 AND busy = 0 AND halted = 0
+           AND (expires_at <= unixepoch() OR (calls < 24 AND chars + ? <= 6000))`,
+        text.length, text.length, text.length,
       );
-      if (!budget.meta.changes) throw new Error("Preview translation budget unavailable");
+      if (!budget.meta.changes) {
+        await execute(
+          `UPDATE content_translation_cache SET attempts = attempts - 1, retry_after = 0
+           WHERE source_hash = ? AND retry_after = ?`,
+          hash, now + RETRY_DELAY_MS,
+        );
+        return { status: "pending" };
+      }
       try {
         const result = await binding.run("@cf/meta/m2m100-1.2b", {
-        text, source_lang: "spanish", target_lang: "english",
-      });
+          text, source_lang: "es", target_lang: "en",
+        });
         translated = "translated_text" in result ? result.translated_text?.trim() ?? "" : "";
         if (!translated) throw new Error("Empty translation");
         await execute("UPDATE preview_translation_budget SET busy = 0 WHERE id = 1");
@@ -103,6 +114,7 @@ export async function translateEditorialText(source: string, previewTour = false
 
 
 export async function warmEditorialEnglish(...pairs: [source: string, manual: string][]) {
-  await Promise.allSettled(pairs.filter(([source, manual]) => source && !manual)
-    .map(([source]) => translateEditorialText(source)));
+  for (const [source, manual] of pairs) {
+    if (source && !manual) await translateEditorialText(source).catch(() => undefined);
+  }
 }
