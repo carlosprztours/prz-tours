@@ -222,7 +222,10 @@ export async function updateTour(
   if (clash) return { ok: false, error: "slug-taken" };
 
   await writeTour(id, base, formData);
-  if (!str(formData, "title_en")) await refreshTourEnglish(id, tourEditorialSource(formData), base.slug === "qa-ai-fase4-c405637");
+  const manual = await queryOne<{ title: string }>(
+    "SELECT title FROM tour_translations WHERE tour_id = ? AND locale = 'en'", id,
+  );
+  if (!manual?.title) await refreshTourEnglish(id, tourEditorialSource(formData), base.slug === "qa-ai-fase4-c405637");
   revalidatePath(`/${locale}/tours`);
   revalidatePath(`/${locale}/admin/tours`);
   return { ok: true };

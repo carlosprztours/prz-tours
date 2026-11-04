@@ -88,13 +88,13 @@ export async function updateTestimonial(
 
   await execute(
     `UPDATE testimonials SET author_name = ?, author_origin = ?, rating = ?,
-       text_es = ?, text_en = ?, tour_slug = ?, avatar_url = ?,
+       text_es = ?, text_en = COALESCE(?, text_en), tour_slug = ?, avatar_url = ?,
        is_published = ?, sort_order = ? WHERE id = ?`,
     t.author_name,
     t.author_origin,
     t.rating,
     t.text_es,
-    t.text_en,
+    formData.has("text_en") ? t.text_en : null,
     t.tour_slug,
     t.avatar_url,
     t.is_published,

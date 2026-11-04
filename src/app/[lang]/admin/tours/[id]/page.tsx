@@ -13,10 +13,12 @@ import type { Locale } from "@/types";
 import { TourForm } from "../TourForm";
 
 type Props = {
+  searchParams: Promise<{ traduccion?: string }>;
   params: Promise<{ lang: string; id: string }>;
 };
 
-export default async function EditTourPage({ params }: Props) {
+export default async function EditTourPage({ params, searchParams }: Props) {
+  const englishReview = (await searchParams).traduccion === "en";
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
@@ -40,7 +42,12 @@ export default async function EditTourPage({ params }: Props) {
           {full.translations.es?.title ?? full.translations.en?.title ?? full.tour.slug}
         </h1>
       </div>
-      <TourForm
+      {englishReview ? (
+        <a href="?">Volver a la edición en español</a>
+      ) : (
+        <a href="?traduccion=en">Mantenimiento de traducción inglesa</a>
+      )}
+      <TourForm englishReview={englishReview}
         locale={locale}
         initial={full}
         labels={tourFormLabels(locale)}

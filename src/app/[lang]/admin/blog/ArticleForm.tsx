@@ -20,11 +20,12 @@ const labelClass = "grid gap-1 text-xs font-bold text-ink-500";
 const areaClass =
   "w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm text-ink-900 outline-none focus:border-ocean-500";
 
-export function ArticleForm({
+export function ArticleForm({ englishReview = false,
   locale,
   initial,
   es,
 }: {
+  englishReview?: boolean;
   locale: string;
   initial: AdminArticleFull | null;
   es: boolean;
@@ -95,10 +96,11 @@ export function ArticleForm({
       <section className="rounded-2xl border border-sand-200 bg-white p-5">
         <h2 className="font-display text-lg font-bold text-ink-900">{es ? "Textos" : "Texts"}</h2>
         {renderTexts("es")}
-        <details className="mt-4 rounded-xl border border-sand-200 p-3">
-          <summary className="cursor-pointer text-sm font-semibold">{es ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+        {englishReview && (
+          <section aria-label="Traducción inglesa">
           {renderTexts("en")}
-        </details>
+          </section>
+        )}
       </section>
 
       {!state.ok && state.error && (

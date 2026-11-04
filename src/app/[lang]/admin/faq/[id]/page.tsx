@@ -12,9 +12,12 @@ import { FaqForm } from "../FaqForm";
 
 export default async function EditFaqPage({
   params,
+  searchParams,
 }: {
+  searchParams: Promise<{ traduccion?: string }>;
   params: Promise<{ lang: string; id: string }>;
 }) {
+  const englishReview = (await searchParams).traduccion === "en";
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
@@ -35,7 +38,12 @@ export default async function EditFaqPage({
           {faq.question_es}
         </h1>
       </div>
-      <FaqForm locale={locale} initial={faq} es={locale === "es"} />
+      {englishReview ? (
+        <a href="?">Volver a la edición en español</a>
+      ) : (
+        <a href="?traduccion=en">Mantenimiento de traducción inglesa</a>
+      )}
+      <FaqForm englishReview={englishReview} locale={locale} initial={faq} es={locale === "es"} />
     </div>
   );
 }

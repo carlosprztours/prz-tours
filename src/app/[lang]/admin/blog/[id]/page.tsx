@@ -12,9 +12,12 @@ import { ArticleForm } from "../ArticleForm";
 
 export default async function EditArticlePage({
   params,
+  searchParams,
 }: {
+  searchParams: Promise<{ traduccion?: string }>;
   params: Promise<{ lang: string; id: string }>;
 }) {
+  const englishReview = (await searchParams).traduccion === "en";
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
@@ -35,7 +38,12 @@ export default async function EditArticlePage({
           {full.translations.es?.title ?? full.translations.en?.title ?? full.article.slug}
         </h1>
       </div>
-      <ArticleForm locale={locale} initial={full} es={locale === "es"} />
+      {englishReview ? (
+        <a href="?">Volver a la edición en español</a>
+      ) : (
+        <a href="?traduccion=en">Mantenimiento de traducción inglesa</a>
+      )}
+      <ArticleForm englishReview={englishReview} locale={locale} initial={full} es={locale === "es"} />
     </div>
   );
 }

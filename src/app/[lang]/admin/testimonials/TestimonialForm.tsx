@@ -18,11 +18,12 @@ const inputClass =
   "h-10 w-full rounded-xl border border-sand-200 bg-white px-3 text-sm text-ink-900 outline-none focus:border-ocean-500";
 const labelClass = "grid gap-1 text-xs font-bold text-ink-500";
 
-export function TestimonialForm({
+export function TestimonialForm({ englishReview = false,
   locale,
   initial,
   es,
 }: {
+  englishReview?: boolean;
   locale: string;
   initial: Testimonial | null;
   es: boolean;
@@ -69,15 +70,16 @@ export function TestimonialForm({
           {es ? "Publicado" : "Published"}
         </label>
       </div>
-      <details className="mt-1 rounded-xl border border-sand-200 p-3">
-        <summary className="cursor-pointer text-sm font-semibold">{locale === "es" ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+      {englishReview && (
+          <section aria-label="Traducción inglesa">
         <div className="mt-3 grid gap-3">
           <label className={labelClass}>
             {es ? "Texto (inglés)" : "Text (English)"}
             <textarea name="text_en" rows={4} defaultValue={initial?.text_en ?? ""} className="w-full rounded-xl border border-sand-200 bg-white px-3 py-2 text-sm outline-none focus:border-ocean-500" />
           </label>
         </div>
-      </details>
+          </section>
+        )}
       {!state.ok && state.error && (
         <p className="text-sm font-semibold text-red-600" role="alert">{state.error}</p>
       )}

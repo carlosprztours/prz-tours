@@ -59,6 +59,7 @@ type Labels = {
 };
 
 type Props = {
+  englishReview?: boolean;
   locale: Locale;
   initial: AdminTourFull | null;
   labels: Labels;
@@ -148,7 +149,7 @@ function ImageGallery({
   );
 }
 
-export function TourForm({ locale, initial, labels, categories, manageCategories }: Props) {
+export function TourForm({ englishReview = false, locale, initial, labels, categories, manageCategories }: Props) {
   const action = useMemo(
     () =>
       initial
@@ -331,11 +332,12 @@ export function TourForm({ locale, initial, labels, categories, manageCategories
           })[initial?.englishStatus ?? "pending"]}.
         </p>
         {renderTexts("es")}
-        <details className="mt-4 rounded-xl border border-sand-200 p-3">
-          <summary className="cursor-pointer text-sm font-semibold">{locale === "es" ? "Revisar o corregir traducción inglesa" : "Review or correct English translation"}</summary>
+        {englishReview && (
+          <section aria-label="Traducción inglesa">
           {renderTexts("en")}
           {renderLists("en")}
-        </details>
+          </section>
+        )}
       </section>
 
       {/* ── Imágenes y listas ── */}
