@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { z } from "zod";
 import { analyze, bumpVersion, changelogEntry, git, manifestSchema, officialTags, preparation, readPlan, validateManifest } from "./lib/versioning.mjs";
 
+import { assertReleaseTooling } from "./lib/release-publication.mjs";
+
 const plan = readPlan();
 const pkg = JSON.parse(readFileSync("package.json", "utf8"));
 const lock = JSON.parse(readFileSync("package-lock.json", "utf8"));
@@ -25,7 +27,9 @@ if (action === "generate") {
   if (readFileSync("agencyos-update.schema.json", "utf8") !== schema) throw new Error("Esquema AgencyOS desactualizado.");
   if (action !== "check") {
     if (!["suggest", "prepare"].includes(action)) throw new Error("Comando desconocido.");
-    const head = git("rev-parse", "HEAD");
+    const toolingSha = git("rev-parse", "HEAD");
+    const head = action === "prepare" ? process.env.APPROVED_SHA || toolingSha : toolingSha;
+    assertReleaseTooling(head, toolingSha);
     const previous = officialTags()[0];
     const info = action === "prepare" ? preparation(plan, head) : {
       previous: previous ?? null,

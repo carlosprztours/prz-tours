@@ -3,6 +3,14 @@ name: Deploy a Cloudflare
 on:
   push:
     branches: [main]
+    # Release-tooling repairs must not replace the already approved Worker.
+    paths-ignore:
+      - .github/workflows/deploy.yml
+      - docs/RELEASES.md
+      - scripts/release.mjs
+      - scripts/publish-release.mjs
+      - scripts/lib/release-publication.mjs
+      - scripts/test-versioning.mjs
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -132,6 +140,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run release:prepare
+        env:
+          APPROVED_SHA: ${{ inputs.approved_sha }}
       - name: Publicar SHA autorizado
         env:
           GH_TOKEN: ${{ github.token }}

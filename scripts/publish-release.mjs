@@ -1,17 +1,19 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
-import { publishRelease } from "./lib/release-publication.mjs";
+import { assertReleaseTooling, publishRelease } from "./lib/release-publication.mjs";
 import { git, validateManifest } from "./lib/versioning.mjs";
 
 const candidate = validateManifest(JSON.parse(readFileSync(".release/agencyos-update.json", "utf8")));
 const notes = readFileSync(".release/notes.md", "utf8");
 const { GH_TOKEN, GITHUB_REPOSITORY: repo, GITHUB_EVENT_NAME: event, GITHUB_REF: ref, APPROVED_SHA: approved, DEPLOY_RUN_ID: run } = process.env;
 const runId = Number(run);
+const toolingSha = git("rev-parse", "HEAD");
 if (!GH_TOKEN || event !== "workflow_dispatch" || ref !== "refs/heads/main" || repo !== candidate.project.repository ||
-    approved !== candidate.candidate.sha || git("rev-parse", "HEAD") !== approved ||
+    approved !== candidate.candidate.sha ||
     !/^[1-9]\d*$/.test(run ?? "") || !Number.isSafeInteger(runId)) {
   throw new Error("Publicación permitida solo mediante dispatch en main con SHA y ejecución de despliegue explícitos.");
 }
+assertReleaseTooling(approved, toolingSha);
 function gh(...args) {
   return execFileSync("gh", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 }
@@ -42,6 +44,16 @@ const remote = {
   createDraft: (tag, body) => api("releases", "-X", "POST",
     "-f", `tag_name=${tag}`, "-f", `name=${tag}`, "-f", `body=${body}`, "-F", "draft=true"),
   publish: id => api(`releases/${id}`, "-X", "PATCH", "-F", "draft=false"),
+  assets: id => api(`releases/${id}/assets?per_page=100`, "--paginate", "--slurp").flat(),
+  download: async id => {
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error("ID de manifiesto inválido.");
+    const response = await fetch(`https://api.github.com/repos/${repo}/releases/assets/${id}`, {
+      signal: AbortSignal.timeout(15_000),
+      headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: "application/octet-stream" },
+    });
+    if (!response.ok) throw new Error(`No se pudo leer el manifiesto (HTTP ${response.status}).`);
+    return Buffer.from(await response.arrayBuffer());
+  },
   upload: async (id, payload) => {
     if (!Number.isSafeInteger(id) || id <= 0) throw new Error("ID de release inválido.");
     const response = await fetch(`https://uploads.github.com/repos/${repo}/releases/${id}/assets?name=agencyos-update.json`, {
@@ -54,7 +66,7 @@ const remote = {
 };
 
 try {
-  const result = await publishRelease(remote, candidate, notes, runId);
+  const result = await publishRelease(remote, candidate, notes, runId, toolingSha);
   writeFileSync(".release/agencyos-update.published.json", JSON.stringify(result, null, 2) + "\n");
   console.log(`Publicación confirmada: ${result.candidate.tag} (${result.candidate.sha}).`);
 } catch (error) {
