@@ -1,5 +1,6 @@
 import "server-only";
 
+import { editorialHash, readEditorialEnglishBatch } from "@/lib/db/editorial-cache";
 import { execute, query, queryOne } from "@/lib/db/client";
 import { translateEditorialText } from "./content-translation";
 
@@ -15,7 +16,7 @@ export function tourEditorialSource(form: FormData) {
 }
 
 /** Read the current Spanish row, not a possibly superseded form submission. */
-export async function retryStoredTourEnglish(id: number) {
+export async function retryStoredTourEnglish(id: number, scheduled = false) {
   const original = await queryOne<{
     title: string; summary: string; description: string;
     seo_title: string | null; seo_description: string | null; pickup_note: string | null;
@@ -38,10 +39,10 @@ export async function retryStoredTourEnglish(id: number) {
     }
     return (original[field] ?? "").trim();
   });
-  await refreshTourEnglish(id, source);
+  await refreshTourEnglish(id, source, scheduled);
 }
 
-export async function refreshTourEnglish(id: number, source: string[]) {
+export async function refreshTourEnglish(id: number, source: string[], scheduled = false) {
   const snapshot = JSON.stringify(source);
   try {
     const job = await queryOne<{ tour_id: number }>(
@@ -52,12 +53,35 @@ export async function refreshTourEnglish(id: number, source: string[]) {
     );
     if (!job) return;
 
+    const cached = scheduled ? await readEditorialEnglishBatch(source.flatMap((value, index) =>
+      index >= 5 && index <= 7 ? value.split("\n") : [value],
+    )) : null;
+    let attempted = false;
     const results = [];
     for (const [index, value] of source.entries()) {
       const isList = ["included", "excluded", "bring"].includes(TOUR_EDITORIAL_FIELDS[index]);
       const parts = isList ? value.split("\n").map((line) => line.trim()).filter(Boolean) : [value];
       const translated = [];
-      for (const part of parts) translated.push(await translateEditorialText(part));
+      for (const part of parts) {
+        const existing = cached?.(part);
+        if (existing) {
+          translated.push({ status: "translated" as const, text: existing });
+        } else if (scheduled && part) {
+          const hash = await editorialHash(part, true);
+          const state = await queryOne<{ attempts: number; retry_after: number }>(
+            "SELECT attempts, retry_after FROM content_translation_cache WHERE source_hash = ?", hash,
+          );
+          if (!attempted && part.length <= 800 && (!state || (state.attempts < 3 && state.retry_after <= Date.now()))) {
+            attempted = true;
+            translated.push(await translateEditorialText(part));
+          } else {
+            translated.push({ status: "pending" as const });
+          }
+        } else {
+          if (part) attempted = true;
+          translated.push(await translateEditorialText(part));
+        }
+      }
       const status = translated.some((part) => part.status === "error") ? "error"
         : translated.every((part) => part.status === "translated") ? "translated" : "pending";
       results.push({ status, text: translated.map((part) => part.status === "translated" ? part.text : "").join("\n") });

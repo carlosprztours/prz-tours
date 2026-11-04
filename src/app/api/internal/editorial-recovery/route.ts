@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { recoverEditorialField } from "@/lib/admin/editorial-recovery";
 import { retryStoredTourEnglish } from "@/lib/admin/tour-editorial-translation";
 import { getEnvVar, queryOne } from "@/lib/db/client";
 
@@ -16,6 +17,19 @@ export async function POST(request: Request) {
   const expected = Buffer.from(createHmac("sha256", secret).update(`editorial-recovery:${timestamp}`).digest("hex"));
   if (supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
     return new Response(null, { status: 404 });
+  }
+
+  const minute = Math.floor(scheduledTime / 60_000);
+  const module = minute % 6;
+  const turn = Math.floor(minute / 6);
+  if (module !== 0) {
+    const budget = await queryOne<{ id: number }>(
+      `SELECT id FROM preview_translation_budget WHERE id = 1 AND busy = 0
+       AND halted != 1 AND halted <= unixepoch()
+       AND (expires_at <= unixepoch() OR (calls < 24 AND chars < 6000))`,
+    );
+    if (budget) await recoverEditorialField(module - 1, turn);
+    return new Response(null, { status: 204 });
   }
 
   // Rotate through pending tours so an exhausted or oversized text cannot
@@ -37,10 +51,10 @@ export async function POST(request: Request) {
            AND halted != 1 AND halted <= unixepoch()
            AND (expires_at <= unixepoch() OR (calls < 24 AND chars < 6000))
        )`,
-    Math.floor(scheduledTime / 60_000),
+    turn,
   );
   if (job) {
-    await retryStoredTourEnglish(job.tour_id);
+    await retryStoredTourEnglish(job.tour_id, true);
     console.info("[editorial-recovery] processed tour", job.tour_id);
   }
   return new Response(null, { status: 204 });
