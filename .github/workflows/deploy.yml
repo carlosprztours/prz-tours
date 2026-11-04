@@ -6,6 +6,17 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [deploy, release]
+        default: deploy
+      approved_sha:
+        description: SHA exacto aprobado (solo release)
+        type: string
+      deploy_run_id:
+        description: ID de ejecución exitosa de despliegue (solo release)
+        type: string
 
 # Concurrencia: cancela deploys anteriores si llega uno nuevo
 concurrency:
@@ -29,6 +40,8 @@ jobs:
 
       - name: Instalar dependencias
         run: npm ci
+
+      - run: npm run release:check && npm run test:versioning
 
       - name: Typecheck
         run: npx tsc --noEmit
@@ -69,7 +82,7 @@ jobs:
   deploy:
     name: Deploy a Cloudflare Workers
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && inputs.operation != 'release'
     runs-on: ubuntu-latest
     environment: production
     permissions:
@@ -93,6 +106,41 @@ jobs:
 
       - name: Build y publicar
         env:
+          PRZ_BUILD_SHA: ${{ github.sha }}
+          PRZ_BUILD_ENV: production
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npm run deploy
+
+
+  release:
+    name: Publicar release aprobada
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.operation == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run release:prepare
+      - name: Publicar SHA autorizado
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPROVED_SHA: ${{ inputs.approved_sha }}
+          DEPLOY_RUN_ID: ${{ inputs.deploy_run_id }}
+        run: node scripts/publish-release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agencyos-update-published
+          path: .release/agencyos-update.published.json
+          if-no-files-found: error
+          retention-days: 7

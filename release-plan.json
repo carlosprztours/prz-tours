@@ -1,0 +1,22 @@
+{
+  "project": { "id": "prz-tours", "name": "Perez Tours", "repository": "carlosprztours/prz-tours" },
+  "baseline": "efd1affe860e72716c7aa44a9e906ecbccaebf7e",
+  "version": "0.1.0",
+  "type": "initial",
+  "decision": "Primera etiqueta oficial propuesta. El paquete ya declara 0.1.0; no hay tags ni releases anteriores que permitan reconstruir versiones oficiales.",
+  "changes": {
+    "features": ["Identificación de versión y revisión en el panel autenticado.", "Manifiesto de actualización para una futura integración con AgencyOS."],
+    "fixes": [],
+    "security": ["La publicación requiere una ejecución manual para un SHA de main con despliegue verificado en Actions."],
+    "performance": [],
+    "breaking": [],
+    "migrations": [],
+    "operations": ["Validación del changelog y preparación reproducible de notas y manifiesto de release."]
+  },
+  "compatibility": { "node": "22", "runtime": "Cloudflare Workers + D1", "schema": "Sin cambios D1 para esta versión. Evaluar las migraciones por separado en futuras versiones." },
+  "environmentVariables": ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"],
+  "checks": ["TypeScript", "ESLint", "Build Next.js/OpenNext", "Verificación de rutas públicas ES/EN tras el despliegue"],
+  "deploymentRequirements": ["GitHub Actions Deploy a Cloudflare", "Entorno production aprobado", "Worker y D1 propios del proyecto"],
+  "risks": ["La versión declarada en el paquete puede existir en varios builds previos a la etiqueta oficial. Usar el SHA para distinguirlos."],
+  "recovery": ["Identificar la última versión sana del Worker y restaurar su tráfico.", "Revisar compatibilidad D1 antes de revertir código. Un rollback de Worker no revierte D1.", "Si procede restaurar datos, usar D1 Time Travel y evaluar las escrituras posteriores al punto de recuperación."]
+}
