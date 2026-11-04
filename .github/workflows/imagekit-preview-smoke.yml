@@ -4,6 +4,9 @@ on:
     branches: [qa/pr6-imagekit-authenticated]
 permissions:
   contents: read
+concurrency:
+  group: pr6-authenticated-imagekit-qa
+  cancel-in-progress: false
 jobs:
   mixed:
     runs-on: ubuntu-latest
@@ -32,7 +35,7 @@ jobs:
           config.d1_databases=[{binding:'DB',database_name:'pr6-qa',database_id:'00000000-0000-4000-8000-000000000006',migrations_dir:'migrations'}];
           config.vars={DISABLE_EXTERNAL_BOOKING_EFFECTS:'true',EDITORIAL_TRANSLATION_WORKERS_AI:'false'};
           fs.writeFileSync('wrangler.qa.json',JSON.stringify(config));
-          fs.writeFileSync('.dev.vars.qa','');
+          
           const password=randomBytes(24).toString('hex');
           console.log('::add-mask::'+password);
           fs.appendFileSync(process.env.GITHUB_ENV,'QA_PASSWORD='+password+'\n');
@@ -106,7 +109,10 @@ jobs:
              const multipart=await new Response(route.request().postDataBuffer(),{headers:{'content-type':route.request().headers()['content-type']}}).formData();
              observed=multipart.getAll('files').length;
              multipart.set('folder',folder);
-             const result=await route.fetch({multipart});
+             const encoded=new Request('http://localhost',{method:'POST',body:multipart});
+             const outgoing={...route.request().headers(),'content-type':encoded.headers.get('content-type')};
+             delete outgoing['content-length'];
+             const result=await route.fetch({headers:outgoing,postData:Buffer.from(await encoded.arrayBuffer())});
              await route.fulfill({response:result});
            });
            const response=page.waitForResponse(r=>r.url().endsWith('/api/admin/upload')&&r.request().method()==='POST');
@@ -135,7 +141,7 @@ jobs:
            await form.getByText('2 elemento(s) agregado(s).',{exact:true}).waitFor();
            assert.deepEqual([count('gallery_images'),count('gallery_videos')],totals.map(n=>n+1));
            await add.click();
-           await form.getByText(/ya exist/i).waitFor();
+           await form.getByText(/ya estaba en la galería/i).waitFor();
            assert.deepEqual([count('gallery_images'),count('gallery_videos')],totals.map(n=>n+1));
            console.log('PASS: authenticated mixed upload, progress, partial error, deduplication, local D1 and idempotent replay');
           } finally {
@@ -147,7 +153,11 @@ jobs:
            }
            assert.equal((await list()).length,0,'ImageKit cleanup not verified');
            for(const table of ['gallery_images','gallery_videos']){
-             for(const url of urls) sql('DELETE FROM '+table+' WHERE url='+ "'"+url.replaceAll("'","''")+"'");
+             for(const url of urls) {
+               const predicate=" WHERE url='"+url.replaceAll("'","''")+"'";
+               sql('DELETE FROM '+table+predicate);
+               assert.equal(sql('SELECT count(*) AS n FROM '+table+predicate)[0].n,0);
+             }
            }
            console.log('PASS: isolated ImageKit folder empty; local test database is discarded by the runner');
           }
