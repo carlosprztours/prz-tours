@@ -21,7 +21,7 @@
   // o el SSL fallan, el sitio sigue accesible por *.workers.dev.
   "workers_dev": true,
   "ai": { "binding": "AI" },
-  "vars": { "DISABLE_EXTERNAL_BOOKING_EFFECTS": "true", "EDITORIAL_TRANSLATION_WORKERS_AI": "false" },
+  "vars": { "DISABLE_EXTERNAL_BOOKING_EFFECTS": "true", "EDITORIAL_TRANSLATION_WORKERS_AI": "true" },
   "d1_databases": [
     {
       "binding": "DB",
