@@ -79,10 +79,10 @@ jobs:
             }
             throw Error('ImageKit management unavailable');
           }
-          async function list(){
-            const r=await manage('/v1/files?'+new URLSearchParams({path:prefix.slice(0,-1),type:'file',limit:'20'}));
+          async function list(target=prefix){
+            const r=await manage('/v1/files?'+new URLSearchParams({path:target.slice(0,-1),type:'file',limit:'20'}));
             assert(r.ok,'ImageKit test key cannot list files: HTTP '+r.status);
-            return (await r.json()).filter(x=>x.filePath?.startsWith(prefix));
+            return (await r.json()).filter(x=>x.filePath?.startsWith(target));
           }
           function sql(command){
            const out=execFileSync('node_modules/.bin/wrangler',['d1','execute','DB','--local','--config','wrangler.qa.json','--persist-to','.qa-d1','--json','--command',command],{encoding:'utf8'});
@@ -90,7 +90,17 @@ jobs:
           }
           const browser=await chromium.launch();
           const urls=[];
+          const ids=new Set();
           try {
+           const prior='/prz/pr6-qa-41933582108-1/';
+           for(const f of await list(prior)){
+             assert.match(f.fileId,/^[a-zA-Z0-9_-]+$/);
+             assert(f.filePath.startsWith(prior));
+             assert((await manage('/v1/files/'+f.fileId,'DELETE')).ok);
+             assert.equal((await manage('/v1/files/'+f.fileId+'/details')).status,404);
+           }
+           assert.equal((await list(prior)).length,0,'Previous QA folder must be empty');
+           console.log('PASS: previous QA folder empty');
            assert.equal((await list()).length,0,'QA folder must start empty');
            const page=await browser.newPage();
            const root='http://localhost:8787';
@@ -125,6 +135,7 @@ jobs:
            await form.getByRole('button',{name:/Subiendo/}).waitFor({timeout:8000});
            const r=await response;
            const body=await r.json();
+           for(const file of body.images??[]) if(file.fileId) ids.add(file.fileId);
            assert.equal(r.status(),200,'Authenticated upload failed: '+r.status());
            assert.equal(observed,3);
            assert.equal(body.images.length,2);
@@ -133,7 +144,13 @@ jobs:
            urls.push(...body.images.map(x=>x.url));
            await form.getByText(/1 foto.s. y 1 v.deo.s. listos/).waitFor();
            await form.getByText(/1 errores/).waitFor();
-           assert.equal((await list()).length,2);
+           assert.equal(ids.size,2);
+           for(const id of ids){
+             assert.match(id,/^[a-zA-Z0-9_-]+$/);
+             const details=await manage('/v1/files/'+id+'/details');
+             assert(details.ok,'Uploaded file metadata was not found');
+             assert((await details.json()).filePath.startsWith(prefix),'Unexpected ImageKit folder');
+           }
            function count(t){return sql('SELECT count(*) AS n FROM '+t)[0].n;}
            const totals=[count('gallery_images'),count('gallery_videos')];
            const add=form.getByRole('button',{name:'Agregar',exact:true});
@@ -146,10 +163,16 @@ jobs:
            console.log('PASS: authenticated mixed upload, progress, partial error, deduplication, local D1 and idempotent replay');
           } finally {
            await browser.close();
-           for(const f of await list()){
-             assert.match(f.fileId,/^[a-zA-Z0-9_-]+$/);
-             assert(f.filePath.startsWith(prefix));
-             assert((await manage('/v1/files/'+f.fileId,'DELETE')).ok,'ImageKit cleanup failed');
+           for(const f of await list()) ids.add(f.fileId);
+           for(const id of ids){
+             assert.match(id,/^[a-zA-Z0-9_-]+$/);
+             const path='/v1/files/'+id;
+             const details=await manage(path+'/details');
+             if(details.status===404) continue;
+             assert(details.ok);
+             assert((await details.json()).filePath.startsWith(prefix),'ImageKit cleanup ownership mismatch');
+             assert((await manage(path,'DELETE')).ok,'ImageKit cleanup failed');
+             assert.equal((await manage(path+'/details')).status,404,'ImageKit cleanup not verified by ID');
            }
            assert.equal((await list()).length,0,'ImageKit cleanup not verified');
            for(const table of ['gallery_images','gallery_videos']){
