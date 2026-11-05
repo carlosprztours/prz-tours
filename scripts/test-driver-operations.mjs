@@ -161,7 +161,7 @@ try {
   await Promise.all([admin, secondAdmin].map(async (page) => {
     const response = page.waitForResponse((r) => r.request().method() === "POST");
     await page.getByRole("button", { name: "Completar", exact: true }).click();
-    await (await response).finished();
+    assert((await response).ok(), "Booking action response failed");
   }));
   assert.equal(sql("SELECT status FROM bookings WHERE id=1")[0].status, "completed");
   assert.equal(sql("SELECT loyalty_trips FROM users WHERE id=6")[0].loyalty_trips, 1);
