@@ -79,9 +79,11 @@ try {
     const response = await page.goto(origin + path);
     assert(response.status() === 404 || new URL(page.url()).pathname !== path
       || /404|not (be )?found|no se encontr/i.test(await page.locator("body").innerText()));
-    assert.doesNotMatch(await page.locator("body").innerText(), confidential);
+    assert(!confidential.test(await page.locator("body").innerText()), `Operational data visible from ${path}`);
   }
-  for (const page of [editor, photographer, customer]) await accessDenied(page, "/es/admin/services");
+  for (const page of [editor, photographer]) await accessDenied(page, "/es/admin/services");
+  await accessDenied(customer, "/es/admin/services", /Panel de conducción|Teléfono de recogida/);
+  assert.equal(new URL(customer.url()).pathname, "/es/account");
   for (const path of ["/es/admin/bookings", "/es/admin/bookings/1", "/es/admin/assignments", "/es/admin/users", "/es/admin/settings", "/es/admin/gallery"]) {
     await accessDenied(driver, path);
   }
@@ -141,6 +143,11 @@ try {
   await accessDenied(driver, "/es/admin/services/3", /QA-SERVICE-2|555-0102/);
   await other.goto(origin + "/es/admin/services/3");
   await other.getByText("555-0102", { exact: true }).waitFor();
+  await admin.goto(origin + "/es/admin/services/3");
+  await admin.getByRole("button", { name: "Generar o renovar QR" }).click();
+  const adminToken = await admin.locator("p.font-mono").innerText();
+  await scan(admin, adminToken, true);
+  assert.equal(sql("SELECT validated_by FROM service_qr_codes WHERE assignment_id=3")[0].validated_by, 1);
 
   sql("UPDATE users SET is_active=0 WHERE id=3");
   assert.equal(sql("SELECT count(*) AS n FROM sessions WHERE user_id=3")[0].n, 0);
