@@ -225,7 +225,7 @@ export type BookingEvent = {
   created_at: string;
 };
 
-export type UserRole = "admin" | "editor" | "photographer" | "customer";
+export type UserRole = "admin" | "editor" | "photographer" | "driver" | "customer";
 
 export type User = {
   id: number;

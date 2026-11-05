@@ -68,6 +68,7 @@ export function UserRowActions({ locale, user, isMe, labels }: Props) {
           <option value="admin">Admin</option>
           <option value="editor">Editor</option>
           <option value="photographer">Fotógrafo</option>
+          <option value="driver">{locale === "es" ? "Conductor" : "Driver"}</option>
           <option value="customer">Cliente</option>
         </select>
       </label>

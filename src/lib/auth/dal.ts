@@ -63,7 +63,7 @@ const loadVerifiedSession = cache(async (): Promise<VerifiedSession | null> => {
 
 /** ¿Es personal con acceso al panel? (admin/editor/fotógrafo). */
 function isStaff(role: string): boolean {
-  return role === "admin" || role === "editor" || role === "photographer";
+  return role === "admin" || role === "editor" || role === "photographer" || role === "driver";
 }
 
 /**

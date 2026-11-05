@@ -51,11 +51,13 @@ export async function setBookingStatus(
           ? ", cancelled_at = datetime('now')"
           : "";
 
-  await execute(
-    `UPDATE bookings SET status = ?, updated_at = datetime('now')${stamp} WHERE id = ?`,
+  const transition = await execute(
+    `UPDATE bookings SET status = ?, updated_at = datetime('now')${stamp} WHERE id = ? AND status = ?`,
     to,
     bookingId,
+    booking.status,
   );
+  if (transition.meta.changes !== 1) return { ok: false, error: "invalid-transition" };
   await execute(
     `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
      VALUES (?, ?, ?, ?, ?)`,

@@ -1,3 +1,4 @@
+import { requireSection } from "@/lib/admin/access";
 /**
  * Ajustes del sitio: edita valores existentes o agrega claves nuevas.
  *
@@ -109,6 +110,7 @@ export default async function AdminSettingsPage({
   const locale = lang as Locale;
   const es = locale === "es";
 
+  await requireSection(locale, "settings");
   const settings = await listSettings(locale);
 
   return (

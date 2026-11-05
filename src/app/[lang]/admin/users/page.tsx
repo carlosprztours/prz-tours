@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { OperationForm } from "../OperationForm";
 /**
  * Usuarios: staff (gestión completa) y clientes registrados (lectura +
  * promoción manual). Solo rol `admin`.
@@ -5,7 +7,7 @@
 import { notFound } from "next/navigation";
 
 import { verifySession } from "@/lib/auth/dal";
-import { listCustomers, listStaff } from "@/lib/admin/users";
+import { listCustomers, listStaff, updateDriverProfile } from "@/lib/admin/users";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { CreateStaffForm } from "./CreateStaffForm";
@@ -51,6 +53,7 @@ export default async function UsersPage({ params }: Props) {
       password: es ? "Contraseña (mín. 8)" : "Password (min. 8)",
       role: es ? "Rol" : "Role",
       editor: es ? "Editor" : "Editor",
+      driver: es ? "Conductor" : "Driver",
       photographer: es ? "Fotógrafo" : "Photographer",
       admin: es ? "Admin" : "Admin",
       submit: es ? "Crear" : "Create",
@@ -109,6 +112,17 @@ export default async function UsersPage({ params }: Props) {
             </p>
             <div className="mt-3">
               <UserRowActions locale={locale} user={u} isMe={u.id === session.user.id} labels={copy.row} />
+                  {u.role === "driver" && <details className="mt-2">
+                    <summary className="cursor-pointer">{es ? "Editar conductor" : "Edit driver"}</summary>
+                    <OperationForm action={updateDriverProfile.bind(null, locale, u.id)} lang={locale} label={es ? "Guardar" : "Save"}>
+                      <label className="grid gap-1">{es ? "Nombre" : "Name"}
+                        <input name="name" required minLength={2} maxLength={100} defaultValue={u.name} className="rounded border p-2" />
+                      </label>
+                      <label className="grid gap-1">{es ? "Teléfono" : "Phone"}
+                        <input name="phone" type="tel" maxLength={40} defaultValue={u.phone ?? ""} className="rounded border p-2" />
+                      </label>
+                    </OperationForm>
+                  </details>}
             </div>
           </div>
         ))}
@@ -142,6 +156,17 @@ export default async function UsersPage({ params }: Props) {
                 </td>
                 <td className="px-4 py-3">
                   <UserRowActions locale={locale} user={u} isMe={u.id === session.user.id} labels={copy.row} />
+                  {u.role === "driver" && <details className="mt-2">
+                    <summary className="cursor-pointer">{es ? "Editar conductor" : "Edit driver"}</summary>
+                    <OperationForm action={updateDriverProfile.bind(null, locale, u.id)} lang={locale} label={es ? "Guardar" : "Save"}>
+                      <label className="grid gap-1">{es ? "Nombre" : "Name"}
+                        <input name="name" required minLength={2} maxLength={100} defaultValue={u.name} className="rounded border p-2" />
+                      </label>
+                      <label className="grid gap-1">{es ? "Teléfono" : "Phone"}
+                        <input name="phone" type="tel" maxLength={40} defaultValue={u.phone ?? ""} className="rounded border p-2" />
+                      </label>
+                    </OperationForm>
+                  </details>}
                 </td>
               </tr>
             ))}
@@ -149,9 +174,10 @@ export default async function UsersPage({ params }: Props) {
         </table>
       </section>
 
-      <section className="rounded-2xl border border-sand-200 bg-white p-5">
+      <section id="customers" className="scroll-mt-24 rounded-2xl border border-sand-200 bg-white p-5">
         <h2 className="font-display text-lg font-bold text-ink-900">{copy.customers}</h2>
         <p className="mt-1 text-xs text-ink-500">{copy.customerNote}</p>
+        <Link className="text-sm underline" href={`/${locale}/admin/coupons`}>{es ? "Gestionar cupones" : "Manage coupons"}</Link>
         {customers.length === 0 ? (
           <p className="mt-3 text-sm text-ink-500">{copy.noCustomers}</p>
         ) : (
@@ -161,7 +187,7 @@ export default async function UsersPage({ params }: Props) {
                 <div>
                   <p className="font-semibold text-ink-900">{u.name}</p>
                   <p className="text-xs text-ink-500">
-                    {u.email} · {copy.since} {u.created_at.slice(0, 10)}
+                    {u.email} · {copy.since} {u.created_at.slice(0, 10)} · {es ? "Viajes hacia el próximo cupón" : "Trips toward next coupon"}: {u.loyalty_trips}
                   </p>
                 </div>
                 <UserRowActions locale={locale} user={u} isMe={false} labels={copy.row} />

@@ -1,3 +1,4 @@
+import { requireSection } from "@/lib/admin/access";
 /**
  * Detalle de reserva: datos del cliente, experiencia, totales, historial y
  * acciones de estado/pago.
@@ -24,6 +25,7 @@ export default async function BookingDetailPage({ params }: Props) {
   const numericId = Number(id);
   if (!Number.isInteger(numericId) || numericId <= 0) notFound();
 
+  await requireSection(locale, "bookings");
   const booking = await getBookingById(numericId);
   if (!booking) notFound();
   const [events, history] = await Promise.all([
