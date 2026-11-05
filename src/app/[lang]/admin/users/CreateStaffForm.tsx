@@ -25,6 +25,7 @@ export function CreateStaffForm({
     role: string;
     editor: string;
     photographer: string;
+    driver: string;
     admin: string;
     submit: string;
     errors: Record<string, string>;
@@ -43,6 +44,7 @@ export function CreateStaffForm({
         <select name="role" defaultValue="editor" className={inputClass} aria-label={labels.role}>
           <option value="editor">{labels.editor}</option>
           <option value="photographer">{labels.photographer}</option>
+          <option value="driver">{labels.driver}</option>
           <option value="admin">{labels.admin}</option>
         </select>
       </div>

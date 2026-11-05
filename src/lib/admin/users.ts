@@ -27,7 +27,7 @@ export async function listStaff(rawLocale: string): Promise<User[]> {
   await requireAdmin(rawLocale);
   return query<User>(
     `SELECT id, email, name, role, phone, locale, is_active, created_at, updated_at
-     FROM users WHERE role IN ('admin','editor','photographer')
+     FROM users WHERE role IN ('admin','editor','photographer','driver')
      ORDER BY role ASC, name ASC`,
   );
 }
@@ -35,10 +35,10 @@ export async function listStaff(rawLocale: string): Promise<User[]> {
 export async function listCustomers(
   rawLocale: string,
   limit = 100,
-): Promise<User[]> {
+): Promise<(User & { loyalty_trips: number })[]> {
   await requireAdmin(rawLocale);
-  return query<User>(
-    `SELECT id, email, name, role, phone, locale, is_active, created_at, updated_at
+  return query<User & { loyalty_trips: number }>(
+    `SELECT id, email, name, role, phone, locale, is_active, created_at, updated_at, loyalty_trips
      FROM users WHERE role = 'customer'
      ORDER BY created_at DESC, id DESC
      LIMIT ?`,
@@ -61,7 +61,7 @@ export async function createStaffUser(
   if (name.length < 2) return { ok: false, error: "bad-name" };
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { ok: false, error: "bad-email" };
   if (password.length < 8) return { ok: false, error: "weak-password" };
-  if (role !== "admin" && role !== "editor" && role !== "photographer") {
+  if (role !== "admin" && role !== "editor" && role !== "photographer" && role !== "driver") {
     return { ok: false, error: "bad-role" };
   }
   if (isSuperAdminEmail(email)) return { ok: false, error: "protected" };
@@ -99,7 +99,7 @@ export async function setStaffRole(
 ): Promise<UsersResult> {
   const { locale, me, meEmail } = await requireAdmin(rawLocale);
   if (userId === me) return { ok: false, error: "self" };
-  if (!["admin", "editor", "photographer", "customer"].includes(role)) {
+  if (!["admin", "editor", "photographer", "driver", "customer"].includes(role)) {
     return { ok: false, error: "bad-role" };
   }
   const target = await query<{ email: string }>(
@@ -121,9 +121,10 @@ export async function setStaffRole(
 export async function promoteCustomer(
   rawLocale: string,
   userId: number,
-  role: Extract<UserRole, "admin" | "editor" | "photographer"> = "editor",
+  role: Extract<UserRole, "admin" | "editor" | "photographer" | "driver"> = "editor",
 ): Promise<UsersResult> {
   const { locale, me, meEmail } = await requireAdmin(rawLocale);
+  if (!["admin", "editor", "photographer", "driver"].includes(role)) return { ok: false, error: "bad-role" };
   const target = await query<{ email: string }>(
     `SELECT email FROM users WHERE id = ?`,
     userId,
@@ -211,4 +212,21 @@ export async function deleteUser(
   const { logActivity } = await import("./activity");
   await logActivity("user.delete", `#${userId}`, me, meEmail);
   return { ok: true };
+}
+
+/** Edita los datos de contacto del conductor sin cambiar sus permisos. */
+export async function updateDriverProfile(rawLocale: string, id: number, form: FormData): Promise<UsersResult> {
+  const { locale } = await requireAdmin(rawLocale);
+  const name = String(form.get("name") ?? "").trim();
+  const phone = String(form.get("phone") ?? "").trim();
+  if (name.length < 2 || name.length > 100 || phone.length > 40) return { ok: false, error: "invalid" };
+  const result = await execute(
+    `UPDATE users SET name = ?, phone = ?, updated_at = datetime('now')
+     WHERE id = ? AND role = 'driver'`,
+    name, phone || null, id,
+  );
+  revalidatePath(`/${locale}/admin/users`);
+  revalidatePath(`/${locale}/admin/drivers`);
+  revalidatePath(`/${locale}/admin/assignments`);
+  return result.meta.changes === 1 ? { ok: true } : { ok: false, error: "not-found" };
 }

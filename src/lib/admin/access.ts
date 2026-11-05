@@ -30,6 +30,11 @@ export { isSuperAdminEmail };
 
 /** Secciones del panel y quién entra a cada una. */
 export const SECTION_ROLES: Record<string, UserRole[]> = {
+  panel: ["admin", "editor", "photographer", "driver"],
+  drivers: ["admin"],
+  assignments: ["admin"],
+  services: ["admin", "driver"],
+  qr: ["admin", "driver"],
   dashboard: ["admin", "editor"],
   bookings: ["admin", "editor"],
   occupancy: ["admin", "editor"],
@@ -52,13 +57,7 @@ export const SECTION_ROLES: Record<string, UserRole[]> = {
  * si no, 404 (igual que la página de usuarios hacía antes).
  */
 export async function requireSection(locale: Locale, section: string) {
-  const session = await getCurrentUser().catch(() => null);
-  if (!session) {
-    const { redirect } = await import("next/navigation");
-    redirect(`/${locale}/login`);
-    // redirect() nunca retorna, pero TypeScript no lo sabe:
-    throw new Error("unreachable");
-  }
+  const session = await verifySession(locale);
   const allowed = SECTION_ROLES[section] ?? [];
   if (!allowed.includes(session.user.role)) notFound();
   return session;

@@ -3,7 +3,8 @@
  * y actividad reciente.
  */
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { requireSection } from "@/lib/admin/access";
+import { notFound, redirect } from "next/navigation";
 
 import { adminTexts } from "@/lib/admin/texts";
 import {
@@ -27,6 +28,9 @@ export default async function AdminDashboard({ params }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
+  const { user } = await requireSection(locale, "panel");
+  if (user.role === "driver") redirect(`/${locale}/admin/services`);
+  if (user.role === "photographer") redirect(`/${locale}/admin/gallery`);
   const t = adminTexts(locale);
 
   const [metrics, byMonth, byTour, recent] = await Promise.all([
