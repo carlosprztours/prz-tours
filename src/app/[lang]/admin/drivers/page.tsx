@@ -1,3 +1,4 @@
+import { requireSection } from "@/lib/admin/access";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listStaff } from "@/lib/admin/users";
@@ -6,6 +7,7 @@ import { isLocale } from "@/lib/i18n";
 export default async function DriversPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
+  await requireSection(lang, "drivers");
   const es = lang === "es";
   const drivers = (await listStaff(lang)).filter((u) => u.role === "driver");
   return (

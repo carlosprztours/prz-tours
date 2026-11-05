@@ -1,3 +1,4 @@
+import { requireSection } from "@/lib/admin/access";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listServices } from "@/lib/admin/operations";
@@ -6,6 +7,7 @@ import { isLocale } from "@/lib/i18n";
 export default async function ServicesPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
+  await requireSection(lang, "services");
   const es = lang === "es";
   const services = await listServices(lang);
   return (

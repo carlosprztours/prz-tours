@@ -1,3 +1,4 @@
+import { requireSection } from "@/lib/admin/access";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { assignService, listAssignmentOptions, listServices } from "@/lib/admin/operations";
@@ -7,6 +8,7 @@ import { OperationForm } from "../OperationForm";
 export default async function AssignmentsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
+  await requireSection(lang, "assignments");
   const { drivers, bookings } = await listAssignmentOptions(lang);
   const services = await listServices(lang);
   const es = lang === "es";
