@@ -90,7 +90,8 @@ export async function assignService(raw: string, form: FormData): Promise<Outcom
        )`, user.id, driver, booking, previous,
   );
   refresh(locale);
-  return { ok: result.meta.changes === 1 };
+  // D1 includes the previous assignment withdrawal performed by the trigger.
+  return { ok: result.meta.changes > 0 };
 }
 
 export async function withdrawService(raw: string, id: number): Promise<Outcome> {
@@ -139,7 +140,7 @@ export async function issueServiceQr(raw: string, id: number): Promise<Outcome> 
     await hashToken(token), user.id, id,
   );
   refresh(locale, id);
-  return r.meta.changes === 1 ? { ok: true, token } : { ok: false };
+  return r.meta.changes > 0 ? { ok: true, token } : { ok: false };
 }
 
 export async function revokeServiceQr(raw: string, id: number): Promise<Outcome> {
