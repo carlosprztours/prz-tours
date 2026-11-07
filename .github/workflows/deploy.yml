@@ -50,7 +50,7 @@ jobs:
         run: npm ci
 
       - run: npm run tools:check && npm run release:check && npm run test:versioning && node --test scripts/test-upload-batches.mjs
-      - run: node scripts/test-polish-loyalty.mjs && node --test scripts/test-editorial-release.mjs
+      - run: node scripts/test-polish-loyalty.mjs && node --test scripts/test-editorial-release.mjs scripts/test-pwa-privacy.mjs scripts/test-notification-providers.mjs
 
       - run: npm audit --audit-level=high
 

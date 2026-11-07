@@ -41,6 +41,20 @@ export async function getVapidPublicKey(): Promise<string | null> {
   return keys?.publicKey ?? null;
 }
 
+/** El endpoint llega del cliente y determina el destino de una petición del servidor. */
+export function isSupportedPushEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint);
+    const host = url.hostname;
+    return url.protocol === "https:" && !url.username && !url.password && !url.port && !url.hash &&
+      (host === "fcm.googleapis.com" || host === "updates.push.services.mozilla.com" ||
+        host === "web.push.apple.com" || host.endsWith(".web.push.apple.com") ||
+        host.endsWith(".notify.windows.com"));
+  } catch {
+    return false;
+  }
+}
+
 export async function saveSubscription(
   userId: number,
   sub: { endpoint: string; keys: { p256dh: string; auth: string } },
@@ -120,6 +134,7 @@ export async function sendPushToUser(
   let delivered = 0;
   await Promise.all(
     rows.map(async (row) => {
+      if (!isSupportedPushEndpoint(row.endpoint)) return;
       try {
         await webpush.sendNotification(
           {

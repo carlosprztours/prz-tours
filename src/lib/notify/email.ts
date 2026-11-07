@@ -48,7 +48,6 @@ export async function sendEmail(payload: EmailPayload): Promise<SendResult> {
   if (!apiKey || !from) {
     console.warn(
       "[email] RESEND_API_TOKEN o RESEND_FROM sin configurar; correo no enviado.",
-      { to: payload.to, subject: payload.subject },
     );
     return { sent: false, skipped: "missing-config" };
   }
@@ -85,11 +84,14 @@ export async function sendEmail(payload: EmailPayload): Promise<SendResult> {
       text: payload.text,
       reply_to: payload.replyTo ?? notifyEmail ?? undefined,
     }),
-  });
+  }).catch(() => null);
 
+  if (!res) {
+    console.error("[email] Resend no respondió.");
+    return { sent: false, skipped: "resend-network" };
+  }
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    console.error("[email] Resend respondió con error:", res.status, detail);
+    console.error("[email] Resend respondió con error:", res.status);
     return { sent: false, skipped: `resend-${res.status}` };
   }
 

@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { CouponsSection } from "@/components/auth/CouponsSection";
+import { LoyaltyPassport } from "@/components/auth/LoyaltyPassport";
 import { InviteLink } from "@/components/auth/InviteLink";
 import { NotificationsSection } from "@/components/auth/NotificationsSection";
 import { PasskeysSection } from "@/components/auth/PasskeysSection";
@@ -17,6 +18,7 @@ import { logout } from "@/lib/actions/auth";
 import { verifyCustomerSession } from "@/lib/auth/dal";
 import { listUserCredentials } from "@/lib/auth/webauthn";
 import {
+  couponIsLive,
   getOrCreateInviteCode,
   listUserCoupons,
   listUserNotifications,
@@ -39,8 +41,8 @@ export default async function AccountPage({ params }: Props) {
   const locale = lang as Locale;
 
   const session = await verifyCustomerSession(locale);
-  const profile = await queryOne<{ name: string; phone: string | null }>(
-    `SELECT name, phone FROM users WHERE id = ?`,
+  const profile = await queryOne<{ name: string; phone: string | null; loyalty_trips: number }>(
+    `SELECT name, phone, loyalty_trips FROM users WHERE id = ?`,
     session.user.id,
   );
   const bookings = await listBookingsByUserId(session.user.id);
@@ -303,8 +305,21 @@ export default async function AccountPage({ params }: Props) {
           </div>
         )}
 
-        <div className="mt-5">
-          <CouponsSection coupons={coupons} labels={copy.coupons} />
+        {session.user.role === "customer" && (
+          <div className="mt-5">
+            <LoyaltyPassport
+              locale={locale}
+              trips={profile?.loyalty_trips ?? 0}
+              hasActiveCoupon={coupons.some(couponIsLive)}
+              hasUsedReward={coupons.some((coupon) => coupon.reason === "loyalty" && coupon.status === "used")}
+            />
+          </div>
+        )}
+
+        <div id="my-coupons" className="mt-5">
+          <CouponsSection coupons={coupons.map((coupon) =>
+            coupon.status === "active" && !couponIsLive(coupon) ? { ...coupon, status: "expired" } : coupon
+          )} labels={copy.coupons} />
         </div>
 
         <div className="mt-5">

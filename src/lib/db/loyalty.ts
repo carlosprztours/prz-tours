@@ -20,7 +20,7 @@
  */
 import "server-only";
 
-import { execute, query, queryOne } from "./client";
+import { batch, execute, query, queryOne } from "./client";
 
 export const LOYALTY_DISCOUNT = 10;
 export const TRIPS_PER_COUPON = 2;
@@ -136,18 +136,7 @@ export async function issueCoupon(input: {
   }
   if (!coupon) throw new Error("Could not issue coupon");
 
-  const es = (input.locale ?? "es") === "es";
-  const discountText =
-    kind === "percent" ? `${value} %` : `$${value}`;
-  await notifyUser(
-    input.userId,
-    "coupon",
-    es ? `Tienes un cupón del ${discountText}` : `You have a ${discountText} coupon`,
-    es
-      ? `Tu código es ${coupon.code}. Úsalo al reservar antes del ${expires.slice(0, 10)}.`
-      : `Your code is ${coupon.code}. Use it when booking before ${expires.slice(0, 10)}.`,
-    `/${input.locale ?? "es"}/book`,
-  );
+  await notifyCoupon(coupon, input.locale ?? "es");
 
   if (input.sendEmail) {
     await sendCouponEmail(coupon, input.locale ?? "es");
@@ -220,35 +209,80 @@ export async function consumeCoupon(couponId: number, bookingId: number): Promis
   );
 }
 
-/**
- * Llamar al completar un viaje (`status → completed`). Suma 1 al contador
- * y, cada `TRIPS_PER_COUPON` viajes sin cupón activo en medio, emite el
- * 10 % y reinicia el contador.
- */
-export async function handleTripCompleted(userId: number): Promise<Coupon | null> {
-  await execute(
-    `UPDATE users SET loyalty_trips = loyalty_trips + 1 WHERE id = ?`,
-    userId,
-  );
-  const row = await queryOne<{ loyalty_trips: number }>(
-    `SELECT loyalty_trips FROM users WHERE id = ?`,
-    userId,
-  );
-  if (!row || row.loyalty_trips < TRIPS_PER_COUPON) return null;
+/** Completa la reserva, acredita el viaje y emite la recompensa en una transacción D1. */
+export async function completeLoyaltyBooking(
+  bookingId: number,
+  owner: { id: number; locale: "es" | "en" } | null,
+  note: string | null,
+): Promise<{ completed: boolean; rewarded: boolean }> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = makeCouponCode();
+    const expires = expiryDate(COUPON_EXPIRY_DAYS);
+    let result;
+    try {
+      // Cada paso condicionado usa el resultado de la escritura anterior del mismo batch.
+      result = await batch([
+        {
+          sql: `UPDATE bookings SET status = 'completed', updated_at = datetime('now'),
+                  completed_at = datetime('now') WHERE id = ? AND status = 'confirmed'`,
+          params: [bookingId],
+        },
+        {
+          sql: `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
+                SELECT ?, 'confirmed', 'completed', ?, 'staff' WHERE changes() = 1`,
+          params: [bookingId, note],
+        },
+        {
+          sql: `UPDATE users SET loyalty_trips = loyalty_trips + 1
+                WHERE id = ? AND is_active = 1 AND changes() = 1`,
+          params: [owner?.id ?? null],
+        },
+        {
+          sql: `INSERT INTO coupons (code, user_id, kind, value, reason, status, expires_at)
+                SELECT ?, u.id, 'percent', ?, 'loyalty', 'active', ? FROM users u
+                WHERE u.id = ? AND changes() = 1 AND u.loyalty_trips >= ?
+                  AND NOT EXISTS (
+                    SELECT 1 FROM coupons c WHERE c.user_id = u.id AND c.status = 'active'
+                      AND (c.expires_at IS NULL OR c.expires_at > datetime('now'))
+                  )`,
+          params: [code, LOYALTY_DISCOUNT, expires, owner?.id ?? null, TRIPS_PER_COUPON],
+        },
+        {
+          sql: `UPDATE users SET loyalty_trips = 0 WHERE id = ? AND changes() = 1`,
+          params: [owner?.id ?? null],
+        },
+      ]);
+    } catch (error) {
+      if (!(error instanceof Error) || !/UNIQUE constraint failed: coupons\.code/i.test(error.message)) throw error;
+      continue;
+    }
+    const completed = result[0].meta.changes === 1;
+    const rewarded = result[3].meta.changes === 1;
+    if (rewarded && owner) {
+      await notifyCoupon({ user_id: owner.id, kind: "percent", value: LOYALTY_DISCOUNT, code, expires_at: expires }, owner.locale);
+    }
+    return { completed, rewarded };
+  }
+  throw new Error("Could not issue loyalty coupon");
+}
 
-  const active = await activeCouponFor(userId);
-  if (active) return null;
-
-  await execute(`UPDATE users SET loyalty_trips = 0 WHERE id = ?`, userId);
-  const user = await queryOne<{ locale: string }>(
-    `SELECT locale FROM users WHERE id = ?`,
-    userId,
-  ).catch(() => null);
-  return issueCoupon({
-    userId,
-    reason: "loyalty",
-    locale: user?.locale === "en" ? "en" : "es",
-  });
+async function notifyCoupon(
+  coupon: Pick<Coupon, "user_id" | "kind" | "value" | "code" | "expires_at">,
+  locale: "es" | "en",
+) {
+  const es = locale === "es";
+  const discount = coupon.kind === "percent" ? `${coupon.value} %` : `$${coupon.value}`;
+  const expires = coupon.expires_at?.slice(0, 10) ?? "";
+  await notifyUser(
+    coupon.user_id,
+    "coupon",
+    es ? `Tienes un cupón del ${discount}` : `You have a ${discount} coupon`,
+    es
+      ? `Tu código es ${coupon.code}. Úsalo al reservar antes del ${expires}.`
+      : `Your code is ${coupon.code}. Use it when booking before ${expires}.`,
+    `/${locale}/book`,
+    locale,
+  );
 }
 
 // ───────────────────────────── Avisos ─────────────────────────────
