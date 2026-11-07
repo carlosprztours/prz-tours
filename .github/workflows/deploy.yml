@@ -86,7 +86,7 @@ jobs:
       - name: Build OpenNext
         run: npx opennextjs-cloudflare build
 
-      - name: Probar operaciones en D1 aislada
+      - name: Probar operaciones y galería en D1 aislada
         if: github.event_name == 'pull_request'
         timeout-minutes: 8
         run: |
@@ -98,6 +98,7 @@ jobs:
             export PLAYWRIGHT_CHROMIUM_EXECUTABLE="$(node -e 'require(process.argv[1]).executablePath().then(console.log)' "$browser_dir/node_modules/@sparticuz/chromium")"
             test -x "$PLAYWRIGHT_CHROMIUM_EXECUTABLE"
           fi
+          node scripts/test-immersive-gallery.mjs
           node scripts/test-driver-operations.mjs
 
   # ------------------------------------------------------------------

@@ -10,7 +10,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
-import { GalleryVideos } from "@/components/gallery/GalleryVideos";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import {
   listAllPublishedGalleryImages,
@@ -53,7 +52,7 @@ export default async function GalleryPage({ params }: Props) {
       <div className="container-site">
         <SectionHeading title={dict.gallery.title} subtitle={dict.gallery.subtitle} />
 
-        {images.length === 0 ? (
+        {images.length === 0 && videos.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-dashed border-sand-200 bg-white/60 p-10 text-center">
             <p className="font-display text-lg font-bold text-ink-900">
               {dict.gallery.emptyState}
@@ -62,12 +61,10 @@ export default async function GalleryPage({ params }: Props) {
           </div>
         ) : (
           <>
-            <p className="mt-4 text-sm font-semibold text-ink-500">{dict.gallery.count(images.length)}</p>
-            <GalleryGrid images={images} siteName={dict.meta.siteName} />
+            {images.length > 0 && <p className="mt-4 text-sm font-semibold text-ink-500">{dict.gallery.count(images.length)}</p>}
+            <GalleryGrid images={images} videos={videos} locale={locale} siteName={dict.meta.siteName} />
           </>
         )}
-
-        <GalleryVideos videos={videos} locale={locale} />
 
         <div className="mt-12 flex justify-center">
           <Link
