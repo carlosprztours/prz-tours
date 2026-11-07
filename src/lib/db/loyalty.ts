@@ -224,7 +224,7 @@ export async function completeLoyaltyBooking(
       result = await batch([
         {
           sql: `UPDATE bookings SET status = 'completed', updated_at = datetime('now'),
-                  completed_at = datetime('now') WHERE id = ? AND status = 'confirmed'`,
+                  completed_at = datetime('now') WHERE id = ? AND status = 'confirmed' AND archived_at IS NULL`,
           params: [bookingId],
         },
         {

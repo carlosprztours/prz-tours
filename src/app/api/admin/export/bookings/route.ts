@@ -37,6 +37,7 @@ export async function GET(request: Request) {
     ? (estado as BookingStatus)
     : "all";
   const bookings = await listBookings({
+    archived: sp.get("archivo") === "1",
     status,
     search: sp.get("q")?.trim() || undefined,
     from: sp.get("desde") || undefined,

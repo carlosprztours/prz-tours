@@ -16,6 +16,7 @@ type Props = {
   params: Promise<{ lang: string }>;
   searchParams: Promise<{
     estado?: string;
+    archivo?: string;
     q?: string;
     desde?: string;
     hasta?: string;
@@ -32,6 +33,8 @@ export default async function BookingsPage({ params, searchParams }: Props) {
   await requireSection(locale, "bookings");
   const t = adminTexts(locale);
   const sp = await searchParams;
+  const archived = sp.archivo === "1";
+  const es = locale === "es";
 
   const status = (["pending", "confirmed", "completed", "cancelled"].includes(sp.estado ?? "")
     ? sp.estado
@@ -39,6 +42,7 @@ export default async function BookingsPage({ params, searchParams }: Props) {
   const page = Math.max(1, Number(sp.pagina ?? "1") || 1);
 
   const filters = {
+    archived,
     status,
     search: sp.q?.trim() || undefined,
     from: sp.desde || undefined,
@@ -55,6 +59,7 @@ export default async function BookingsPage({ params, searchParams }: Props) {
 
   const query = (overrides: Record<string, string>) => {
     const p = new URLSearchParams();
+    if (archived) p.set("archivo", "1");
     if (sp.estado) p.set("estado", sp.estado);
     if (sp.q) p.set("q", sp.q);
     if (sp.desde) p.set("desde", sp.desde);
@@ -71,9 +76,12 @@ export default async function BookingsPage({ params, searchParams }: Props) {
     <div className="grid gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl font-extrabold text-ink-900">
-          {t.bookings} · {total}
+          {archived ? (es ? "Reservas archivadas" : "Archived bookings") : t.bookings} · {total}
         </h1>
-        <span className="flex gap-2">
+        <span className="flex flex-wrap gap-2">
+          <Link href={query({ archivo: archived ? "" : "1", pagina: "" })} className="inline-flex h-10 items-center rounded-full border border-sand-200 bg-white px-4 text-sm font-bold text-ink-700">
+            {archived ? (es ? "Ver activas" : "View active") : (es ? "Ver archivadas" : "View archived")}
+          </Link>
           <Link
             href={`/${locale}/admin/occupancy`}
             className="inline-flex h-10 items-center rounded-full border border-sand-200 bg-white px-4 text-sm font-bold text-ink-700 transition hover:ring-1 hover:ring-ocean-300"
@@ -82,6 +90,7 @@ export default async function BookingsPage({ params, searchParams }: Props) {
           </Link>
           <a
             href={`/api/admin/export/bookings?${new URLSearchParams({
+              ...(archived ? { archivo: "1" } : {}),
               ...(status !== "all" ? { estado: status } : {}),
               ...(sp.q ? { q: sp.q } : {}),
               ...(sp.desde ? { desde: sp.desde } : {}),
@@ -95,6 +104,7 @@ export default async function BookingsPage({ params, searchParams }: Props) {
       </div>
 
       <form method="get" className="flex flex-wrap items-end gap-3 rounded-2xl border border-sand-200 bg-white p-4">
+        {archived && <input type="hidden" name="archivo" value="1" />}
         <label className="grid gap-1 text-xs font-bold text-ink-500">
           {t.status}
           <select name="estado" defaultValue={status} className="h-10 rounded-xl border border-sand-200 px-3 text-sm text-ink-900">

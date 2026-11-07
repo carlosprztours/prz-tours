@@ -171,6 +171,8 @@ export type PaymentStatus = "unpaid" | "partial" | "paid" | "refunded";
 export type BookingKind = "tour" | "transfer" | "custom";
 
 export type Booking = {
+  archived_at: string | null;
+  excluded_from_reports_at: string | null;
   id: number;
   reference: string;
   kind: BookingKind;

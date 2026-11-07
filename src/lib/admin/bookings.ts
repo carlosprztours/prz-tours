@@ -37,6 +37,7 @@ export async function setBookingStatus(
   const { loc, me, email } = await staffLocale(locale);
   const booking = await getBookingById(bookingId);
   if (!booking) return { ok: false, error: "not-found" };
+  if (booking.archived_at) return { ok: false, error: "archived" };
 
   if (!NEXT_STATUS[booking.status].includes(to)) {
     return { ok: false, error: "invalid-transition" };
@@ -53,7 +54,7 @@ export async function setBookingStatus(
     const stamp = to === "confirmed" ? ", confirmed_at = datetime('now')"
       : to === "cancelled" ? ", cancelled_at = datetime('now')" : "";
     const transition = await execute(
-      `UPDATE bookings SET status = ?, updated_at = datetime('now')${stamp} WHERE id = ? AND status = ?`,
+      `UPDATE bookings SET status = ?, updated_at = datetime('now')${stamp} WHERE id = ? AND status = ? AND archived_at IS NULL`,
       to,
       bookingId,
       booking.status,
@@ -169,12 +170,14 @@ export async function setBookingPayment(
   const { loc, me, email } = await staffLocale(locale);
   const booking = await getBookingById(bookingId);
   if (!booking) return { ok: false, error: "not-found" };
+  if (booking.archived_at) return { ok: false, error: "archived" };
 
-  await execute(
-    `UPDATE bookings SET payment_status = ?, updated_at = datetime('now') WHERE id = ?`,
+  const changed = await execute(
+    `UPDATE bookings SET payment_status = ?, updated_at = datetime('now') WHERE id = ? AND archived_at IS NULL`,
     payment,
     bookingId,
   );
+  if (changed.meta.changes !== 1) return { ok: false, error: "archived" };
   await execute(
     `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
      VALUES (?, ?, ?, ?, ?)`,
