@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   let saved: { state?: string; locale?: string; next?: string; inviteRef?: string } = {};
   try {
-    saved = JSON.parse(request.cookies.get("prz_oauth_state")?.value ?? "{}");
+    saved = JSON.parse(request.cookies.get("prz_oauth_state")?.value ?? "{}") ?? {};
   } catch {
     return fail(origin, locale);
   }

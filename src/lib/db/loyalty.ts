@@ -405,8 +405,16 @@ export async function getOrCreateInviteCode(userId: number): Promise<string> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const code = makeInviteCode();
     try {
-      await execute(`UPDATE users SET invite_code = ? WHERE id = ?`, code, userId);
-      return code;
+      const changed = await execute(
+        `UPDATE users SET invite_code = ? WHERE id = ? AND invite_code IS NULL`,
+        code, userId,
+      );
+      if (changed.meta.changes === 1) return code;
+      const current = await queryOne<{ invite_code: string }>(
+        `SELECT invite_code FROM users WHERE id = ?`, userId,
+      );
+      if (current?.invite_code) return current.invite_code;
+      throw new Error("Could not find invite account");
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!/UNIQUE constraint failed/i.test(msg)) throw err;

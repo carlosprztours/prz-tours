@@ -69,7 +69,7 @@ try {
   assert((await fetch(origin + "/es/login")).ok, "Isolated Worker did not start");
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
   async function login(id, expected) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: id === 6, hasTouch: id === 6 });
     await page.goto(origin + "/es/login");
     await page.locator("#email").fill(`qa${id}@example.test`);
     await page.locator("#password").fill(password);
@@ -99,7 +99,7 @@ try {
     assert.match(response.headers.get("content-type"), /image\/png/);
   }
   const invalidOAuth = await fetch(origin + "/api/auth/google/callback?code=QA&state=invalid", { redirect: "manual" });
-  assert.equal(new URL(invalidOAuth.headers.get("location")).pathname, "/es/login");
+  assert.equal(new URL(invalidOAuth.headers.get("location")).pathname, "/en/login");
   assert(!invalidOAuth.headers.has("set-cookie"));
   const unauthenticatedPush = await fetch(origin + "/api/push/subscribe", { method: "POST", body: "{}" });
   assert.equal(unauthenticatedPush.status, 401);
@@ -109,7 +109,10 @@ try {
   const editor = await login(4, "/es/admin");
   const photographer = await login(5, "/es/admin/gallery");
   const customer = await login(6, "/es/account");
-  const sw = await customer.evaluate(async () => (await navigator.serviceWorker.ready).active?.scriptURL);
+  const sw = await customer.evaluate(async () => Promise.race([
+    navigator.serviceWorker.ready.then((registration) => registration.active?.scriptURL),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Service worker did not activate")), 10000)),
+  ]));
   assert.equal(sw, origin + "/sw.js");
   await customer.evaluate(() => { Notification.requestPermission = async () => "denied"; });
   await customer.getByRole("button", { name: /activar avisos/i }).click();
@@ -232,6 +235,10 @@ try {
     const card = customer.getByRole("region", { name: locale === "es" ? "Pasaporte Perez Tours" : "Perez Tours Passport" });
     await card.getByText(progress, { exact: true }).waitFor();
     await card.getByText(status, { exact: true }).waitFor();
+    assert(await card.evaluate((section) => {
+      const bounds = section.getBoundingClientRect();
+      return bounds.left >= 0 && bounds.right <= document.documentElement.clientWidth;
+    }));
     const link = card.getByRole("link");
     await link.focus();
     await link.press("Enter");
@@ -258,7 +265,14 @@ try {
   await passport("0 of 2 trips completed", "You have an active coupon.", "en");
   sql("UPDATE coupons SET status='used', booking_id=4, used_at=datetime('now') WHERE user_id=6 AND reason='loyalty'");
   await passport("0 of 2 trips completed", "Your previous reward has been used.", "en");
-  const invitePath = await customer.locator('input[readonly][value*="/signup?ref="]').inputValue();
+  sql("UPDATE users SET invite_code=NULL WHERE id=6");
+  const otherAccount = await customer.context().newPage();
+  await Promise.all([customer, otherAccount].map((page) => page.goto(origin + "/en/account")));
+  const invitePaths = await Promise.all([customer, otherAccount].map((page) =>
+    page.locator('input[readonly][value*="/signup?ref="]').inputValue()));
+  assert.equal(invitePaths[0], invitePaths[1]);
+  const [invitePath] = invitePaths;
+  await otherAccount.close();
   const invited = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await invited.goto(origin + invitePath);
   await invited.locator("#name").fill("QA invited traveller");
