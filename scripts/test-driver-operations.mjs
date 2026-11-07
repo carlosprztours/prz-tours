@@ -69,7 +69,8 @@ try {
   assert((await fetch(origin + "/es/login")).ok, "Isolated Worker did not start");
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
   async function login(id, expected) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: id === 6, hasTouch: id === 6 });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: id === 6, hasTouch: id === 6 });
+    const page = await context.newPage();
     await page.goto(origin + "/es/login");
     await page.locator("#email").fill(`qa${id}@example.test`);
     await page.locator("#password").fill(password);
