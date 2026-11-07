@@ -384,7 +384,7 @@ function AccountSection({ title, children }: { title: string; children: ReactNod
     <details className="group rounded-2xl border border-sand-200 bg-white">
       <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 font-bold text-ink-900 focus-visible:outline-2 focus-visible:outline-ocean-700">
         {title}
-        <span aria-hidden="true" className="text-ocean-800 group-open:rotate-180">⌄</span>
+        <span aria-hidden="true" className="text-ocean-800 group-open:rotate-180 after:content-['⌄']" />
       </summary>
       <div className="border-t border-sand-100 p-3 sm:p-4">{children}</div>
     </details>
