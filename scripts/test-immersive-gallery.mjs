@@ -130,14 +130,28 @@ try {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 80, y: 380 }] });
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await mobileDialog.getByText("2 / 3", { exact: true }).waitFor();
-  await mobileDialog.getByRole("button", { name: "Next" }).tap();
+  await mobileDialog.getByRole("button", { name: "Next", exact: true }).tap();
+  await mobile.clock.runFor(500);
+  await mobileDialog.getByText("3 / 3", { exact: true }).waitFor({ timeout: 5000 });
   await mobileDialog.getByRole("button", { name: "Play video" }).waitFor();
   assert.equal(mobileSeen.videoRequests, 0);
+  const mobilePlay = mobileDialog.getByRole("button", { name: "Play video" });
+  await mobilePlay.tap();
+  await mobileDialog.getByRole("alert").waitFor();
+  await mobileDialog.getByRole("button", { name: "Try again" }).tap();
+  await mobilePlay.tap();
+  await mobile.waitForFunction(() => {
+    const video = document.querySelector("dialog video");
+    return video && !video.paused && video.currentTime > 0;
+  });
+  const mobileMedia = await mobileDialog.locator("video").elementHandle();
   await mobileDialog.getByRole("button", { name: /Close/ }).tap();
   await mobileDialog.waitFor({ state: "hidden" });
+  assert(await mobileMedia.evaluate((video) => video.paused && !video.isConnected));
+  const requestedInViewer = mobileSeen.videoRequests;
   await mobile.goto(origin + "/en");
   assert(await mobile.getByRole("button", { name: "Play video" }).isVisible(), "Home player must remain available");
-  assert.equal(mobileSeen.videoRequests, 0);
+  assert.equal(mobileSeen.videoRequests, requestedInViewer);
   console.log("PASS: ES/EN, mixed published media, portrait/landscape, focus/scroll, keyboard/touch, autoplay, reduced motion, lazy video, retry, playback and cleanup");
 } finally {
   await browser?.close();
