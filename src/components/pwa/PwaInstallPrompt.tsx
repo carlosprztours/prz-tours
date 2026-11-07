@@ -15,6 +15,7 @@
  */
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type Labels = {
@@ -130,6 +131,7 @@ export function PwaInstallPrompt({
   force = false,
   inline = false,
 }: Props) {
+  const pathname = usePathname();
   const deferred = useRef<BeforeInstallPromptEvent | null>(null);
   const [canInstall, setCanInstall] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -239,6 +241,7 @@ export function PwaInstallPrompt({
   const showNotifyRow = !subscribed && pushSupported;
   const anythingToShow = showInstallRow || showNotifyRow;
 
+  if (!inline && /^\/(?:es|en)\/account\/?$/.test(pathname)) return null;
   if (dismissed && !force) return null;
   if (!anythingToShow) return null;
 

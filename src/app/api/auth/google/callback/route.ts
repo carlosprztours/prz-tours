@@ -22,7 +22,7 @@ import { execute, queryOne } from "@/lib/db/client";
 import { defaultLocale, isLocale } from "@/lib/i18n/config";
 import type { Locale, UserWithSecret } from "@/types";
 
-function fail(url: URL, origin: string, locale: Locale): NextResponse {
+function fail(origin: string, locale: Locale): NextResponse {
   // Sin mensaje específico a propósito: el login muestra "inválido".
   return NextResponse.redirect(new URL(`/${locale}/login`, origin));
 }
@@ -34,15 +34,15 @@ export async function GET(request: NextRequest) {
 
   let saved: { state?: string; locale?: string; next?: string; inviteRef?: string } = {};
   try {
-    saved = JSON.parse(request.cookies.get("prz_oauth_state")?.value ?? "{}");
+    saved = JSON.parse(request.cookies.get("prz_oauth_state")?.value ?? "{}") ?? {};
   } catch {
-    return fail(url, origin, locale);
+    return fail(origin, locale);
   }
   const loc: Locale = isLocale(saved.locale ?? "") ? (saved.locale as Locale) : defaultLocale;
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   if (!code || !state || !saved.state || state !== saved.state) {
-    return fail(url, origin, loc);
+    return fail(origin, loc);
   }
   const next =
     typeof saved.next === "string" &&
@@ -52,13 +52,13 @@ export async function GET(request: NextRequest) {
       : undefined;
 
   const client = await getGoogleClient();
-  if (!client) return fail(url, origin, loc);
+  if (!client) return fail(origin, loc);
   const redirectUri = `${origin}/api/auth/google/callback`;
 
   const token = await exchangeGoogleCode(client.id, client.secret, code, redirectUri);
-  if (!token) return fail(url, origin, loc);
+  if (!token) return fail(origin, loc);
   const profile = await fetchGoogleProfile(token);
-  if (!profile) return fail(url, origin, loc);
+  if (!profile) return fail(origin, loc);
 
   // 1) ¿Cuenta ya vinculada a este Google?
   // 2) ¿Cuenta con este email (contraseña) para vincular?
@@ -70,13 +70,18 @@ export async function GET(request: NextRequest) {
     profile.sub,
   );
   if (!user) {
-    const byEmail = await queryOne<UserWithSecret>(
-      `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
+    const byEmail = await queryOne<UserWithSecret & { google_id: string | null }>(
+      `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at, google_id
        FROM users WHERE email = ?`,
       profile.email,
     );
     if (byEmail) {
-      await execute(`UPDATE users SET google_id = ? WHERE id = ?`, profile.sub, byEmail.id);
+      if (byEmail.is_active !== 1 || byEmail.google_id !== null) return fail(origin, loc);
+      const linked = await execute(
+        `UPDATE users SET google_id = ? WHERE id = ? AND is_active = 1 AND google_id IS NULL`,
+        profile.sub, byEmail.id,
+      );
+      if (linked.meta.changes !== 1) return fail(origin, loc);
       user = byEmail;
     } else {
       const unusableHash = `google-oauth$${crypto.randomUUID()}`;
@@ -90,7 +95,7 @@ export async function GET(request: NextRequest) {
         profile.sub,
       );
       const id = Number(inserted.meta.last_row_id);
-      if (!Number.isInteger(id) || id <= 0) return fail(url, origin, loc);
+      if (!Number.isInteger(id) || id <= 0) return fail(origin, loc);
       isNew = true;
       user = await queryOne<UserWithSecret>(
         `SELECT id, email, name, role, phone, locale, is_active, password_hash, created_at, updated_at
@@ -100,7 +105,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  if (!user || user.is_active !== 1) return fail(url, origin, loc);
+  if (!user || user.is_active !== 1) return fail(origin, loc);
 
   // Fidelidad: código propio + cupón si es cuenta nueva referida.
   try {
@@ -128,6 +133,6 @@ export async function GET(request: NextRequest) {
     next ??
     (user.role === "customer" ? `/${loc}/account` : `/${loc}/admin`);
   const res = NextResponse.redirect(new URL(dest, origin));
-  res.cookies.delete("prz_oauth_state");
+  res.cookies.set("prz_oauth_state", "", { path: "/api/auth/google", maxAge: 0 });
   return res;
 }

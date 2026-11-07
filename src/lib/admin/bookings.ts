@@ -42,31 +42,33 @@ export async function setBookingStatus(
     return { ok: false, error: "invalid-transition" };
   }
 
-  const stamp =
-    to === "confirmed"
-      ? ", confirmed_at = datetime('now')"
-      : to === "completed"
-        ? ", completed_at = datetime('now')"
-        : to === "cancelled"
-          ? ", cancelled_at = datetime('now')"
-          : "";
-
-  const transition = await execute(
-    `UPDATE bookings SET status = ?, updated_at = datetime('now')${stamp} WHERE id = ? AND status = ?`,
-    to,
-    bookingId,
-    booking.status,
-  );
-  if (transition.meta.changes !== 1) return { ok: false, error: "invalid-transition" };
-  await execute(
-    `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
-     VALUES (?, ?, ?, ?, ?)`,
-    bookingId,
-    booking.status,
-    to,
-    actorNote ?? null,
-    "staff",
-  );
+  let completion: { owner: Awaited<ReturnType<typeof import("@/lib/db/loyalty").resolveBookingUser>>; rewarded: boolean } | undefined;
+  if (to === "completed") {
+    const { completeLoyaltyBooking, resolveBookingUser } = await import("@/lib/db/loyalty");
+    const owner = await resolveBookingUser(booking);
+    const result = await completeLoyaltyBooking(bookingId, owner, actorNote ?? null);
+    if (!result.completed) return { ok: false, error: "invalid-transition" };
+    completion = { owner, rewarded: result.rewarded };
+  } else {
+    const stamp = to === "confirmed" ? ", confirmed_at = datetime('now')"
+      : to === "cancelled" ? ", cancelled_at = datetime('now')" : "";
+    const transition = await execute(
+      `UPDATE bookings SET status = ?, updated_at = datetime('now')${stamp} WHERE id = ? AND status = ?`,
+      to,
+      bookingId,
+      booking.status,
+    );
+    if (transition.meta.changes !== 1) return { ok: false, error: "invalid-transition" };
+    await execute(
+      `INSERT INTO booking_events (booking_id, from_status, to_status, note, actor)
+       VALUES (?, ?, ?, ?, ?)`,
+      bookingId,
+      booking.status,
+      to,
+      actorNote ?? null,
+      "staff",
+    );
+  }
 
   revalidatePath(`/${loc}/admin/bookings`);
   revalidatePath(`/${loc}/admin`);
@@ -83,11 +85,10 @@ export async function setBookingStatus(
   if (to === "confirmed" || to === "completed") {
     try {
       const {
-        handleTripCompleted,
         notifyUser,
         resolveBookingUser,
       } = await import("@/lib/db/loyalty");
-      const owner = await resolveBookingUser(booking);
+      const owner = completion ? completion.owner : await resolveBookingUser(booking);
       if (owner) {
         const bl = owner.locale;
         const experience =
@@ -110,20 +111,17 @@ export async function setBookingStatus(
           // personal, para que quede constancia de la reserva confirmada.
           const { sendBookingUpdateEmail } = await import("@/lib/notify/booking-email");
           await sendBookingUpdateEmail(booking, "confirmed", bl).catch(() => false);
-        } else {
-          const coupon = await handleTripCompleted(owner.id);
-          if (!coupon) {
-            await notifyUser(
-              owner.id,
-              "trip-completed",
-              bl === "es" ? "¡Gracias por viajar con nosotros!" : "Thanks for travelling with us!",
-              bl === "es"
-                ? `Tu viaje ${booking.reference} quedó registrado. Cada 2 viajes recibes un 10 % de descuento.`
-                : `Your trip ${booking.reference} was recorded. Every 2 trips you earn 10 % off.`,
-              `/${bl}/account`,
-              bl,
-            );
-          }
+        } else if (!completion?.rewarded) {
+          await notifyUser(
+            owner.id,
+            "trip-completed",
+            bl === "es" ? "¡Gracias por viajar con nosotros!" : "Thanks for travelling with us!",
+            bl === "es"
+              ? `Tu viaje ${booking.reference} quedó registrado. Cada 2 viajes recibes un 10 % de descuento.`
+              : `Your trip ${booking.reference} was recorded. Every 2 trips you earn 10 % off.`,
+            `/${bl}/account`,
+            bl,
+          );
         }
       }
     } catch (err) {

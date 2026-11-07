@@ -7,7 +7,7 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth/dal";
-import { deleteSubscription, saveSubscription } from "@/lib/db/push";
+import { deleteSubscription, isSupportedPushEndpoint, saveSubscription } from "@/lib/db/push";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +25,13 @@ export async function POST(request: Request) {
   let body: Body;
   try {
     body = (await request.json()) as Body;
+    if (!body || typeof body !== "object") throw new Error("Invalid body");
   } catch {
     return NextResponse.json({ ok: false, error: "bad-json" }, { status: 400 });
   }
 
   // Baja: mandan el endpoint que quieren eliminar.
-  if (!body.subscription && body.endpoint) {
+  if (!body.subscription && typeof body.endpoint === "string" && body.endpoint.length <= 2048) {
     await deleteSubscription(session.user.id, body.endpoint);
     return NextResponse.json({ ok: true });
   }
@@ -39,7 +40,9 @@ export async function POST(request: Request) {
   const endpoint = sub?.endpoint;
   const p256dh = sub?.keys?.p256dh;
   const auth = sub?.keys?.auth;
-  if (!endpoint || !p256dh || !auth) {
+  if (typeof endpoint !== "string" || endpoint.length > 2048 || !isSupportedPushEndpoint(endpoint) ||
+      typeof p256dh !== "string" || !/^[A-Za-z0-9_-]{87}$/.test(p256dh) ||
+      typeof auth !== "string" || !/^[A-Za-z0-9_-]{22}$/.test(auth)) {
     return NextResponse.json({ ok: false, error: "bad-subscription" }, { status: 400 });
   }
 

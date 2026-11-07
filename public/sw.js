@@ -3,24 +3,24 @@
  * Estrategia simple y segura para un sitio con contenido dinámico (D1):
  *
  * - Navegaciones (HTML): network-first con fallback a caché. Si no hay
- *   internet y no hay copia, se muestra la home cacheada.
+ *   internet, se muestra una portada anónima para rutas públicas.
  * - Estáticos (`/_next/static`, `/img`, fuentes, iconos, manifiesto):
  *   cache-first (inmutables o versionados).
  * - API y actions: solo red (nunca cachear reservas ni sesiones).
  *
  * No se cachea nada con cookies/auth para no filtrar datos entre usuarios.
  */
-const VERSION = "prz-v1";
+const VERSION = "prz-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGES_CACHE = `${VERSION}-pages`;
 
-const PRECACHE = ["/en", "/icons/icon-192.png", "/icons/icon-512.png"];
+const OFFLINE_HOME = "/en";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(PAGES_CACHE);
-      await cache.addAll(PRECACHE).catch(() => {});
+      await cache.add(new Request(OFFLINE_HOME, { credentials: "omit", cache: "reload" })).catch(() => {});
       await self.skipWaiting();
     })(),
   );
@@ -126,6 +126,9 @@ self.addEventListener("fetch", (event) => {
 
   // API y Server Actions: siempre red, sin caché.
   if (isApi(url)) return;
+  const isPublicNavigation = request.mode === "navigate" &&
+    /^\/(es|en)(?:\/(?:tours(?:\/[^/]+)?|transfers|gallery|blog(?:\/[^/]+)?|about|contact))?\/?$/.test(url.pathname);
+  if (!isStaticAsset(url) && !isPublicNavigation) return;
 
   event.respondWith(
     (async () => {
@@ -147,19 +150,11 @@ self.addEventListener("fetch", (event) => {
         }
       }
 
-      // Navegaciones y resto: red primero, caché después.
+      // HTML autenticado nunca entra a CacheStorage. Offline solo hay una portada anónima.
       try {
-        const fresh = await fetch(request);
-        if (fresh.ok && (request.mode === "navigate" || request.destination === "")) {
-          const cache = await caches.open(PAGES_CACHE);
-          cache.put(request, fresh.clone()).catch(() => {});
-        }
-        return fresh;
+        return await fetch(request);
       } catch {
-        const cached =
-          (await caches.match(request)) ?? (await caches.match("/en"));
-        if (cached) return cached;
-        return Response.error();
+        return (await caches.match(OFFLINE_HOME, { cacheName: PAGES_CACHE })) ?? Response.error();
       }
     })(),
   );

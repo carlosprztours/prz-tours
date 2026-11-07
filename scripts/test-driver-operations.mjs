@@ -45,7 +45,15 @@ try {
        INSERT INTO bookings(id,reference,customer_name,customer_email,customer_phone,tour_title,hotel,booked_for,pickup_time,status,user_id,payment_status)
        VALUES (1,'QA-SERVICE-1','QA Customer','qa6@example.test','555-0101','Destination','Hotel','2030-01-01','09:00','confirmed',6,'paid'),
               (2,'QA-SERVICE-2','Other','qa6@example.test','555-0102','Second','Hotel','2030-01-01','09:00','confirmed',NULL,'paid');`);
-  for (const migration of migrations.filter((file) => file >= "0019")) d1("--file", `migrations/${migration}`);
+  for (const migration of migrations.filter((file) => file >= "0019" && file < "0021")) d1("--file", `migrations/${migration}`);
+  sql(`INSERT INTO gallery_images(id,url,alt,sort_order)
+       VALUES (69,'/icons/icon-192.png','Private Airport Transfers in Puerto Plata, Dominican Republic',-2),
+              (71,'/icons/icon-512.png','Good air conditioner and confort',-1);`);
+  for (const migration of migrations.filter((file) => file >= "0021")) d1("--file", `migrations/${migration}`);
+  d1("--file", "migrations/0021_reviewed_public_copy.sql");
+  assert.deepEqual(sql("SELECT id,url FROM gallery_images WHERE id IN (69,71) ORDER BY id"), [
+    {id:69,url:"/icons/icon-192.png"}, {id:71,url:"/icons/icon-512.png"},
+  ]);
   assert.equal(sql("SELECT role FROM users WHERE id=1")[0].role, "admin");
   assert.equal(sql("SELECT user_id FROM sessions WHERE id='before'")[0].user_id, 1);
   assert.equal(sql("SELECT user_id FROM coupons WHERE id=1")[0].user_id, 6);
@@ -61,7 +69,8 @@ try {
   assert((await fetch(origin + "/es/login")).ok, "Isolated Worker did not start");
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
   async function login(id, expected) {
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: id === 6, hasTouch: id === 6 });
+    const page = await context.newPage();
     await page.goto(origin + "/es/login");
     await page.locator("#email").fill(`qa${id}@example.test`);
     await page.locator("#password").fill(password);
@@ -69,12 +78,59 @@ try {
     await page.waitForURL(origin + expected);
     return page;
   }
+  const gallery = await browser.newPage();
+  for (const [locale, alts] of [
+    ["es", ["Traslados privados al aeropuerto en Puerto Plata, República Dominicana", "Aire acondicionado y comodidad"]],
+    ["en", ["Private airport transfers in Puerto Plata, Dominican Republic", "Air conditioning and comfort"]],
+  ]) {
+    await gallery.goto(origin + `/${locale}/gallery`);
+    for (const alt of alts) {
+      await gallery.getByRole("button", { name: alt, exact: true }).click();
+      await gallery.getByRole("img", { name: alt, exact: true }).waitFor();
+      await gallery.keyboard.press("Escape");
+    }
+  }
+  await gallery.close();
+  const manifest = await (await fetch(origin + "/manifest.webmanifest")).json();
+  assert.equal(manifest.display, "standalone");
+  assert.equal(manifest.start_url, "/en");
+  for (const icon of manifest.icons) {
+    const response = await fetch(origin + icon.src);
+    assert(response.ok);
+    assert.match(response.headers.get("content-type"), /image\/png/);
+  }
+  const invalidOAuth = await fetch(origin + "/api/auth/google/callback?code=QA&state=invalid", { redirect: "manual" });
+  assert.equal(new URL(invalidOAuth.headers.get("location")).pathname, "/en/login");
+  assert(!invalidOAuth.headers.has("set-cookie"));
+  const unauthenticatedPush = await fetch(origin + "/api/push/subscribe", { method: "POST", body: "{}" });
+  assert.equal(unauthenticatedPush.status, 401);
   const admin = await login(1, "/es/admin");
   const driver = await login(2, "/es/admin/services");
   const other = await login(3, "/es/admin/services");
   const editor = await login(4, "/es/admin");
   const photographer = await login(5, "/es/admin/gallery");
   const customer = await login(6, "/es/account");
+  const sw = await customer.evaluate(async () => Promise.race([
+    navigator.serviceWorker.ready.then((registration) => registration.active?.scriptURL),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Service worker did not activate")), 10000)),
+  ]));
+  assert.equal(sw, origin + "/sw.js");
+  await customer.evaluate(() => { Notification.requestPermission = async () => "denied"; });
+  const enableAlerts = customer.getByRole("button", { name: /activar avisos/i });
+  await enableAlerts.waitFor();
+  assert.equal(await enableAlerts.count(), 1);
+  await enableAlerts.click();
+  await customer.getByRole("status").filter({ hasText: /permiso|bloquead/i }).waitFor();
+  assert.equal(sql("SELECT count(*) AS n FROM push_subscriptions")[0].n, 0);
+  const keys = { p256dh: "A".repeat(87), auth: "A".repeat(22) };
+  const subscription = { endpoint: "https://fcm.googleapis.com/fcm/send/qa-only", keys };
+  const pushApi = origin + "/api/push/subscribe";
+  const rejectedPush = await customer.request.post(pushApi, { data: { subscription: { ...subscription, endpoint: "https://fcm.googleapis.com.example.test/qa" } } });
+  assert.equal(rejectedPush.status(), 400);
+  assert((await customer.request.post(pushApi, { data: { subscription } })).ok());
+  assert.equal(sql("SELECT user_id FROM push_subscriptions")[0].user_id, 6);
+  assert((await customer.request.post(pushApi, { data: { endpoint: subscription.endpoint } })).ok());
+  assert.equal(sql("SELECT count(*) AS n FROM push_subscriptions")[0].n, 0);
   for (const [page, expected] of [
     [admin, ["Reservas", "Conductores", "Servicios y asignaciones", "Panel de conducción", "Validación QR", "Clientes y fidelización"]],
     [driver, ["Panel de conducción", "Validación QR"]],
@@ -178,6 +234,62 @@ try {
   assert.equal(sql("SELECT status FROM bookings WHERE id=1")[0].status, "completed");
   assert.equal(sql("SELECT loyalty_trips FROM users WHERE id=6")[0].loyalty_trips, 1);
   assert.equal(sql("SELECT count(*) AS n FROM booking_events WHERE booking_id=1 AND to_status='completed'")[0].n, 1);
+  let passportVisit = 0;
+  async function passport(progress, status, locale = "es") {
+    await customer.goto(origin + `/${locale}/account?qa-passport=${++passportVisit}`);
+    const card = customer.getByRole("region", { name: locale === "es" ? "Pasaporte Perez Tours" : "Perez Tours Passport" });
+    await card.getByText(progress, { exact: true }).waitFor();
+    await card.getByText(status, { exact: true }).waitFor();
+    assert(await card.evaluate((section) => {
+      const bounds = section.getBoundingClientRect();
+      return bounds.left >= 0 && bounds.right <= document.documentElement.clientWidth;
+    }));
+    const link = card.getByRole("link");
+    await link.focus();
+    await link.press("Enter");
+    await customer.waitForURL((url) => url.hash === "#my-coupons");
+  }
+  await passport("1 de 2 viajes completados", "Tienes un cupón activo.");
+  sql(`UPDATE coupons SET status='cancelled' WHERE id=1;
+       UPDATE users SET loyalty_trips=0 WHERE id=6;
+       INSERT INTO bookings(id,reference,customer_name,customer_email,customer_phone,tour_title,hotel,booked_for,pickup_time,status,user_id,payment_status)
+       VALUES (3,'QA-SERVICE-3','QA Customer','qa6@example.test','555-0101','Destination','Hotel','2030-01-01','09:00','confirmed',6,'paid'),
+              (4,'QA-SERVICE-4','QA Customer','qa6@example.test','555-0101','Destination','Hotel','2030-01-02','09:00','confirmed',6,'paid');`);
+  await passport("0 de 2 viajes completados", "Aún no tienes un cupón activo.");
+  await Promise.all([admin, secondAdmin].map((page, i) => page.goto(origin + "/es/admin/bookings/" + (i + 3))));
+  await Promise.all([admin, secondAdmin].map(async (page) => {
+    const response = page.waitForResponse((r) => r.request().method() === "POST");
+    await page.getByRole("button", { name: "Completar", exact: true }).click();
+    assert((await response).ok());
+  }));
+  assert.deepEqual(sql("SELECT status FROM bookings WHERE id IN (3,4) ORDER BY id"), [{status: "completed"}, {status: "completed"}]);
+  assert.equal(sql("SELECT count(*) AS n FROM booking_events WHERE booking_id IN (3,4) AND to_status='completed'")[0].n, 2);
+  assert.equal(sql("SELECT loyalty_trips FROM users WHERE id=6")[0].loyalty_trips, 0);
+  assert.deepEqual(sql("SELECT status,value,reason FROM coupons WHERE user_id=6 AND reason='loyalty'"), [{status: "active", value: 10, reason: "loyalty"}]);
+  assert.equal(sql("SELECT count(*) AS n FROM notifications WHERE user_id=6 AND type='coupon'")[0].n, 1);
+  await passport("0 of 2 trips completed", "You have an active coupon.", "en");
+  sql("UPDATE coupons SET status='used', booking_id=4, used_at=datetime('now') WHERE user_id=6 AND reason='loyalty'");
+  await passport("0 of 2 trips completed", "Your previous reward has been used.", "en");
+  sql("UPDATE users SET invite_code=NULL WHERE id=6");
+  const otherAccount = await customer.context().newPage();
+  await Promise.all([customer, otherAccount].map((page) => page.goto(origin + "/en/account?qa-invite=1")));
+  const invitePaths = await Promise.all([customer, otherAccount].map((page) =>
+    page.locator('input[readonly][value*="/signup?ref="]').inputValue()));
+  assert.equal(invitePaths[0], invitePaths[1]);
+  const [invitePath] = invitePaths;
+  await otherAccount.close();
+  const invited = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await invited.goto(origin + invitePath);
+  await invited.locator("#name").fill("QA invited traveller");
+  await invited.locator("#email").fill("qa-invited@example.test");
+  await invited.locator("#password").fill(password);
+  await invited.locator("form").filter({ has: invited.locator("#password") }).locator("button[type=submit]").click();
+  await invited.waitForURL(origin + "/en/account");
+  assert.deepEqual(sql(`SELECT u.referred_by,c.value,c.status FROM users u JOIN coupons c ON c.user_id=u.id
+    WHERE u.email='qa-invited@example.test' AND c.reason='invite'`), [{referred_by:6,value:10,status:"active"}]);
+  await invited.getByRole("region", { name: "Perez Tours Passport" }).getByText("You have an active coupon.").waitFor();
+  await invited.close();
+  console.log("PASS: two concurrent completions, one 10% reward, one coupon notification, passport in ES/EN");
   console.log("PASS: D1 migration preservation, role matrix, assignment and history, conflict, QR, operational stages and session revocation");
 } finally {
   await browser?.close();
