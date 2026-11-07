@@ -115,7 +115,10 @@ try {
   ]));
   assert.equal(sw, origin + "/sw.js");
   await customer.evaluate(() => { Notification.requestPermission = async () => "denied"; });
-  await customer.getByRole("button", { name: /activar avisos/i }).click();
+  const enableAlerts = customer.getByRole("button", { name: /activar avisos/i });
+  await enableAlerts.waitFor();
+  assert.equal(await enableAlerts.count(), 1);
+  await enableAlerts.click();
   await customer.getByRole("status").filter({ hasText: /permiso|bloquead/i }).waitFor();
   assert.equal(sql("SELECT count(*) AS n FROM push_subscriptions")[0].n, 0);
   const keys = { p256dh: "A".repeat(87), auth: "A".repeat(22) };
@@ -230,8 +233,9 @@ try {
   assert.equal(sql("SELECT status FROM bookings WHERE id=1")[0].status, "completed");
   assert.equal(sql("SELECT loyalty_trips FROM users WHERE id=6")[0].loyalty_trips, 1);
   assert.equal(sql("SELECT count(*) AS n FROM booking_events WHERE booking_id=1 AND to_status='completed'")[0].n, 1);
+  let passportVisit = 0;
   async function passport(progress, status, locale = "es") {
-    await customer.goto(origin + `/${locale}/account`);
+    await customer.goto(origin + `/${locale}/account?qa-passport=${++passportVisit}`);
     const card = customer.getByRole("region", { name: locale === "es" ? "Pasaporte Perez Tours" : "Perez Tours Passport" });
     await card.getByText(progress, { exact: true }).waitFor();
     await card.getByText(status, { exact: true }).waitFor();
@@ -242,7 +246,7 @@ try {
     const link = card.getByRole("link");
     await link.focus();
     await link.press("Enter");
-    await customer.waitForURL("**/account#my-coupons");
+    await customer.waitForURL((url) => url.hash === "#my-coupons");
   }
   await passport("1 de 2 viajes completados", "Tienes un cupón activo.");
   sql(`UPDATE coupons SET status='cancelled' WHERE id=1;
@@ -267,7 +271,7 @@ try {
   await passport("0 of 2 trips completed", "Your previous reward has been used.", "en");
   sql("UPDATE users SET invite_code=NULL WHERE id=6");
   const otherAccount = await customer.context().newPage();
-  await Promise.all([customer, otherAccount].map((page) => page.goto(origin + "/en/account")));
+  await Promise.all([customer, otherAccount].map((page) => page.goto(origin + "/en/account?qa-invite=1")));
   const invitePaths = await Promise.all([customer, otherAccount].map((page) =>
     page.locator('input[readonly][value*="/signup?ref="]').inputValue()));
   assert.equal(invitePaths[0], invitePaths[1]);
