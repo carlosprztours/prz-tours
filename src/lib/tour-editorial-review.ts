@@ -27,5 +27,9 @@ export function publishReviewedTourEnglish(source: string[], english: string[], 
 }
 
 export function existingPickupNote(locale: "es" | "en", hasManualEnglish: boolean, source: string | null) {
+  // These older tours share one audited pickup note between both locales.
+  if (locale === "es" && source === "We provide pick-up service from all cruise ports and hotels.") {
+    return "Ofrecemos recogida en todos los puertos de cruceros y hoteles.";
+  }
   return locale === "es" || hasManualEnglish ? source : null;
 }

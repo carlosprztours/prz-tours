@@ -92,6 +92,7 @@ function GalleryViewer({ items, initialIndex, es, siteName, opener, onClose }: {
   const reduceMotion = useSyncExternalStore(subscribe, () => window.matchMedia(MOTION_QUERY).matches, () => true);
   const visible = useSyncExternalStore(subscribe, () => !document.hidden, () => false);
   const count = items.length;
+  const rotating = count > 1 && !paused && !playing && !interacting && !focused && !reduceMotion && visible;
   const item = items[index];
   const next = items[(index + 1) % count];
 
@@ -112,10 +113,10 @@ function GalleryViewer({ items, initialIndex, es, siteName, opener, onClose }: {
   }, [opener]);
 
   useEffect(() => {
-    if (count < 2 || paused || playing || interacting || focused || reduceMotion || !visible) return;
+    if (!rotating) return;
     const timeout = window.setTimeout(() => setIndex((index + 1) % count), INTERVAL);
     return () => window.clearTimeout(timeout);
-  }, [count, index, paused, playing, interacting, focused, reduceMotion, visible]);
+  }, [count, index, rotating]);
 
   function move(direction: number) {
     setPlaying(false);
@@ -167,7 +168,7 @@ function GalleryViewer({ items, initialIndex, es, siteName, opener, onClose }: {
         >
           {item.kind === "image" ? (
             <SafeImage key={index} src={item.image.url} alt={item.image.alt || item.image.caption || siteName}
-              fill sizes="100vw" loading="eager" className="object-contain" onLoad={() => setLoadedIndex(index)} />
+              fill sizes="100vw" loading="eager" className={rotating ? "object-contain gallery-photo-rotation" : "object-contain"} onLoad={() => setLoadedIndex(index)} />
           ) : (
             <VideoCard key={index} video={item.video} es={es} immersive onPlaybackChange={setPlaying} />
           )}

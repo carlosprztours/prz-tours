@@ -79,7 +79,8 @@ export function couponIsLive(coupon: Coupon): boolean {
 export async function activeCouponFor(userId: number): Promise<Coupon | null> {
   const coupon = await queryOne<Coupon>(
     `SELECT * FROM coupons WHERE user_id = ? AND status = 'active'
-     ORDER BY id DESC`,
+       AND (expires_at IS NULL OR expires_at > datetime('now'))
+     ORDER BY id DESC LIMIT 1`,
     userId,
   );
   if (!coupon || !couponIsLive(coupon)) return null;
@@ -200,7 +201,7 @@ export async function checkCoupon(
   if (coupon.user_id !== userId) return { ok: false, error: "not-yours" };
   if (coupon.status !== "active") return { ok: false, error: "used" };
   if (!couponIsLive(coupon)) {
-    await execute(`UPDATE coupons SET status = 'expired' WHERE id = ?`, coupon.id).catch(() => {});
+    await execute(`UPDATE coupons SET status = 'expired' WHERE id = ? AND status = 'active'`, coupon.id).catch(() => {});
     return { ok: false, error: "expired" };
   }
   const discount =

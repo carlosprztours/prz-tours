@@ -30,13 +30,30 @@ try {
       ('${fixture}hidden.svg', 'Oculta QA', 0);
      INSERT INTO gallery_videos (url, poster, title, is_published) VALUES
       ('${fixture}clip.webm', '${fixture}landscape.svg', 'Vídeo QA', 1),
-      ('${fixture}hidden.webm', NULL, 'Oculto QA', 0);`], { stdio: "ignore" });
+      ('${fixture}hidden.webm', NULL, 'Oculto QA', 0);
+     INSERT INTO tours (id, slug, price) VALUES (801,'qa-bilingual',50),(802,'qa-english-only',50),(803,'qa-related',50);
+     INSERT INTO tour_translations (tour_id,locale,title,summary,description,seo_title,seo_description) VALUES
+       (801,'es','Excursión de prueba','Resumen ES','Descripción ES','Metadato español','Descripción SEO ES'),
+       (801,'en','Sample excursion','Summary EN','Description EN','English metadata','SEO description EN'),
+       (802,'en','English-only trip','','',NULL,NULL),
+       (803,'es','Excursión relacionada','','',NULL,NULL),
+       (803,'en','Related excursion','','',NULL,NULL);`], { stdio: "ignore" });
   worker = spawn(wrangler, ["dev", ...args, "--port", "8796"], { stdio: "ignore" });
   for (let attempt = 0; attempt < 40; attempt++) {
     if ((await fetch(origin + "/es/gallery").catch(() => null))?.ok) break;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   assert((await fetch(origin + "/es/gallery")).ok, "Isolated Worker did not start");
+  for (const [lang, title, summary, description, seo, related] of [
+    ["es", "Excursión de prueba", "Resumen ES", "Descripción ES", "Metadato español", "Excursión relacionada"],
+    ["en", "Sample excursion", "Summary EN", "Description EN", "English metadata", "Related excursion"],
+  ]) {
+    const catalogue = await (await fetch(origin + `/${lang}/tours`)).text();
+    const detail = await (await fetch(origin + `/${lang}/tours/qa-bilingual`)).text();
+    assert(catalogue.includes(title) && catalogue.includes(summary));
+    assert(detail.includes(description) && detail.includes(seo) && detail.includes(related));
+    assert.equal(catalogue.includes("English-only trip"), lang === "en");
+  }
   browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
   async function fixturePage(options) {
     const page = await browser.newPage(options);
@@ -80,12 +97,14 @@ try {
   }
   await position(1);
   await imageFits("Vertical QA", 0.5);
+  assert.equal(await dialog.getByRole("img", { name: "Vertical QA" }).evaluate((img) => getComputedStyle(img).animationName), "gallery-photo-breathe");
   await page.clock.runFor(5100);
   await position(2);
   await imageFits("Horizontal QA", 2);
   await dialog.getByRole("button", { name: "Pausar carrusel" }).click();
   await page.clock.runFor(6000);
   await position(2);
+  assert.equal(await dialog.getByRole("img", { name: "Horizontal QA" }).evaluate((img) => getComputedStyle(img).animationName), "none");
   await dialog.getByRole("button", { name: "Reanudar carrusel" }).click();
   await page.clock.runFor(5100);
   await position(3);
@@ -122,6 +141,7 @@ try {
   await mobile.getByRole("button", { name: "View photo", exact: true }).first().tap();
   const mobileDialog = mobile.getByRole("dialog", { name: "Media gallery" });
   await mobileDialog.getByText("1 / 3", { exact: true }).waitFor();
+  assert.equal(await mobileDialog.locator("img").first().evaluate((img) => getComputedStyle(img).animationName), "none");
   await mobile.clock.runFor(6000);
   assert(await mobileDialog.getByText("1 / 3", { exact: true }).isVisible());
   const cdp = await mobile.context().newCDPSession(mobile);

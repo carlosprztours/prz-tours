@@ -53,6 +53,7 @@ export async function finishPendingBooking(orderId: string): Promise<CaptureResu
       source: "web",
       clientIp: pending.clientIp,
       userId: pending.userId,
+      paymentAlreadyCaptured: true,
     });
   } catch (err) {
     console.error("[paypal-capture] no se pudo crear la reserva:", err);

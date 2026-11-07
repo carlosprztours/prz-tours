@@ -1,5 +1,5 @@
 /**
- * Mi cuenta: datos del cliente y sus reservas (por email de la cuenta).
+ * Mi cuenta: datos del cliente y las reservas vinculadas a su cuenta.
  *
  * Requiere sesión (cualquier rol). El staff también puede entrar aquí.
  */
@@ -12,6 +12,7 @@ import { InviteLink } from "@/components/auth/InviteLink";
 import { NotificationsSection } from "@/components/auth/NotificationsSection";
 import { PasskeysSection } from "@/components/auth/PasskeysSection";
 import { PwaInstallPrompt } from "@/components/pwa/PwaInstallPrompt";
+import { SECTION_ROLES } from "@/lib/admin/access";
 import { logout } from "@/lib/actions/auth";
 import { verifyCustomerSession } from "@/lib/auth/dal";
 import { listUserCredentials } from "@/lib/auth/webauthn";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/db/loyalty";
 import { queryOne } from "@/lib/db/client";
 import { hasSubscription } from "@/lib/db/push";
-import { listBookingsByEmail } from "@/lib/db/bookings";
+import { listBookingsByUserId } from "@/lib/db/bookings";
 import { getDictionary, isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
 import { ProfileForm } from "./ProfileForm";
@@ -42,7 +43,7 @@ export default async function AccountPage({ params }: Props) {
     `SELECT name, phone FROM users WHERE id = ?`,
     session.user.id,
   );
-  const bookings = await listBookingsByEmail(session.user.email);
+  const bookings = await listBookingsByUserId(session.user.id);
   const [inviteCode, coupons, notifications, dict, subscribed] = await Promise.all([
     getOrCreateInviteCode(session.user.id),
     listUserCoupons(session.user.id),
@@ -170,7 +171,16 @@ export default async function AccountPage({ params }: Props) {
           },
         },
   };
-  const isStaff = session.user.role === "admin" || session.user.role === "editor";
+  const isStaff = SECTION_ROLES.panel.includes(session.user.role);
+  const base = `/${locale}/admin`;
+  const management = [
+    { href: `${base}/bookings`, label: es ? "Reservas" : "Bookings", section: "bookings" },
+    { href: `${base}/drivers`, label: es ? "Conductores" : "Drivers", section: "drivers" },
+    { href: `${base}/assignments`, label: es ? "Servicios y asignaciones" : "Services and assignments", section: "assignments" },
+    { href: `${base}/services`, label: es ? "Panel de conducción" : "Driver panel", section: "services" },
+    { href: `${base}/qr`, label: es ? "Validación QR" : "QR validation", section: "qr" },
+    { href: `${base}/users#customers`, label: es ? "Clientes y fidelización" : "Customers and loyalty", section: "users" },
+  ].filter((item) => SECTION_ROLES[item.section].includes(session.user.role));
 
   return (
     <div className="bg-sand-50/50 py-12">
@@ -201,6 +211,21 @@ export default async function AccountPage({ params }: Props) {
             </form>
           </div>
         </div>
+
+        {management.length > 0 && (
+          <nav aria-label={es ? "Gestión" : "Management"} className="mt-6 rounded-2xl border border-sand-200 bg-white p-4">
+            <h2 className="font-bold">{es ? "Gestión" : "Management"}</h2>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {management.map(({ href, label }) => (
+                <li key={href}>
+                  <Link href={href} className="inline-flex min-h-11 items-center rounded-xl border border-sand-200 px-3 text-sm font-semibold hover:border-ocean-300">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
 
         <div className="mt-8">
           <ProfileForm
