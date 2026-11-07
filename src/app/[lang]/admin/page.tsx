@@ -10,8 +10,6 @@ import { adminTexts } from "@/lib/admin/texts";
 import {
   getDashboardMetrics,
   getRecentBookings,
-  getRevenueByMonth,
-  getRevenueByTour,
 } from "@/lib/db/metrics";
 import { isLocale } from "@/lib/i18n";
 import type { Locale } from "@/types";
@@ -19,10 +17,6 @@ import type { Locale } from "@/types";
 type Props = {
   params: Promise<{ lang: string }>;
 };
-
-function money(n: number): string {
-  return `$${(Math.round(n * 100) / 100).toLocaleString("en-US")}`;
-}
 
 export default async function AdminDashboard({ params }: Props) {
   const { lang } = await params;
@@ -33,33 +27,11 @@ export default async function AdminDashboard({ params }: Props) {
   if (user.role === "photographer") redirect(`/${locale}/admin/gallery`);
   const t = adminTexts(locale);
 
-  const [metrics, byMonth, byTour, recent] = await Promise.all([
-    getDashboardMetrics(),
-    getRevenueByMonth(),
-    getRevenueByTour(),
-    getRecentBookings(),
-  ]);
-
-  const delta =
-    metrics.lastMonthRevenue > 0
-      ? ((metrics.monthRevenue - metrics.lastMonthRevenue) /
-          metrics.lastMonthRevenue) *
-        100
-      : null;
-
+  const [metrics, recent] = await Promise.all([getDashboardMetrics(), getRecentBookings()]);
   const cards = [
-    { label: t.totalRevenue, value: money(metrics.totalRevenue), hint: t.onlyConfirmedNote },
-    {
-      label: t.monthRevenue,
-      value: money(metrics.monthRevenue),
-      hint: delta === null ? t.vsLastMonth : `${delta >= 0 ? "+" : ""}${delta.toFixed(0)}% ${t.vsLastMonth}`,
-    },
     { label: t.pendingBookings, value: String(metrics.pendingBookings), hint: t.bookings },
     { label: t.totalGuests, value: String(metrics.totalGuests), hint: t.onlyConfirmedNote },
   ];
-
-  const maxMonth = Math.max(1, ...byMonth.map((r) => r.revenue));
-  const maxTour = Math.max(1, ...byTour.map((r) => r.revenue));
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -75,59 +47,11 @@ export default async function AdminDashboard({ params }: Props) {
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-sand-200 bg-white p-5 shadow-sm">
-          <h2 className="font-display text-lg font-bold text-ink-900">{t.revenueByMonth}</h2>
-          {byMonth.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-500">{t.noData}</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {byMonth.map((row) => (
-                <li key={row.month}>
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="font-bold text-ink-900">{row.month}</span>
-                    <span className="text-ink-600">
-                      {money(row.revenue)} · {row.bookings}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-sand-100">
-                    <div
-                      className="h-full rounded-full bg-ocean-600"
-                      style={{ width: `${Math.max(2, (row.revenue / maxMonth) * 100)}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-sand-200 bg-white p-5 shadow-sm">
-          <h2 className="font-display text-lg font-bold text-ink-900">{t.revenueByTour}</h2>
-          {byTour.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-500">{t.noData}</p>
-          ) : (
-            <ul className="mt-4 space-y-3">
-              {byTour.map((row) => (
-                <li key={`${row.tour_slug}-${row.tour_title}`}>
-                  <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="truncate font-bold text-ink-900">{row.tour_title}</span>
-                    <span className="shrink-0 text-ink-600">
-                      {money(row.revenue)} · {row.bookings}
-                    </span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-sand-100">
-                    <div
-                      className="h-full rounded-full bg-coral-500"
-                      style={{ width: `${Math.max(2, (row.revenue / maxTour) * 100)}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+      {user.role === "admin" && (
+        <Link href={`/${locale}/admin/finance`} className="justify-self-start rounded-xl border border-sand-200 bg-white px-4 py-3 font-bold text-ocean-800">
+          {locale === "es" ? "Resumen financiero" : "Financial summary"}
+        </Link>
+      )}
 
       <section className="rounded-2xl border border-sand-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">

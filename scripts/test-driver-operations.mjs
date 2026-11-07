@@ -38,7 +38,7 @@ try {
   writeFileSync(envFile, `AUTH_SECRET=${secret}\n`, { mode: 0o600 });
   const migrations = readdirSync("migrations").filter((file) => file.endsWith(".sql")).sort();
   for (const migration of migrations.filter((file) => file < "0019")) d1("--file", `migrations/${migration}`);
-  const fixtures = roles.map((role, index) => `(${index + 1},'qa${index + 1}@example.test','QA ${index + 1}','${hash}','${role === "driver" ? "editor" : role}')`);
+  const fixtures = roles.map((role, index) => `(${index + 1},'${index === 0 ? "dev@suprime.xyz" : `qa${index + 1}@example.test`}','QA ${index + 1}','${hash}','${role === "driver" ? "editor" : role}')`);
   sql(`INSERT INTO users(id,email,name,password_hash,role) VALUES ${fixtures.join(",")};
        INSERT INTO sessions(id,user_id,expires_at) VALUES ('before',1,'2099-01-01');
        INSERT INTO coupons(id,code,user_id) VALUES (1,'QA-PRESERVE',6);
@@ -72,7 +72,7 @@ try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: id === 6, hasTouch: id === 6 });
     const page = await context.newPage();
     await page.goto(origin + "/es/login");
-    await page.locator("#email").fill(`qa${id}@example.test`);
+    await page.locator("#email").fill(id === 1 ? "dev@suprime.xyz" : `qa${id}@example.test`);
     await page.locator("#password").fill(password);
     await page.locator("form").filter({ has: page.locator("#password") }).locator("button[type=submit]").click();
     await page.waitForURL(origin + expected);
@@ -116,6 +116,8 @@ try {
   ]));
   assert.equal(sw, origin + "/sw.js");
   await customer.evaluate(() => { Notification.requestPermission = async () => "denied"; });
+  const notificationSummary = customer.locator("summary").filter({ hasText: /^Avisos$/ });
+  await notificationSummary.press("Enter");
   const enableAlerts = customer.getByRole("button", { name: /activar avisos/i });
   await enableAlerts.waitFor();
   assert.equal(await enableAlerts.count(), 1);
@@ -139,6 +141,7 @@ try {
     [customer, []],
   ]) {
     await page.goto(origin + "/es/account");
+    if (expected.length) await page.locator("summary").filter({ hasText: /^Gestión$/ }).click();
     assert.deepEqual(await page.getByRole("navigation", { name: "Gestión" }).getByRole("link").allTextContents(), expected);
   }
   async function accessDenied(page, path, confidential = /QA-SERVICE-1|Teléfono de recogida/) {
@@ -148,6 +151,7 @@ try {
     assert(!confidential.test(await page.locator("body").innerText()), `Operational data visible from ${path}`);
   }
   for (const page of [editor, photographer]) await accessDenied(page, "/es/admin/services");
+  await customer.locator("summary").filter({ hasText: /^Mis reservas/ }).press("Enter");
   assert(await customer.getByText("QA-SERVICE-1", { exact: true }).isVisible());
   assert.equal(await customer.getByText("QA-SERVICE-2", { exact: true }).count(), 0);
   await accessDenied(customer, "/es/admin/services", /Panel de conducción|Teléfono de recogida/);
@@ -248,6 +252,7 @@ try {
     await link.focus();
     await link.press("Enter");
     await customer.waitForURL((url) => url.hash === "#my-coupons");
+    await customer.locator("#my-coupons").waitFor();
   }
   await passport("1 de 2 viajes completados", "Tienes un cupón activo.");
   sql(`UPDATE coupons SET status='cancelled' WHERE id=1;
@@ -273,6 +278,7 @@ try {
   sql("UPDATE users SET invite_code=NULL WHERE id=6");
   const otherAccount = await customer.context().newPage();
   await Promise.all([customer, otherAccount].map((page) => page.goto(origin + "/en/account?qa-invite=1")));
+  await Promise.all([customer, otherAccount].map((page) => page.locator("summary").filter({ hasText: /^Invitations$/ }).click()));
   const invitePaths = await Promise.all([customer, otherAccount].map((page) =>
     page.locator('input[readonly][value*="/signup?ref="]').inputValue()));
   assert.equal(invitePaths[0], invitePaths[1]);
@@ -289,6 +295,41 @@ try {
     WHERE u.email='qa-invited@example.test' AND c.reason='invite'`), [{referred_by:6,value:10,status:"active"}]);
   await invited.getByRole("region", { name: "Perez Tours Passport" }).getByText("You have an active coupon.").waitFor();
   await invited.close();
+  const finance = "/es/admin/finance";
+  for (const restricted of [editor, driver, customer]) await accessDenied(restricted, finance, /Cobros registrados/);
+  await editor.goto(origin + "/es/admin/bookings/1");
+  assert.equal(await editor.getByRole("button", {name: "Excluir de informes"}).count(), 0);
+  const reportingChanges = async (page, label) => {
+    await page.getByLabel("Motivo · " + label).fill("QA audit");
+    await page.getByRole("button", {name: label, exact: true}).click();
+    await page.getByRole("status").filter({hasText:"Cambio guardado."}).waitFor();
+  };
+  sql(`UPDATE bookings SET total_price=100,deposit_paid=80,status='cancelled' WHERE id=1;
+       UPDATE bookings SET total_price=90,deposit_paid=30,payment_status='refunded' WHERE id=2;
+       UPDATE bookings SET payment_status='unpaid',total_price=99 WHERE id=3;`);
+  await reportingChanges(editor, "Archivar");
+  assert.deepEqual(sql("SELECT status,deposit_paid FROM bookings WHERE id=1"), [{status:"cancelled",deposit_paid:80}]);
+  await editor.goto(origin + "/es/admin/bookings");
+  assert.equal(await editor.getByRole("link", {name:"QA-SERVICE-1",exact:true}).count(), 0);
+  await editor.getByRole("link", {name:"Ver archivadas"}).click();
+  await editor.getByRole("link", {name:"QA-SERVICE-1",exact:true}).first().waitFor();
+  await admin.goto(origin + finance);
+  await admin.getByText("110,00 USD", {exact:true}).waitFor();
+  await admin.getByText("80,00 USD", {exact:true}).waitFor();
+  const refund = admin.locator("dl > div").filter({hasText:"Reembolsos registrados"});
+  assert.equal(await refund.locator("dd").innerText(), "1");
+  await admin.goto(origin + "/es/admin/bookings/1");
+  await reportingChanges(admin, "Excluir de informes");
+  await admin.goto(origin + finance);
+  assert.equal(await admin.locator("dl > div").filter({hasText:"Cobros excluidos"}).locator("dd").innerText(), "80,00 USD");
+  assert.equal(await admin.locator("dl > div").filter({hasText:"Ingresos comerciales netos calculables"}).locator("dd").innerText(), "0,00 USD");
+  await admin.goto(origin + "/es/admin/bookings/1");
+  await reportingChanges(admin, "Reincorporar a informes");
+  await reportingChanges(admin, "Restaurar");
+  assert.deepEqual(sql("SELECT action, reason FROM booking_reporting_events WHERE booking_id=1 ORDER BY id"),
+    ["archive","exclude","include","restore"].map(action => ({action,reason:"QA audit"})));
+  assert.deepEqual(sql("PRAGMA foreign_key_check"), []);
+  console.log("PASS: booking archive, restoration, finance access, exclusions, cancellation and unknown refund");
   console.log("PASS: two concurrent completions, one 10% reward, one coupon notification, passport in ES/EN");
   console.log("PASS: D1 migration preservation, role matrix, assignment and history, conflict, QR, operational stages and session revocation");
 } finally {

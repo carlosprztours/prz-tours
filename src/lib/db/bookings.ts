@@ -337,6 +337,7 @@ export async function markBookingPaidByReference(reference: string): Promise<voi
 // ───────────────────────────── Lectura (panel) ─────────────────────────────
 
 export type BookingFilters = {
+  archived?: boolean;
   status?: BookingStatus | "all";
   search?: string;
   from?: string;
@@ -372,7 +373,7 @@ function buildWhere(filters: BookingFilters): {
   where: string;
   params: unknown[];
 } {
-  const clauses: string[] = [];
+  const clauses = [filters.archived ? "archived_at IS NOT NULL" : "archived_at IS NULL"];
   const params: unknown[] = [];
   if (filters.status && filters.status !== "all") {
     clauses.push("status = ?");

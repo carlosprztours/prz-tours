@@ -4,6 +4,7 @@
  * Requiere sesión (cualquier rol). El staff también puede entrar aquí.
  */
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -214,9 +215,21 @@ export default async function AccountPage({ params }: Props) {
           </div>
         </div>
 
+        {session.user.role === "customer" && (
+          <div className="mt-5">
+            <LoyaltyPassport
+              locale={locale}
+              trips={profile?.loyalty_trips ?? 0}
+              hasActiveCoupon={coupons.some(couponIsLive)}
+              hasUsedReward={coupons.some((coupon) => coupon.reason === "loyalty" && coupon.status === "used")}
+            />
+          </div>
+        )}
+
+        <div className="mt-5 grid gap-3">
         {management.length > 0 && (
-          <nav aria-label={es ? "Gestión" : "Management"} className="mt-6 rounded-2xl border border-sand-200 bg-white p-4">
-            <h2 className="font-bold">{es ? "Gestión" : "Management"}</h2>
+          <AccountSection title={es ? "Gestión" : "Management"}>
+          <nav aria-label={es ? "Gestión" : "Management"} className="p-1">
             <ul className="mt-2 flex flex-wrap gap-2">
               {management.map(({ href, label }) => (
                 <li key={href}>
@@ -227,9 +240,10 @@ export default async function AccountPage({ params }: Props) {
               ))}
             </ul>
           </nav>
+          </AccountSection>
         )}
 
-        <div className="mt-8">
+        <AccountSection title={es ? "Datos personales y seguridad" : "Personal details and security"}>
           <ProfileForm
             locale={locale}
             initial={{
@@ -239,9 +253,7 @@ export default async function AccountPage({ params }: Props) {
             }}
             labels={copy.profile}
           />
-        </div>
-
-        <div className="mt-5">
+        <div className="mt-3">
           <PasswordForm
             locale={locale}
             labels={
@@ -278,7 +290,7 @@ export default async function AccountPage({ params }: Props) {
           />
         </div>
 
-        <div className="mt-5">
+        <div className="mt-3">
           <PasskeysSection
             credentials={passkeys.map((p) => ({
               id: p.id,
@@ -288,10 +300,10 @@ export default async function AccountPage({ params }: Props) {
             labels={copy.passkeys}
           />
         </div>
+        </AccountSection>
 
-        <div className="mt-5">
+        <AccountSection title={copy.notifications.title}>
           <NotificationsSection initial={notifications} labels={copy.notifications} />
-        </div>
 
         {session.user.role === "customer" && (
           <div className="mt-5">
@@ -305,30 +317,21 @@ export default async function AccountPage({ params }: Props) {
           </div>
         )}
 
-        {session.user.role === "customer" && (
-          <div className="mt-5">
-            <LoyaltyPassport
-              locale={locale}
-              trips={profile?.loyalty_trips ?? 0}
-              hasActiveCoupon={coupons.some(couponIsLive)}
-              hasUsedReward={coupons.some((coupon) => coupon.reason === "loyalty" && coupon.status === "used")}
-            />
-          </div>
-        )}
+        </AccountSection>
 
-        <div id="my-coupons" className="mt-5">
+        <AccountSection title={copy.coupons.title}>
+        <div id="my-coupons">
           <CouponsSection coupons={coupons.map((coupon) =>
             coupon.status === "active" && !couponIsLive(coupon) ? { ...coupon, status: "expired" } : coupon
           )} labels={copy.coupons} />
         </div>
+        </AccountSection>
 
-        <div className="mt-5">
+        <AccountSection title={es ? "Invitaciones" : "Invitations"}>
           <InviteLink locale={locale} code={inviteCode} labels={copy.invite} />
-        </div>
+        </AccountSection>
 
-        <h2 className="mt-10 font-display text-xl font-extrabold text-ink-900">
-          {copy.myBookings} · {bookings.length}
-        </h2>
+        <AccountSection title={`${copy.myBookings} · ${bookings.length}`}>
         {bookings.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-sand-200 bg-white p-8 text-center">
             <p className="text-sm text-ink-500">{copy.noBookings}</p>
@@ -369,7 +372,21 @@ export default async function AccountPage({ params }: Props) {
             ))}
           </ul>
         )}
+        </AccountSection>
+        </div>
       </div>
     </div>
+  );
+}
+
+function AccountSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <details className="group rounded-2xl border border-sand-200 bg-white">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 font-bold text-ink-900 focus-visible:outline-2 focus-visible:outline-ocean-700">
+        {title}
+        <span aria-hidden="true" className="text-ocean-800 group-open:rotate-180">⌄</span>
+      </summary>
+      <div className="border-t border-sand-100 p-3 sm:p-4">{children}</div>
+    </details>
   );
 }

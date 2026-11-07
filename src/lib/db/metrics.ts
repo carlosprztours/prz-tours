@@ -1,109 +1,15 @@
-/**
- * Métricas del dashboard: ingresos y actividad.
- *
- * REGLA DE NEGOCIO: solo las reservas `confirmed` y `completed` cuentan como
- * ingreso. Las `pending` son intención; las `cancelled` no generan nada.
- * Toda la lógica de dinero del panel depende de esta regla.
- */
 import "server-only";
 
 import { query, queryOne } from "./client";
-import type {
-  BookingStatus,
-  DashboardMetrics,
-  RevenueByMonth,
-  RevenueByTour,
-} from "@/types";
+import type { BookingStatus } from "@/types";
 
-/** Estados que generan ingreso. */
-export const REVENUE_STATUSES: BookingStatus[] = ["confirmed", "completed"];
-
-const revenueWhere = `status IN ('confirmed','completed')`;
-
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  const [counts, revenue, month, lastMonth, guests, misc] = await Promise.all([
-    query<{ status: BookingStatus; n: number }>(
-      `SELECT status, COUNT(*) AS n FROM bookings GROUP BY status`,
-    ),
-    queryOne<{ total: number | null }>(
-      `SELECT SUM(total_price) AS total FROM bookings WHERE ${revenueWhere}`,
-    ),
-    queryOne<{ total: number | null }>(
-      `SELECT SUM(total_price) AS total FROM bookings
-       WHERE ${revenueWhere}
-         AND strftime('%Y-%m', booked_for || ' 00:00:00') = strftime('%Y-%m', 'now')`,
-    ),
-    queryOne<{ total: number | null }>(
-      `SELECT SUM(total_price) AS total FROM bookings
-       WHERE ${revenueWhere}
-         AND strftime('%Y-%m', booked_for || ' 00:00:00') =
-             strftime('%Y-%m', 'now', '-1 month')`,
-    ),
-    queryOne<{ total: number | null }>(
-      `SELECT SUM(guests) AS total FROM bookings WHERE ${revenueWhere}`,
-    ),
-    queryOne<{
-      unread: number;
-      tours: number;
-      total: number;
-    }>(
-      `SELECT
-         (SELECT COUNT(*) FROM messages WHERE is_read = 0) AS unread,
-         (SELECT COUNT(*) FROM tours WHERE is_published = 1) AS tours,
-         (SELECT COUNT(*) FROM bookings) AS total`,
-    ),
-  ]);
-  const byStatus: Record<string, number> = {};
-  for (const c of counts) byStatus[c.status] = c.n;
-
-  return {
-    totalBookings: misc?.total ?? 0,
-    pendingBookings: byStatus.pending ?? 0,
-    confirmedBookings: byStatus.confirmed ?? 0,
-    completedBookings: byStatus.completed ?? 0,
-    cancelledBookings: byStatus.cancelled ?? 0,
-    totalRevenue: revenue?.total ?? 0,
-    monthRevenue: month?.total ?? 0,
-    lastMonthRevenue: lastMonth?.total ?? 0,
-    totalGuests: guests?.total ?? 0,
-    bookingCount:
-      (byStatus.confirmed ?? 0) + (byStatus.completed ?? 0),
-    unreadMessages: misc?.unread ?? 0,
-    publishedTours: misc?.tours ?? 0,
-  };
-}
-
-/** Ingresos por mes (últimos 12 meses con actividad). */
-export async function getRevenueByMonth(
-  limit = 12,
-): Promise<RevenueByMonth[]> {
-  return query<RevenueByMonth>(
-    `SELECT strftime('%Y-%m', booked_for) AS month,
-            SUM(total_price) AS revenue,
-            COUNT(*) AS bookings
-     FROM bookings
-     WHERE ${revenueWhere} AND booked_for IS NOT NULL
-     GROUP BY month
-     ORDER BY month DESC
-     LIMIT ?`,
-    limit,
+export async function getDashboardMetrics() {
+  const row = await queryOne<{ pendingBookings: number | null; totalGuests: number | null }>(
+    `SELECT SUM(status = 'pending') AS pendingBookings,
+            SUM(CASE WHEN status IN ('confirmed','completed') THEN guests ELSE 0 END) AS totalGuests
+       FROM bookings WHERE archived_at IS NULL`,
   );
-}
-
-/** Ingresos por tour (para saber qué se vende más). */
-export async function getRevenueByTour(limit = 10): Promise<RevenueByTour[]> {
-  return query<RevenueByTour>(
-    `SELECT tour_slug,
-            COALESCE(NULLIF(tour_title, ''), 'Traslado / personalizado') AS tour_title,
-            SUM(total_price) AS revenue,
-            COUNT(*) AS bookings
-     FROM bookings
-     WHERE ${revenueWhere}
-     GROUP BY tour_slug, tour_title
-     ORDER BY revenue DESC
-     LIMIT ?`,
-    limit,
-  );
+  return { pendingBookings: row?.pendingBookings ?? 0, totalGuests: row?.totalGuests ?? 0 };
 }
 
 /** Últimas reservas (para el widget de actividad reciente). */
@@ -124,6 +30,7 @@ export async function getRecentBookings(limit = 8): Promise<
     `SELECT id, reference, customer_name, tour_title, transfer_label,
             guests, total_price, status, created_at
      FROM bookings
+     WHERE archived_at IS NULL
      ORDER BY created_at DESC, id DESC
      LIMIT ?`,
     limit,
