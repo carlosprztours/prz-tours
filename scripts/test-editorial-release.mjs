@@ -10,6 +10,12 @@ test("preserves both legacy pickup notes for tours with manual English", () => {
   }
 });
 
+test("localizes the audited legacy pickup note without changing its English copy", () => {
+  const note = "We provide pick-up service from all cruise ports and hotels.";
+  assert.equal(existingPickupNote("es", true, note), "Ofrecemos recogida en todos los puertos de cruceros y hoteles.");
+  assert.equal(existingPickupNote("en", true, note), note);
+});
+
 test("publishes nonsensitive fields while withholding unapproved sensitive fields", () => {
   const source = ["Tour", "Resumen", "Condiciones", "", "", "Equipo", "", "", "Recogida"];
   const english = ["Tour", "Summary", "Terms", "", "", "Equipment", "", "", "Pickup"];

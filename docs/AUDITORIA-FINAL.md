@@ -24,12 +24,12 @@ T = título; R = resumen; D = descripción; SEO = título y descripción; L = in
 |---|---|---|---|---|
 | Damajagua | T corregido; resto presente | Presente | 6/3/6 ambos | SEO dice US$60, precio base US$55. |
 | ATV | Presente | Presente | 5/4/4 ambos | — |
-| Ciudad de Puerto Plata | T, D y SEO corregidos; R conservado | Presente y conservado | 5/3/4 ambos | La entrada a la fortaleza figura incluida y excluida. |
+| Ciudad de Puerto Plata | T, D, SEO y recogida corregidos; R conservado | Presente y conservado | 5/3/4 ambos | La entrada a la fortaleza figura incluida y excluida. |
 | Monkey Jungle | T y R corregidos; D y SEO conservados | Presente | 4/3/5 ambos | Confirmar si la tirolina está incluida: el resumen EN lo anuncia y las listas no lo aclaran. |
 | Dune Buggy | Presente | Presente | 5/4/6 ambos | SEO US$60 frente a precio base US$110; la descripción SEO indica 4x2 en ES y 4x4 en EN. |
 | Esnórquel en Sosúa | Presente | Presente | 5/3/4 ambos | — |
 | Cayo Arena | Presente | Presente | 6/4/6 ambos | Paradise Island se conserva como nombre alternativo. |
-| Cabalgata en Puerto Plata | Ficha añadida | R y descripción SEO completados donde faltaban | 0/0/0 ambos | Faltan inclusiones, exclusiones y recomendaciones confirmadas. |
+| Cabalgata en Puerto Plata | Ficha y recogida en ES | R y descripción SEO completados donde faltaban | 0/0/0 ambos | Faltan inclusiones, exclusiones y recomendaciones confirmadas. |
 
 ## Permisos y menús
 
