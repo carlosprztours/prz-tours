@@ -38,6 +38,8 @@ export const SECTION_ROLES: Record<string, UserRole[]> = {
   dashboard: ["admin", "editor"],
   bookings: ["admin", "editor"],
   occupancy: ["admin", "editor"],
+  portada: ["admin", "editor"],
+  textos: ["admin", "editor"],
   tours: ["admin", "editor"],
   transfers: ["admin", "editor"],
   testimonials: ["admin", "editor"],

@@ -30,6 +30,8 @@ export default async function AdminLayout({ children, params }: Props) {
   const allNav = [
     { href: base, label: locale === "es" ? "Panel" : "Dashboard", exact: true, section: "dashboard" },
 
+    { href: `${base}/portada`, label: locale === "es" ? "Portada" : "Homepage", section: "portada" },
+    { href: `${base}/textos`, label: locale === "es" ? "Textos" : "Site copy", section: "textos" },
     { href: `${base}/occupancy`, label: locale === "es" ? "Ocupación" : "Occupancy", section: "occupancy" },
     { href: `${base}/tours`, label: locale === "es" ? "Tours" : "Tours", section: "tours" },
     { href: `${base}/transfers`, label: locale === "es" ? "Traslados" : "Transfers", section: "transfers" },
@@ -44,14 +46,6 @@ export default async function AdminLayout({ children, params }: Props) {
     { href: `${base}/settings`, label: locale === "es" ? "Ajustes" : "Settings", section: "settings" },
     { href: `${base}/activity`, label: locale === "es" ? "Actividad" : "Activity", section: "activity" },
   ];
-  const management = [
-    { href: `${base}/bookings`, label: locale === "es" ? "Reservas" : "Bookings", section: "bookings" },
-    { href: `${base}/drivers`, label: locale === "es" ? "Conductores" : "Drivers", section: "drivers" },
-    { href: `${base}/assignments`, label: locale === "es" ? "Servicios y asignaciones" : "Services and assignments", section: "assignments" },
-    { href: `${base}/services`, label: locale === "es" ? "Panel de conducción" : "Driver panel", section: "services" },
-    { href: `${base}/qr`, label: locale === "es" ? "Validación QR" : "QR validation", section: "qr" },
-    { href: `${base}/users#customers`, label: locale === "es" ? "Clientes y fidelización" : "Customers and loyalty", section: "users" },
-  ].filter((item) => SECTION_ROLES[item.section].includes(role));
   const nav = allNav.filter((item) => (SECTION_ROLES[item.section] ?? []).includes(role));
 
   return (
@@ -71,6 +65,9 @@ export default async function AdminLayout({ children, params }: Props) {
                 ? (locale === "es" ? "Producción activa" : "Production running")
                 : (locale === "es" ? "Build local" : "Local build")}
             </span>
+            <Link href={`/${locale}/account`} className="rounded-full border border-white/25 px-2.5 py-1.5 font-semibold hover:bg-white/10">
+              {locale === "es" ? "Mi cuenta" : "My account"}
+            </Link>
             <Link
               href={`/${locale}`}
               className="rounded-full border border-white/25 px-2.5 py-1.5 font-semibold transition hover:bg-white/10 sm:px-3"
@@ -91,18 +88,6 @@ export default async function AdminLayout({ children, params }: Props) {
 
       <div className="container-site grid gap-6 py-6 lg:grid-cols-[220px_1fr]">
         <nav aria-label="Panel" className="min-w-0 lg:sticky lg:top-24 lg:self-start">
-          {management.length > 0 && (
-            <section aria-label={locale === "es" ? "Gestión" : "Management"} className="mb-4">
-              <h2 className="mb-2 text-sm font-bold">{locale === "es" ? "Gestión" : "Management"}</h2>
-              <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
-                {management.map((item) => (
-                  <li key={item.href} className="shrink-0">
-                    <Link href={item.href} className="block rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-ink-700 ring-1 ring-sand-200">{item.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
           <ul className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
             {nav.map((item) => (
               <li key={item.href} className="shrink-0">

@@ -152,3 +152,11 @@ textarea {
     stroke-dashoffset: 0;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes gallery-photo-breathe {
+    0%, 100% { transform: scale(0.975); }
+    55% { transform: scale(1); }
+  }
+  .gallery-photo-rotation { animation: gallery-photo-breathe 5s ease-in-out both; }
+}

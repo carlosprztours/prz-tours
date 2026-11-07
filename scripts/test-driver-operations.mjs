@@ -44,7 +44,7 @@ try {
        INSERT INTO coupons(id,code,user_id) VALUES (1,'QA-PRESERVE',6);
        INSERT INTO bookings(id,reference,customer_name,customer_email,customer_phone,tour_title,hotel,booked_for,pickup_time,status,user_id,payment_status)
        VALUES (1,'QA-SERVICE-1','QA Customer','qa6@example.test','555-0101','Destination','Hotel','2030-01-01','09:00','confirmed',6,'paid'),
-              (2,'QA-SERVICE-2','Other','qa6@example.test','555-0102','Second','Hotel','2030-01-01','09:00','confirmed',6,'paid');`);
+              (2,'QA-SERVICE-2','Other','qa6@example.test','555-0102','Second','Hotel','2030-01-01','09:00','confirmed',NULL,'paid');`);
   for (const migration of migrations.filter((file) => file >= "0019")) d1("--file", `migrations/${migration}`);
   assert.equal(sql("SELECT role FROM users WHERE id=1")[0].role, "admin");
   assert.equal(sql("SELECT user_id FROM sessions WHERE id='before'")[0].user_id, 1);
@@ -75,6 +75,16 @@ try {
   const editor = await login(4, "/es/admin");
   const photographer = await login(5, "/es/admin/gallery");
   const customer = await login(6, "/es/account");
+  for (const [page, expected] of [
+    [admin, ["Reservas", "Conductores", "Servicios y asignaciones", "Panel de conducción", "Validación QR", "Clientes y fidelización"]],
+    [driver, ["Panel de conducción", "Validación QR"]],
+    [editor, ["Reservas"]],
+    [photographer, []],
+    [customer, []],
+  ]) {
+    await page.goto(origin + "/es/account");
+    assert.deepEqual(await page.getByRole("navigation", { name: "Gestión" }).getByRole("link").allTextContents(), expected);
+  }
   async function accessDenied(page, path, confidential = /QA-SERVICE-1|Teléfono de recogida/) {
     const response = await page.goto(origin + path);
     assert(response.status() === 404 || new URL(page.url()).pathname !== path
@@ -82,6 +92,8 @@ try {
     assert(!confidential.test(await page.locator("body").innerText()), `Operational data visible from ${path}`);
   }
   for (const page of [editor, photographer]) await accessDenied(page, "/es/admin/services");
+  assert(await customer.getByText("QA-SERVICE-1", { exact: true }).isVisible());
+  assert.equal(await customer.getByText("QA-SERVICE-2", { exact: true }).count(), 0);
   await accessDenied(customer, "/es/admin/services", /Panel de conducción|Teléfono de recogida/);
   assert.equal(new URL(customer.url()).pathname, "/es/account");
   for (const path of ["/es/admin/bookings", "/es/admin/bookings/1", "/es/admin/assignments", "/es/admin/users", "/es/admin/settings", "/es/admin/gallery"]) {

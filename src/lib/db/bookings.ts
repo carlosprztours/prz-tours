@@ -12,7 +12,7 @@
  */
 import "server-only";
 
-import { execute, query, queryOne } from "./client";
+import { batch, execute, query, queryOne } from "./client";
 import type { Booking, BookingEvent, BookingStatus, Locale } from "@/types";
 
 export type CreateBookingInput = {
@@ -39,6 +39,8 @@ export type CreateBookingInput = {
   clientIp?: string | null;
   /** Cuenta que reserva (la reserva ya exige sesión). */
   userId?: number | null;
+  /** La reconciliación posterior al cobro usa el flujo existente de PayPal. */
+  paymentAlreadyCaptured?: boolean;
 };
 
 export type BookingQuote = {
@@ -143,6 +145,9 @@ export async function quoteBooking(input: CreateBookingInput): Promise<BookingQu
       promoCode = personal.coupon.code;
       loyaltyCouponId = personal.coupon.id;
     } else {
+      if (personal.error !== "not-found") {
+        throw Object.assign(new Error("Invalid personal coupon"), { code: `promo-${personal.error}` });
+      }
       const { checkPromo } = await import("./promos");
       const checked = await checkPromo(input.promoCode, baseTotal);
       if (!checked.ok) {
@@ -184,8 +189,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   for (let attempt = 0; attempt < 3 && !booking; attempt++) {
     reference = makeReference();
     try {
-      await execute(
-        `INSERT INTO bookings
+      const insert = `INSERT INTO bookings
            (reference, kind, tour_id, tour_slug, tour_title,
             transfer_route_id, transfer_label, user_id,
             customer_name, customer_email, customer_phone, customer_country,
@@ -193,8 +197,9 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
             promo_code, discount_amount, deposit_due,
             booked_for, pickup_time, hotel, airport, cruise_port, cruise_ship, meeting_point,
             locale, notes, status, payment_status, source, client_ip)
-         VALUES
-           (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`,
+         SELECT
+           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?`;
+      const params = [
         reference,
         input.kind,
         input.tourId ?? null,
@@ -225,7 +230,30 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
         input.notes ?? null,
         input.source ?? "web",
         input.clientIp ?? null,
-      );
+      ];
+      if (quote.loyaltyCouponId && !input.paymentAlreadyCaptured) {
+        const [inserted] = await batch([
+          {
+            sql: `${insert} WHERE EXISTS (
+              SELECT 1 FROM coupons WHERE id = ? AND user_id = ? AND status = 'active'
+                AND (expires_at IS NULL OR expires_at > datetime('now'))
+            )`,
+            params: [...params, quote.loyaltyCouponId, input.userId],
+          },
+          {
+            sql: `UPDATE coupons SET status = 'used',
+                    booking_id = (SELECT id FROM bookings WHERE reference = ?), used_at = datetime('now')
+                  WHERE id = ? AND user_id = ? AND status = 'active'
+                    AND EXISTS (SELECT 1 FROM bookings WHERE reference = ? AND user_id = ?)`,
+            params: [reference, quote.loyaltyCouponId, input.userId, reference, input.userId],
+          },
+        ]);
+        if (!inserted.meta.changes) {
+          throw Object.assign(new Error("Personal coupon no longer available"), { code: "promo-used" });
+        }
+      } else {
+        await execute(insert, ...params);
+      }
       booking = await queryOne<Booking>(
         `SELECT * FROM bookings WHERE reference = ?`,
         reference,
@@ -250,7 +278,7 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
       console.error("[bookings] consumePromoUse error:", err),
     );
   }
-  if (quote.loyaltyCouponId) {
+  if (quote.loyaltyCouponId && input.paymentAlreadyCaptured) {
     const { consumeCoupon } = await import("./loyalty");
     await consumeCoupon(quote.loyaltyCouponId, booking.id).catch((err) =>
       console.error("[bookings] consumeCoupon error:", err),
@@ -381,7 +409,15 @@ export async function getBookingByReference(
   return queryOne<Booking>(`SELECT * FROM bookings WHERE reference = ?`, reference);
 }
 
-/** Reservas de un cliente por su email (para "mis reservas"). */
+/** Reservas vinculadas a la cuenta autenticada, no al email declarado. */
+export async function listBookingsByUserId(userId: number): Promise<Booking[]> {
+  return query<Booking>(
+    `SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 25`,
+    userId,
+  );
+}
+
+/** Historial por email para operadores autorizados. */
 export async function listBookingsByEmail(
   email: string,
   limit = 25,
