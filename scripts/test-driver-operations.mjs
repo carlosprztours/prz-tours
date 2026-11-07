@@ -83,7 +83,11 @@ try {
     ["en", ["Private airport transfers in Puerto Plata, Dominican Republic", "Air conditioning and comfort"]],
   ]) {
     await gallery.goto(origin + `/${locale}/gallery`);
-    for (const alt of alts) await gallery.getByRole("img", { name: alt, exact: true }).waitFor();
+    for (const alt of alts) {
+      await gallery.getByRole("button", { name: alt, exact: true }).click();
+      await gallery.getByRole("img", { name: alt, exact: true }).waitFor();
+      await gallery.keyboard.press("Escape");
+    }
   }
   await gallery.close();
   const manifest = await (await fetch(origin + "/manifest.webmanifest")).json();
@@ -254,6 +258,18 @@ try {
   await passport("0 of 2 trips completed", "You have an active coupon.", "en");
   sql("UPDATE coupons SET status='used', booking_id=4, used_at=datetime('now') WHERE user_id=6 AND reason='loyalty'");
   await passport("0 of 2 trips completed", "Your previous reward has been used.", "en");
+  const invitePath = await customer.locator('input[readonly][value*="/signup?ref="]').inputValue();
+  const invited = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await invited.goto(origin + invitePath);
+  await invited.locator("#name").fill("QA invited traveller");
+  await invited.locator("#email").fill("qa-invited@example.test");
+  await invited.locator("#password").fill(password);
+  await invited.locator("form").filter({ has: invited.locator("#password") }).locator("button[type=submit]").click();
+  await invited.waitForURL(origin + "/en/account");
+  assert.deepEqual(sql(`SELECT u.referred_by,c.value,c.status FROM users u JOIN coupons c ON c.user_id=u.id
+    WHERE u.email='qa-invited@example.test' AND c.reason='invite'`), [{referred_by:6,value:10,status:"active"}]);
+  await invited.getByRole("region", { name: "Perez Tours Passport" }).getByText("You have an active coupon.").waitFor();
+  await invited.close();
   console.log("PASS: two concurrent completions, one 10% reward, one coupon notification, passport in ES/EN");
   console.log("PASS: D1 migration preservation, role matrix, assignment and history, conflict, QR, operational stages and session revocation");
 } finally {
